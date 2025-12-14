@@ -223,7 +223,232 @@ class DiagnosticsController {
     }
 }
 
+/**
+ * WebSocket Client for Real-time Predictions
+ * Handles connection to Spring Boot WebSocket endpoint
+ */
+class PredictionWebSocketClient {
+    constructor() {
+        this.userId = this.getUserId();  // Get from session/auth
+        this.connected = false;
+        this.client = null;
+        this.subscriptions = {};
+        this.connect();
+    }
+
+    /**
+     * Get current user ID from session/localStorage
+     */
+    getUserId() {
+        // TODO: Get from authentication context
+        // For now, use sessionStorage or query parameter
+        return sessionStorage.getItem('userId') || new URLSearchParams(window.location.search).get('userId') || 'guest';
+    }
+
+    /**
+     * Connect to WebSocket server
+     */
+    connect() {
+        // Using SockJS for WebSocket with fallback to HTTP polling
+        const socket = new SockJS('http://localhost:8080/ws/predictions');
+        this.client = Stomp.over(socket);
+
+        // Enable logging for debugging
+        this.client.debug = (str) => {
+            if (str.includes('CONNECTED') || str.includes('SEND') || str.includes('SUBSCRIBE')) {
+                console.log('[WebSocket]', str);
+            }
+        };
+
+        // Connect with headers
+        this.client.connect({}, (frame) => {
+            console.log('WebSocket connected:', frame);
+            this.connected = true;
+            this.subscribeToChannels();
+        }, (error) => {
+            console.error('WebSocket connection error:', error);
+            this.connected = false;
+            // Retry connection after 5 seconds
+            setTimeout(() => this.connect(), 5000);
+        });
+    }
+
+    /**
+     * Subscribe to WebSocket channels
+     */
+    subscribeToChannels() {
+        // Subscribe to user-specific prediction results
+        this.subscriptions.predictions = this.client.subscribe(
+            `/user/${this.userId}/queue/predictions`,
+            (message) => this.handlePredictionResponse(JSON.parse(message.body))
+        );
+
+        // Subscribe to prediction status updates
+        this.subscriptions.status = this.client.subscribe(
+            `/user/${this.userId}/queue/status`,
+            (message) => this.handleStatusUpdate(JSON.parse(message.body))
+        );
+
+        // Subscribe to error messages
+        this.subscriptions.errors = this.client.subscribe(
+            `/user/${this.userId}/queue/errors`,
+            (message) => this.handleError(JSON.parse(message.body))
+        );
+
+        // Subscribe to broadcast predictions
+        this.subscriptions.broadcast = this.client.subscribe(
+            '/topic/predictions',
+            (message) => this.handleBroadcastPrediction(JSON.parse(message.body))
+        );
+    }
+
+    /**
+     * Send prediction request to server
+     */
+    sendPrediction(plantId, imageBase64, description = '') {
+        if (!this.connected) {
+            console.error('WebSocket not connected');
+            return;
+        }
+
+        const request = {
+            userId: this.userId,
+            plantId: plantId,
+            imageBase64: imageBase64,
+            description: description,
+            requestedAt: new Date().toISOString()
+        };
+
+        this.client.send(
+            `/app/predict/${this.userId}`,
+            {},
+            JSON.stringify(request)
+        );
+
+        console.log('Prediction request sent');
+    }
+
+    /**
+     * Handle individual prediction response
+     */
+    handlePredictionResponse(response) {
+        console.log('Prediction response received:', response);
+
+        // Update UI with prediction results
+        const resultDiv = document.getElementById('predictionResult');
+        if (resultDiv) {
+            resultDiv.innerHTML = `
+                <div class="prediction-card">
+                    <h3>Plant: ${response.plantName}</h3>
+                    <h4>Disease: ${response.diseaseName}</h4>
+                    <p>Confidence: ${(response.confidence * 100).toFixed(2)}%</p>
+                    <p><strong>Recommendation:</strong> ${response.recommendedAction}</p>
+                    <p><small>Predicted at: ${response.predictedAt}</small></p>
+                </div>
+            `;
+        }
+
+        // Trigger callback if exists
+        if (window.onPredictionComplete) {
+            window.onPredictionComplete(response);
+        }
+    }
+
+    /**
+     * Handle status updates during processing
+     */
+    handleStatusUpdate(update) {
+        console.log('Status update:', update);
+
+        // Update progress bar
+        const progressBar = document.getElementById('predictionProgress');
+        if (progressBar) {
+            progressBar.style.width = `${update.progressPercentage}%`;
+            progressBar.textContent = `${update.progressPercentage}%`;
+        }
+
+        // Update status message
+        const statusDiv = document.getElementById('predictionStatus');
+        if (statusDiv) {
+            statusDiv.textContent = update.message;
+            statusDiv.classList.add(`status-${update.status.toLowerCase()}`);
+        }
+
+        // Trigger callback if exists
+        if (window.onStatusUpdate) {
+            window.onStatusUpdate(update);
+        }
+    }
+
+    /**
+     * Handle error messages
+     */
+    handleError(error) {
+        console.error('WebSocket error:', error);
+
+        const errorDiv = document.getElementById('predictionError');
+        if (errorDiv) {
+            errorDiv.style.display = 'block';
+            errorDiv.textContent = `Error: ${error.errorMessage}`;
+        }
+
+        // Trigger callback if exists
+        if (window.onPredictionError) {
+            window.onPredictionError(error);
+        }
+    }
+
+    /**
+     * Handle broadcast predictions from other users
+     */
+    handleBroadcastPrediction(prediction) {
+        console.log('Broadcast prediction received:', prediction);
+
+        // Update live feed or notification center
+        const feedDiv = document.getElementById('predictionFeed');
+        if (feedDiv) {
+            const item = document.createElement('div');
+            item.className = 'feed-item';
+            item.innerHTML = `
+                <p><strong>${prediction.plantName}</strong> - ${prediction.diseaseName}</p>
+                <p>Confidence: ${(prediction.confidence * 100).toFixed(2)}%</p>
+            `;
+            feedDiv.prepend(item);
+        }
+
+        // Trigger callback if exists
+        if (window.onBroadcastPrediction) {
+            window.onBroadcastPrediction(prediction);
+        }
+    }
+
+    /**
+     * Send heartbeat to keep connection alive
+     */
+    sendHeartbeat() {
+        if (this.connected) {
+            this.client.send('/app/heartbeat', {}, JSON.stringify({ clientId: this.userId }));
+        }
+    }
+
+    /**
+     * Disconnect from WebSocket
+     */
+    disconnect() {
+        if (this.client) {
+            this.client.disconnect(() => {
+                console.log('WebSocket disconnected');
+                this.connected = false;
+            });
+        }
+    }
+}
+
 // Initialize controller when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.diagnosticsController = new DiagnosticsController();
+    window.webSocketClient = new PredictionWebSocketClient();
+
+    // Send heartbeat every 30 seconds
+    setInterval(() => window.webSocketClient?.sendHeartbeat(), 30000);
 });

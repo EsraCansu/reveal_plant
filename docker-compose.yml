@@ -1,0 +1,50 @@
+services:
+  # ========================
+  # Frontend Service (Node.js)
+  # ========================
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frontend
+    container_name: reveal_plant_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      JAVA_API_URL: http://localhost:8080
+      FASTAPI_URL: http://fastapi_server:8000
+    depends_on:
+      - fastapi_server
+    restart: unless-stopped
+    networks:
+      - reveal_plant_network
+    volumes:
+      - ./:/app
+      - /app/node_modules
+
+  # ========================
+  # Python FastAPI ML Server
+  # ========================
+  fastapi_server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: fastapi
+    container_name: reveal_plant_fastapi
+    ports:
+      - "8000:8000"
+    environment:
+      PYTHONUNBUFFERED: 1
+    restart: unless-stopped
+    networks:
+      - reveal_plant_network
+    volumes:
+      - ./cnn_model:/app/cnn_model
+
+networks:
+  reveal_plant_network:
+    driver: bridge
+
+
