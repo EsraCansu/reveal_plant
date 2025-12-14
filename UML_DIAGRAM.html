@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Village - Entity Relationship Diagram (ERD)</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .diagram-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .diagram-title {
+            color: #333;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        .legend {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        
+        .legend h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .legend-item {
+            display: inline-block;
+            margin-right: 30px;
+            margin-bottom: 10px;
+        }
+        
+        .legend-symbol {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        
+        .relation {
+            margin: 20px 0;
+            padding: 10px;
+            background: white;
+            border-left: 4px solid #667eea;
+        }
+        
+        .relation-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .relation-desc {
+            color: #666;
+            font-size: 0.95em;
+            margin-left: 10px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #ddd;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌱 Plant Village - Entity Relationship Diagram (ERD)</h1>
+            <p>Şematik Veritabanı İlişkileri - Plant Disease Recognition System</p>
+        </div>
+
+        <div class="diagram-section">
+            <div class="diagram-title">📊 Entity-Relationship Diyagramı</div>
+            <div class="mermaid">
+erDiagram
+    USER ||--o{ PREDICTION : "creates"
+    USER ||--o{ PREDICTION_LOG : "administrates"
+    PREDICTION }o--|| USER : "belongsTo"
+    PREDICTION ||--o{ PREDICTION_LOG : "has"
+    PREDICTION ||--o{ PREDICTION_DISEASE : "contains"
+    PREDICTION }o--|| PLANT : "analyzes"
+    PLANT ||--o{ DISEASE : "has"
+    DISEASE }o--|| PLANT : "belongsTo"
+    DISEASE ||--o{ PREDICTION_DISEASE : "identifiedAs"
+    PREDICTION_DISEASE }o--|| DISEASE : "references"
+    PREDICTION_LOG }o--|| PREDICTION : "logsFor"
+    PREDICTION_LOG }o--|| USER : "createdBy"
+    PREDICTION }o--|| PLANT : "involves"
+    PLANT ||--o{ PREDICTION : "involedIn"
+
+    USER {
+        int user_id PK
+        string user_name
+        string email
+        string password_hash
+        timestamp created_at
+        timestamp last_login
+        string role
+    }
+
+    PREDICTION {
+        int prediction_id PK
+        int user_id FK
+        string prediction_type
+        float confidence
+        string uploaded_image_url
+        timestamp created_at
+        boolean is_valid
+    }
+
+    PLANT {
+        int plant_id PK
+        string plant_name
+        string scientific_name
+        string image_url
+        text description
+        boolean valid_classification
+    }
+
+    DISEASE {
+        int disease_id PK
+        int plant_id FK
+        string symptom_description
+        text name
+        text cause
+        float confidence
+        string example_image_url
+        text treatment
+    }
+
+    PREDICTION_LOG {
+        int log_id PK
+        int prediction_id FK
+        int admin_user_id FK
+        int action_type
+        timestamp timestamp
+        text old_value
+        text new_value
+    }
+
+    PREDICTION_DISEASE {
+        int prediction_disease_id PK
+        int prediction_id FK
+        int disease_id FK
+        float confidence
+    }
+
+    PREDICTION_PLANT {
+        int prediction_plant_id PK
+        int prediction_id FK
+        int plant_id FK
+    }
+            </div>
+        </div>
+
+        <div class="diagram-section">
+            <div class="diagram-title">🔗 İlişki Sembollerinin Anlamı</div>
+            
+            <table class="legend-table">
+                <thead>
+                    <tr>
+                        <th>Sembol</th>
+                        <th>Anlamı</th>
+                        <th>Örnek</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>||</code></td>
+                        <td>Tam eşleşme (One)</td>
+                        <td>Bir satırda tam olarak</td>
+                    </tr>
+                    <tr>
+                        <td><code>|o</code></td>
+                        <td>Sıfır veya bir (Zero or One)</td>
+                        <td>Olabilir veya olmayabilir</td>
+                    </tr>
+                    <tr>
+                        <td><code>}o</code></td>
+                        <td>Sıfır veya çok (Zero or Many)</td>
+                        <td>Hiç olmayabilir, birden fazla olabilir</td>
+                    </tr>
+                    <tr>
+                        <td><code>}|</code></td>
+                        <td>Bir veya çok (One or Many)</td>
+                        <td>En az bir, birden fazla olabilir</td>
+                    </tr>
+                    <tr>
+                        <td><code>--|</code></td>
+                        <td>Bire-bir ilişki</td>
+                        <td>OneToOne</td>
+                    </tr>
+                    <tr>
+                        <td><code>}|</code></td>
+                        <td>Bire-çok ilişki</td>
+                        <td>OneToMany</td>
+                    </tr>
+                    <tr>
+                        <td><code>}o{</code></td>
+                        <td>Çoğa-çok ilişki</td>
+                        <td>ManyToMany</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="diagram-section">
+            <div class="diagram-title">📋 İlişkilerin Detayı</div>
+            
+            <div class="relation-box">
+                <strong>USER → PREDICTION</strong><br>
+                <code>USER ||--o{ PREDICTION : "creates"</code><br>
+                Bir kullanıcı (1) birden fazla tahmin (0..∞) oluşturabilir
+            </div>
+            
+            <div class="relation-box">
+                <strong>USER → PREDICTION_LOG</strong><br>
+                <code>USER ||--o{ PREDICTION_LOG : "administrates"</code><br>
+                Bir admin kullanıcısı (1) birden fazla tahmin logu (0..∞) yönetebilir
+            </div>
+            
+            <div class="relation-box">
+                <strong>PREDICTION ↔ PLANT</strong><br>
+                <code>PREDICTION }o--|| PLANT : "analyzes"</code><br>
+                Bir tahmin (0..∞) bir bitki türünü (1) analiz eder - ManyToOne (PREDICTION tarafından)
+            </div>
+            
+            <div class="relation-box">
+                <strong>PLANT ↔ DISEASE</strong><br>
+                <code>PLANT ||--o{ DISEASE : "has"</code><br>
+                Bir bitki türü (1) birden fazla hastalık (0..∞) içerebilir
+            </div>
+            
+            <div class="relation-box">
+                <strong>PREDICTION → PREDICTION_LOG</strong><br>
+                <code>PREDICTION ||--o{ PREDICTION_LOG : "has"</code><br>
+                Bir tahmin (1) birden fazla log kaydı (0..∞) tutabilir
+            </div>
+            
+            <div class="relation-box">
+                <strong>PREDICTION → PREDICTION_DISEASE</strong><br>
+                <code>PREDICTION ||--o{ PREDICTION_DISEASE : "contains"</code><br>
+                Bir tahmin (1) birden fazla hastalık teşhisini (0..∞) içerebilir
+            </div>
+            
+            <div class="relation-box">
+                <strong>DISEASE → PREDICTION_DISEASE</strong><br>
+                <code>DISEASE ||--o{ PREDICTION_DISEASE : "identifiedAs"</code><br>
+                Bir hastalık (1) birden fazla tahmin sonucu (0..∞) tarafından teşhis edilebilir
+            </div>
+        </div>
+
+        <div class="diagram-section">
+            <div class="diagram-title">📦 Entity (Tablo) Özeti</div>
+            
+            <div class="entity-list">
+                <div class="entity-card">
+                    <h4>👤 USER</h4>
+                    <ul>
+                        <li><strong>PK:</strong> user_id</li>
+                        <li>user_name</li>
+                        <li>email</li>
+                        <li>password_hash</li>
+                        <li>created_at</li>
+                        <li>last_login</li>
+                        <li>role</li>
+                    </ul>
+                </div>
+                
+                <div class="entity-card">
+                    <h4>🔮 PREDICTION</h4>
+                    <ul>
+                        <li><strong>PK:</strong> prediction_id</li>
+                        <li><strong>FK:</strong> user_id</li>
+                        <li>prediction_type</li>
+                        <li>confidence</li>
+                        <li>uploaded_image_url</li>
+                        <li>created_at</li>
+                        <li>is_valid</li>
+                    </ul>
+                </div>
+                
+                <div class="entity-card">
+                    <h4>🌿 PLANT</h4>
+                    <ul>
+                        <li><strong>PK:</strong> plant_id</li>
+                        <li>plant_name</li>
+                        <li>scientific_name</li>
+                        <li>image_url</li>
+                        <li>description</li>
+                        <li>valid_classification</li>
+                    </ul>
+                </div>
+                
+                <div class="entity-card">
+                    <h4>🦠 DISEASE</h4>
+                    <ul>
+                        <li><strong>PK:</strong> disease_id</li>
+                        <li><strong>FK:</strong> plant_id</li>
+                        <li>symptom_description</li>
+                        <li>name</li>
+                        <li>cause</li>
+                        <li>confidence</li>
+                        <li>example_image_url</li>
+                        <li>treatment</li>
+                    </ul>
+                </div>
+                
+                <div class="entity-card">
+                    <h4>📝 PREDICTION_LOG</h4>
+                    <ul>
+                        <li><strong>PK:</strong> log_id</li>
+                        <li><strong>FK:</strong> prediction_id</li>
+                        <li><strong>FK:</strong> admin_user_id</li>
+                        <li>action_type</li>
+                        <li>timestamp</li>
+                        <li>old_value</li>
+                        <li>new_value</li>
+                    </ul>
+                </div>
+                
+                <div class="entity-card">
+                    <h4>🔗 PREDICTION_DISEASE</h4>
+                    <ul>
+                        <li><strong>PK:</strong> prediction_disease_id</li>
+                        <li><strong>FK:</strong> prediction_id</li>
+                        <li><strong>FK:</strong> disease_id</li>
+                        <li>confidence</li>
+                    </ul>
+                </div>
+                
+                <div class="entity-card">
+                    <h4>🔗 PREDICTION_PLANT</h4>
+                    <ul>
+                        <li><strong>PK:</strong> prediction_plant_id</li>
+                        <li><strong>FK:</strong> prediction_id</li>
+                        <li><strong>FK:</strong> plant_id</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="diagram-section">
+            <div class="diagram-title">🎯 Veritabanı İlişkileri (Metin Formatı)</div>
+            
+            <pre style="background: white; padding: 20px; border-radius: 8px; overflow-x: auto; line-height: 1.6;">
+┌─────────────────────────────────────────────────────────────┐
+│                    DATABASE SCHEMA                           │
+└─────────────────────────────────────────────────────────────┘
+
+USER (1) ──────────────── (∞) PREDICTION
+  │                           ├─ (1) ──── (∞) PREDICTION_LOG
+  │                           ├─ (1) ──── (∞) PREDICTION_DISEASE
+  │                           └─ (∞) ──── (1) PLANT
+  │
+  └──────────────────────── (∞) PREDICTION_LOG
+
+
+PLANT (1) ──────────────── (∞) DISEASE
+  ├─ (∞) ──────────────── (1) PREDICTION
+  └─ (∞) ──────────────── (1) PREDICTION_PLANT
+
+
+DISEASE (1) ──────────────── (∞) PREDICTION_DISEASE
+                                └─ (∞) ──────────────── (1) PREDICTION
+
+
+┌──────────┐     ┌──────────────┐     ┌─────────┐
+│  USER    │     │ PREDICTION   │     │ PLANT   │
+│──────────│     │──────────────│     │─────────│
+│PK user_id│────→│FK user_id    │◄────│PK plant_id
+│          │     │PK pred_id    │     │         │
+│          │     │              │     │         │
+└──────────┘     └──────────────┘     └─────────┘
+      │               │      │            │
+      │               │      │            │
+      │               │      │        ┌───────────┐
+      │               │      │        │ DISEASE   │
+      │               │      │        │───────────│
+      │               │      │        │FK plant_id│
+      │               │      │        │PK dis_id  │
+      │               │      │        └───────────┘
+      │               │      │            │
+      │               │      └────────────┘
+      │               │
+      │           ┌───────────────────────┐
+      │           │ PREDICTION_DISEASE    │
+      │           │───────────────────────│
+      │           │FK prediction_id       │
+      │           │FK disease_id          │
+      │           │PK pred_disease_id     │
+      │           └───────────────────────┘
+      │
+      │         ┌──────────────────┐
+      │─────────→│PREDICTION_LOG    │
+                │──────────────────│
+                │FK prediction_id  │
+                │FK admin_user_id  │
+                │PK log_id         │
+                └──────────────────┘
+            </pre>
+        </div>
+
+        <div class="diagram-section">
+            <div class="diagram-title">🏗️ Bütün Mimari - Tüm Katmanlar ve İlişkiler</div>
+            
+            <pre style="background: white; padding: 30px; border-radius: 8px; overflow-x: auto; line-height: 1.8; font-size: 0.95em;">
+╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                        PLANT VILLAGE - YAZILIM MİMARİSİ (ARCHITECTURE)                                               ║
+╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                              PRESENTATION LAYER (Frontend)                                                            │
+│                              (HTML, JavaScript, CSS)                                                                  │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+                                            ↓ HTTP REST API
+                                    (JSON Request/Response)
+                                            ↓
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                            CONTROLLER LAYER (REST API)                                                                │
+│                                                                                                                       │
+│   ┌─────────────────────┐                              ┌──────────────────────┐                                     │
+│   │ UserController      │                              │ PredictionController │                                     │
+│   ├─────────────────────┤                              ├──────────────────────┤                                     │
+│   │ @RestController     │                              │ @RestController      │                                     │
+│   │ @RequestMapping     │                              │ @RequestMapping      │                                     │
+│   ├─────────────────────┤                              ├──────────────────────┤                                     │
+│   │ + registerUser()    │                              │ + makePrediction()   │                                     │
+│   │ + loginUser()       │  ◄────────────┐              │ + getPredHistory()   │                                     │
+│   │ + getUserProfile()  │               │              │ + reviewPrediction() │                                     │
+│   │ + updateProfile()   │               │              │ + getPredById()      │                                     │
+│   └─────────────────────┘               │              └──────────────────────┘                                     │
+│                                          │                                                                           │
+│                                  (Handles HTTP)                                                                      │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+                        ↓ Delegates to Service Layer
+                        ↓
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                            SERVICE LAYER (Business Logic)                                                             │
+│                                                                                                                       │
+│   ┌──────────────────────┐                             ┌──────────────────────────┐                                │
+│   │«interface»           │                             │«interface»               │                                │
+│   │ UserService          │                             │ PredictionService        │                                │
+│   └──────────────────────┘                             └──────────────────────────┘                                │
+│             △                                                    △                                                    │
+│             │                                                    │                                                    │
+│             │ implements                                         │ implements                                         │
+│             │                                                    │                                                    │
+│   ┌──────────────────────┐                             ┌──────────────────────────┐                                │
+│   │ UserServiceImpl       │                             │ PredictionServiceImpl     │                                │
+│   ├──────────────────────┤                             ├──────────────────────────┤                                │
+│   │ @Service             │                             │ @Service                 │                                │
+│   │                      │                             │                          │                                │
+│   │ - userRepository     │◄─────────────┐              │ - predictionRepository   │◄──────────┐                   │
+│   │                      │              │              │ - predictionLogRepo      │           │                   │
+│   ├──────────────────────┤              │              │ - predictionDiseaseRepo  │           │                   │
+│   │ + register()         │              │              │ - predictionPlantRepo    │           │                   │
+│   │ + login()            │              │              ├──────────────────────────┤           │                   │
+│   │ + getUserById()      │              │              │ + createPrediction()     │           │                   │
+│   │ + updateProfile()    │              │              │ + getPredictionHistory() │           │                   │
+│   └──────────────────────┘              │              │ + getInvalidPred...()    │           │                   │
+│                                          │              │ + updatePrediction()     │           │                   │
+│                                          │              │ + findById()             │           │                   │
+│                                          │              └──────────────────────────┘           │                   │
+│                                          │                                                     │                   │
+│                                    (Uses Repository)                                   (Uses Repository)            │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+                        ↓ Uses Repository
+                        ↓
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                         REPOSITORY LAYER (Data Access)                                                                │
+│                         (Spring Data JPA)                                                                             │
+│                                                                                                                       │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐                          │
+│  │«interface»       │  │«interface»       │  │«interface»       │  │«interface»       │                          │
+│  │UserRepository    │  │PredictionRepo    │  │PlantRepository   │  │DiseaseRepository │                          │
+│  └──────────────────┘  └──────────────────┘  └──────────────────┘  └──────────────────┘                          │
+│  extends JpaRepository  extends JpaRepository  extends JpaRepository  extends JpaRepository                        │
+│                                                                                                                       │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐                          │
+│  │«interface»       │  │«interface»       │  │«interface»       │  │«interface»       │                          │
+│  │PredictionLog     │  │PredictionDisease │  │PredictionPlant   │  │GlobalExceptionH. │                          │
+│  │Repository        │  │Repository        │  │Repository        │  │andler             │                          │
+│  └──────────────────┘  └──────────────────┘  └──────────────────┘  └──────────────────┘                          │
+│                                                                                                                       │
+│  ┌─────────────────────────────────────────┐  ┌──────────────────────────────────────┐                             │
+│  │«exception»                              │  │«exception»                           │                             │
+│  │ResourceNotFoundException                │  │ValidationException                   │                             │
+│  │+ ResourceNotFoundException(String)      │  │+ ValidationException(String)         │                             │
+│  └─────────────────────────────────────────┘  └──────────────────────────────────────┘                             │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+                        ↓ Manages
+                        ↓
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                             MODEL LAYER (Entities/Domain)                                                             │
+│                             (JPA @Entity)                                                                             │
+│                                                                                                                       │
+│   ┌─────────────┐      ┌──────────────┐      ┌─────────┐      ┌──────────┐                                        │
+│   │ User        │      │ Prediction   │      │ Plant   │      │ Disease  │                                        │
+│   ├─────────────┤      ├──────────────┤      ├─────────┤      ├──────────┤                                        │
+│   │@Entity      │      │ @Entity      │      │@Entity  │      │@Entity   │                                        │
+│   │@Table       │      │ @Table       │      │@Table   │      │@Table    │                                        │
+│   │             │      │              │      │         │      │          │                                        │
+│   │ id (PK)     │◄─────│ user_id (FK) │      │ id (PK) │◄─────│id (PK)   │                                        │
+│   │ userName    │      │ prediction.. │      │ name    │      │name      │                                        │
+│   │ email       │      │ confidence   │─────→│ sci...  │      │cause     │                                        │
+│   │ password    │      │ isValid      │      │ image   │      │treatment │                                        │
+│   │ createdAt   │      │ createdAt    │      │ desc    │      │confidence│                                        │
+│   │ lastLogin   │      │              │      │         │      │          │                                        │
+│   │ role        │      │ (OneToMany)  │      │ (Plant) │      │(Disease) │                                        │
+│   │             │      │ Prediction   │      │         │      │          │                                        │
+│   │ (User)      │      │ Log [*]      │      │ Disease │      │Prediction│                                        │
+│   │             │      │              │      │ [*]     │      │Disease   │                                        │
+│   │             │      │ (ManyToMany) │      │         │      │[*]       │                                        │
+│   │             │      │ Plant [*]    │      │         │      │          │                                        │
+│   │             │      │              │      │         │      │          │                                        │
+│   │             │      │ (OneToMany)  │      │         │      │          │                                        │
+│   │             │      │ PredictionDis│      │         │      │          │                                        │
+│   │             │      │ ease [*]     │      │         │      │          │                                        │
+│   └─────────────┘      └──────────────┘      └─────────┘      └──────────┘                                        │
+│        △                      △                    △                △                                               │
+│        │                      │                    │                │                                               │
+│        └──────────────────────┼────────────────────┼────────────────┘  (Relationships)                             │
+│                              (ManyToOne, OneToMany, ManyToMany)                                                    │
+│                                                                                                                       │
+│   ┌─────────────────────┐    ┌──────────────────┐    ┌──────────────────┐                                         │
+│   │ PredictionLog       │    │ PredictionDisease│    │ PredictionPlant  │                                         │
+│   ├─────────────────────┤    ├──────────────────┤    ├──────────────────┤                                         │
+│   │ @Entity             │    │ @Entity          │    │ @Entity          │                                         │
+│   │                     │    │                  │    │                  │                                         │
+│   │ id (PK)             │    │ id (PK)          │    │ id (PK)          │                                         │
+│   │ prediction_id (FK)  │    │ prediction_id(FK)│    │ prediction_id(FK)│                                         │
+│   │ admin_user_id (FK)  │    │ disease_id (FK)  │    │ plant_id (FK)    │                                         │
+│   │ actionType          │    │ confidence       │    │                  │                                         │
+│   │ timestamp           │    │                  │    │ (Junction Table) │                                         │
+│   │ oldValue            │    │ (Junction Table) │    │                  │                                         │
+│   │ newValue            │    │                  │    │                  │                                         │
+│   └─────────────────────┘    └──────────────────┘    └──────────────────┘                                         │
+│                                                                                                                       │
+│        ↑                        ↑                         ↑                                                          │
+│        │                        │                         │                                                          │
+│    (OneToMany)             (ManyToMany)              (ManyToMany)                                                   │
+│    from User               from Prediction           from Prediction                                               │
+│    from Prediction         & Disease                 & Plant                                                         │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+                        ↓ Persisted by
+                        ↓
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                        DATA ACCESS LAYER (Database)                                                                   │
+│                        (MSSQL Server / JPA-ORM)                                                                       │
+│                                                                                                                       │
+│    ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│    │                        MSSQL DATABASE                                                                        │  │
+│    │  ┌─────────┬──────────┬────────┬──────────┬────────────┬───────────────┬──────────────┐                     │  │
+│    │  │ [User]  │[Plant]   │[Disease│[Predict..│[Prediction│[PredictionD..│[PredictionP.│                     │  │
+│    │  │         │          │Disease]│ Log]     │Disable]   │ eat]          │ lant]        │                     │  │
+│    │  └─────────┴──────────┴────────┴──────────┴────────────┴───────────────┴──────────────┘                     │  │
+│    │                                                                                                               │  │
+│    │  Relationships (Foreign Keys):                                                                               │  │
+│    │  ├─ [User] ──1:∞──→ [Prediction]                                                                             │  │
+│    │  ├─ [User] ──1:∞──→ [PredictionLog]                                                                           │  │
+│    │  ├─ [Plant] ──1:∞──→ [Disease]                                                                                │  │
+│    │  ├─ [Prediction] ─∞:∞─ [Plant] (via [PredictionPlant])                                                        │  │
+│    │  ├─ [Prediction] ──1:∞──→ [PredictionLog]                                                                     │  │
+│    │  └─ [Prediction] ──1:∞──→ [PredictionDisease]                                                                 │  │
+│    └─────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+KATMAN AÇIKLAMASI VE İLİŞKİLER:
+
+1. PRESENTATION LAYER (Frontend)
+   └─ HTML, JavaScript, CSS dosyaları
+   └─ Kullanıcı arayüzü
+
+2. CONTROLLER LAYER → Receives HTTP Requests
+   ├─ UserController: Kullanıcı yönetimi (register, login, profile)
+   ├─ PredictionController: Tahmin işlemleri
+   └─ @RestController anotasyonuyla RESTful API endpoints oluşturur
+   └─ Request'i service layer'a gönderir
+
+3. SERVICE LAYER → Business Logic
+   ├─ UserService (Interface) → UserServiceImpl (Implementation)
+   ├─ PredictionService (Interface) → PredictionServiceImpl (Implementation)
+   └─ Repository'lerle database işlemlerini yönetir
+   └─ Controller'dan gelen istekleri işler ve sonuç döner
+
+4. REPOSITORY LAYER → Data Access
+   ├─ JPA Repository extends (Spring Data)
+   ├─ CRUD operasyonları (Create, Read, Update, Delete)
+   ├─ Custom query methods
+   └─ Exception handling (ResourceNotFoundException, ValidationException)
+
+5. MODEL LAYER → Domain Entities
+   ├─ User: Sistem kullanıcıları
+   ├─ Prediction: Yapılan tahminler
+   ├─ Plant: Bitki türleri
+   ├─ Disease: Hastalık bilgileri
+   ├─ PredictionLog: Tahmin değişiklik geçmişi (Audit Log)
+   ├─ PredictionDisease: Tahmin-Hastalık ilişkisi (Junction Table)
+   └─ PredictionPlant: Tahmin-Bitki ilişkisi (Junction Table)
+
+6. DATA ACCESS LAYER → Database
+   └─ MSSQL Server
+   └─ Tüm entities tablolara dönüştürülür
+   └─ Foreign Key ilişkileri kurulur
+
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+İLİŞKİ ÖRNEKLERİ:
+
+1. REST API CALL:
+   Browser HTTP GET → UserController.getUserProfile() 
+   → UserServiceImpl.getUserById() 
+   → UserRepository.findById() 
+   → Database SELECT * FROM User WHERE user_id = ?
+   → User Entity döner
+   → Service'e gider
+   → Controller JSON'a dönüştürür
+   → Browser'e Response gönderilir
+
+2. VERI KAYDETME:
+   Frontend POST → PredictionController.makePrediction(Prediction)
+   → PredictionServiceImpl.createPrediction()
+   → predictionRepository.save(prediction)
+   → Yeni Prediction INSERT INTO Prediction table
+   → PredictionLog kaydı oluşturulur
+   → Response gönderilir
+
+3. İLİŞKİLİ VERİ ALMA:
+   PredictionController.getPredictionHistory(userId)
+   → PredictionServiceImpl.getPredictionHistory(userId)
+   → predictionRepository.findByUser_UserIdOrderByCreatedAtDesc(userId)
+   → SELECT * FROM Prediction WHERE user_id = ? ORDER BY created_at DESC
+   → List[Prediction] döner
+
+            </pre>
+        </div>
+    %% ============ MODEL LAYER ============
+    
+    class User {
+        -Integer userId
+        -String userName
+        -String email
+        -String passwordHash
+        -String password*
+        -LocalDateTime createdAt
+        -LocalDateTime lastLogin
+        -String role
+        -Set~Prediction~ predictions
+        -Set~PredictionLog~ adminLogs
+        
+        +getUserId() Integer
+        +setUserId(Integer)
+        +getUserName() String
+        +setUserName(String)
+        +getEmail() String
+        +setEmail(String)
+        +getPasswordHash() String
+        +setPasswordHash(String)
+        +getPassword() String
+        +setPassword(String)
+        +getCreatedAt() LocalDateTime
+        +setCreatedAt(LocalDateTime)
+        +getLastLogin() LocalDateTime
+        +setLastLogin(LocalDateTime)
+        +getRole() String
+        +setRole(String)
+        +getPredictions() Set
+        +setPredictions(Set)
+        +getAdminLogs() Set
+        +setAdminLogs(Set)
+    }
+    
+    class Prediction {
+        -Integer predictionId
+        -User user
+        -String predictionType
+        -Float confidence
+        -String uploadedImageUrl
+        -LocalDateTime createdAt
+        -Boolean isValid
+        -Set~Plant~ plants
+        -Set~PredictionLog~ logs
+        -Set~PredictionDisease~ diseases
+        
+        +getPredictionId() Integer
+        +setPredictionId(Integer)
+        +getUser() User
+        +setUser(User)
+        +getPredictionType() String
+        +setPredictionType(String)
+        +getConfidence() Float
+        +setConfidence(Float)
+        +getUploadedImageUrl() String
+        +setUploadedImageUrl(String)
+        +getCreatedAt() LocalDateTime
+        +setCreatedAt(LocalDateTime)
+        +getIsValid() Boolean
+        +setIsValid(Boolean)
+        +getPlants() Set
+        +setPlants(Set)
+        +getLogs() Set
+        +setLogs(Set)
+        +getDiseases() Set
+        +setDiseases(Set)
+    }
+    
+    class Plant {
+        -Integer plantId
+        -String plantName
+        -String scientificName
+        -String imageUrl
+        -String description
+        -Boolean validClassification
+        -Set~Prediction~ predictions
+        -Set~Disease~ diseases
+        
+        +getPlantId() Integer
+        +setPlantId(Integer)
+        +getPlantName() String
+        +setPlantName(String)
+        +getScientificName() String
+        +setScientificName(String)
+        +getImageUrl() String
+        +setImageUrl(String)
+        +getDescription() String
+        +setDescription(String)
+        +getValidClassification() Boolean
+        +setValidClassification(Boolean)
+        +getPredictions() Set
+        +setPredictions(Set)
+        +getDiseases() Set
+        +setDiseases(Set)
+    }
+    
+    class Disease {
+        -Integer diseaseId
+        -String symptomDescription
+        -String name
+        -String cause
+        -Float confidence
+        -String exampleImageUrl
+        -String treatment
+        -Plant plant
+        -Set~PredictionDisease~ predictionDiseases
+        
+        +getDiseaseId() Integer
+        +setDiseaseId(Integer)
+        +getSymptomDescription() String
+        +setSymptomDescription(String)
+        +getName() String
+        +setName(String)
+        +getCause() String
+        +setCause(String)
+        +getConfidence() Float
+        +setConfidence(Float)
+        +getExampleImageUrl() String
+        +setExampleImageUrl(String)
+        +getTreatment() String
+        +setTreatment(String)
+        +getPlant() Plant
+        +setPlant(Plant)
+        +getPredictionDiseases() Set
+        +setPredictionDiseases(Set)
+    }
+    
+    class PredictionLog {
+        -Integer logId
+        -Prediction prediction
+        -User adminUser
+        -Integer actionType
+        -LocalDateTime timestamp
+        -String oldValue
+        -String newValue
+        
+        +getLogId() Integer
+        +setLogId(Integer)
+        +getPrediction() Prediction
+        +setPrediction(Prediction)
+        +getAdminUser() User
+        +setAdminUser(User)
+        +getActionType() Integer
+        +setActionType(Integer)
+        +getTimestamp() LocalDateTime
+        +setTimestamp(LocalDateTime)
+        +getOldValue() String
+        +setOldValue(String)
+        +getNewValue() String
+        +setNewValue(String)
+    }
+    
+    class PredictionDisease {
+        -Integer predictionDiseaseId
+        -Prediction prediction
+        -Disease disease
+        -Float confidence
+        
+        +getPredictionDiseaseId() Integer
+        +setPredictionDiseaseId(Integer)
+        +getPrediction() Prediction
+        +setPrediction(Prediction)
+        +getDisease() Disease
+        +setDisease(Disease)
+        +getConfidence() Float
+        +setConfidence(Float)
+    }
+    
+    class PredictionPlant {
+        -Integer predictionPlantId
+        -Prediction prediction
+        -Plant plant
+        
+        +getPredictionPlantId() Integer
+        +setPredictionPlantId(Integer)
+        +getPrediction() Prediction
+        +setPrediction(Prediction)
+        +getPlant() Plant
+        +setPlant(Plant)
+    }
+    
+    %% ============ SERVICE LAYER ============
+    
+    class UserService {
+        <<interface>>
+        +register() User
+        +login() User
+        +updateProfile() User
+        +getUserById() User
+    }
+    
+    class UserServiceImpl {
+        -UserRepository userRepository
+        
+        +register() User
+        +login() User
+        +updateProfile() User
+        +getUserById() User
+    }
+    
+    class PredictionService {
+        <<interface>>
+        +createPrediction() Prediction
+        +getPredictionHistory() List
+        +getInvalidPredictionsForReview() List
+        +findById() Optional
+        +updatePrediction() Prediction
+    }
+    
+    class PredictionServiceImpl {
+        -PredictionRepository predictionRepository
+        -PredictionLogRepository predictionLogRepository
+        -PredictionDiseaseRepository predictionDiseaseRepository
+        -PredictionPlantRepository predictionPlantRepository
+        
+        +createPrediction() Prediction
+        +getPredictionHistory() List
+        +getInvalidPredictionsForReview() List
+        +findById() Optional
+        +updatePrediction() Prediction
+    }
+    
+    %% ============ CONTROLLER LAYER ============
+    
+    class UserController {
+        -UserService userService
+        
+        +registerUser() ResponseEntity
+        +loginUser() ResponseEntity
+        +getUserProfile() ResponseEntity
+        +updateUserProfile() ResponseEntity
+    }
+    
+    class PredictionController {
+        -PredictionService predictionService
+        
+        +makePrediction() ResponseEntity
+        +getPredictionHistory() ResponseEntity
+        +reviewPrediction() ResponseEntity
+        +getPredictionById() ResponseEntity
+    }
+    
+    %% ============ REPOSITORY LAYER ============
+    
+    class UserRepository {
+        <<interface>>
+        +findById() Optional
+        +save() User
+        +findAll() List
+        +deleteById() void
+    }
+    
+    class PredictionRepository {
+        <<interface>>
+        +findById() Optional
+        +save() Prediction
+        +findByUser_UserId() List
+        +findByIsValid() List
+    }
+    
+    class PlantRepository {
+        <<interface>>
+        +findById() Optional
+        +save() Plant
+        +findAll() List
+    }
+    
+    class DiseaseRepository {
+        <<interface>>
+        +findById() Optional
+        +save() Disease
+        +findByPlant_PlantId() List
+    }
+    
+    class PredictionLogRepository {
+        <<interface>>
+        +findById() Optional
+        +save() PredictionLog
+        +findByPrediction() List
+    }
+    
+    class PredictionDiseaseRepository {
+        <<interface>>
+        +findById() Optional
+        +save() PredictionDisease
+    }
+    
+    class PredictionPlantRepository {
+        <<interface>>
+        +findById() Optional
+        +save() PredictionPlant
+    }
+    
+    %% ============ EXCEPTION HANDLING ============
+    
+    class GlobalExceptionHandler {
+        +handleResourceNotFound() ResponseEntity
+        +handleValidationException() ResponseEntity
+        +handleException() ResponseEntity
+    }
+    
+    class ResourceNotFoundException {
+        +ResourceNotFoundException(String message)
+    }
+    
+    class ValidationException {
+        +ValidationException(String message)
+    }
+    
+    %% ============ RELATIONSHIPS ============
+    
+    %% Model Relations
+    User "1" --> "*" Prediction : creates
+    User "1" --> "*" PredictionLog : administrates
+    Prediction "*" --> "*" Plant : analyzes
+    Prediction "1" --> "*" PredictionLog : has
+    Prediction "1" --> "*" PredictionDisease : contains
+    Plant "1" --> "*" Disease : has
+    Disease "1" --> "*" PredictionDisease : identified_as
+    Prediction "1" --> "*" PredictionPlant : records
+    Plant "1" --> "*" PredictionPlant : recorded_in
+    
+    %% Service Relations
+    UserService <|-- UserServiceImpl : implements
+    PredictionService <|-- PredictionServiceImpl : implements
+    
+    %% Controller Relations
+    UserController --> UserService : uses
+    PredictionController --> PredictionService : uses
+    
+    %% Service-Repository Relations
+    UserServiceImpl --> UserRepository : uses
+    PredictionServiceImpl --> PredictionRepository : uses
+    PredictionServiceImpl --> PredictionLogRepository : uses
+    PredictionServiceImpl --> PredictionDiseaseRepository : uses
+    PredictionServiceImpl --> PredictionPlantRepository : uses
+    
+    %% Repository-Model Relations
+    UserRepository -.-> User : manages
+    PredictionRepository -.-> Prediction : manages
+    PlantRepository -.-> Plant : manages
+    DiseaseRepository -.-> Disease : manages
+    PredictionLogRepository -.-> PredictionLog : manages
+    PredictionDiseaseRepository -.-> PredictionDisease : manages
+    PredictionPlantRepository -.-> PredictionPlant : manages
+    
+    %% Exception Handler
+    GlobalExceptionHandler -.-> ResourceNotFoundException : handles
+    GlobalExceptionHandler -.-> ValidationException : handles
+            </div>
+        </div>
+
+        <div class="diagram-section">
+            <div class="diagram-title">🔄 İlişkiler Detayı</div>
+            
+            <div class="relation">
+                <div class="relation-title">User ↔ Prediction</div>
+                <div class="relation-desc">
+                    <strong>Tür:</strong> OneToMany<br>
+                    <strong>Açıklama:</strong> Bir kullanıcı birden fazla tahmin kaydı oluşturabilir. Tahmin her zaman tek bir kullanıcıya aittir.
+                </div>
+            </div>
+            
+            <div class="relation">
+                <div class="relation-title">User ↔ PredictionLog</div>
+                <div class="relation-desc">
+                    <strong>Tür:</strong> OneToMany<br>
+                    <strong>Açıklama:</strong> Bir admin kullanıcısı birden fazla tahmin logunu düzenleyebilir. Her log tek bir yönetici tarafından oluşturulur.
+                </div>
+            </div>
+            
+            <div class="relation">
+                <div class="relation-title">Prediction ↔ Plant</div>
+                <div class="relation-desc">
+                    <strong>Tür:</strong> ManyToMany<br>
+                    <strong>Açıklama:</strong> Bir tahmin birden fazla bitki türünü analiz edebilir, bir bitki türü birden fazla tahmin tarafından analiz edilebilir. Junction table: Prediction_Plant
+                </div>
+            </div>
+            
+            <div class="relation">
+                <div class="relation-title">Prediction ↔ PredictionLog</div>
+                <div class="relation-desc">
+                    <strong>Tür:</strong> OneToMany<br>
+                    <strong>Açıklama:</strong> Her tahmin için yapılan değişikliklerin geçmişi tutulur. Bir tahmine birden fazla log kaydı atanabilir.
+                </div>
+            </div>
+            
+            <div class="relation">
+                <div class="relation-title">Prediction ↔ PredictionDisease</div>
+                <div class="relation-desc">
+                    <strong>Tür:</strong> OneToMany<br>
+                    <strong>Açıklama:</strong> Bir tahmin birden fazla hastalık teşhisini içerebilir. Her hastalık-tahmin ilişkisi ayrı bir kayıt olur.
+                </div>
+            </div>
+            
+            <div class="relation">
+                <div class="relation-title">Plant ↔ Disease</div>
+                <div class="relation-desc">
+                    <strong>Tür:</strong> OneToMany<br>
+                    <strong>Açıklama:</strong> Bir bitki türünün birden fazla hastalığı olabilir. Her hastalık tek bir bitki türüne aittir.
+                </div>
+            </div>
+            
+            <div class="relation">
+                <div class="relation-title">Disease ↔ PredictionDisease</div>
+                <div class="relation-desc">
+                    <strong>Tür:</strong> OneToMany<br>
+                    <strong>Açıklama:</strong> Bir hastalık birden fazla tahmin sonucu tarafından teşhis edilebilir. Tahmin-hastalık ilişkisinin detaylarını tutar.
+                </div>
+            </div>
+        </div>
+
+        <div class="diagram-section">
+            <div class="diagram-title">📐 Katmanlar ve Sorumlulukları</div>
+            
+            <div style="margin-bottom: 20px;">
+                <h4 style="color: #667eea; margin-bottom: 10px;">🗂️ Model Katmanı (Entity)</h4>
+                <p style="color: #666; line-height: 1.6;">
+                    Veri tabanı tablolarıyla doğrudan ilgili Java sınıflarını içerir. 
+                    Her entity JPA @Entity anotasyonuyla işaretlenmiş, getter/setter metodları, 
+                    database ilişkileri (@OneToMany, @ManyToMany vb.) tanımlanmıştır.
+                </p>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <h4 style="color: #667eea; margin-bottom: 10px;">⚙️ Service Katmanı</h4>
+                <p style="color: #666; line-height: 1.6;">
+                    Business logic'i içerir. Interface (UserService, PredictionService) ve 
+                    implementation sınıfları (UserServiceImpl, PredictionServiceImpl) ile 
+                    loose coupling sağlanır. Repository'ler aracılığıyla veritabanıyla iletişim kurulur.
+                </p>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <h4 style="color: #667eea; margin-bottom: 10px;">🎮 Controller Katmanı (REST API)</h4>
+                <p style="color: #666; line-height: 1.6;">
+                    HTTP isteklerini alır ve yanıtlar gönderir. Service katmanını çağırarak 
+                    business logic'i tetikler. Frontend ve backend arasındaki köprüdür.
+                </p>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <h4 style="color: #667eea; margin-bottom: 10px;">💾 Repository Katmanı (Data Access)</h4>
+                <p style="color: #666; line-height: 1.6;">
+                    Spring Data JPA repository arayüzleri. CRUD işlemleri ve özel sorguların 
+                    tanımlandığı yer. Veritabanı işlemlerini soyutlar.
+                </p>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <h4 style="color: #667eea; margin-bottom: 10px;">🚨 Exception Handling</h4>
+                <p style="color: #666; line-height: 1.6;">
+                    GlobalExceptionHandler ile tüm hataları merkezi olarak yönetilir. 
+                    ResourceNotFoundException ve ValidationException gibi custom exception'lar tanımlanmıştır.
+                </p>
+            </div>
+        </div>
+
+        <div class="legend">
+            <h3>📚 Sembol Açıklaması</h3>
+            <div class="legend-item">
+                <span class="legend-symbol" style="background-color: #667eea;"></span>
+                <strong>Interface</strong> - &lt;&lt;interface&gt;&gt;
+            </div>
+            <div class="legend-item">
+                <span class="legend-symbol" style="background-color: #764ba2;"></span>
+                <strong>Abstract Class</strong> - &lt;&lt;abstract&gt;&gt;
+            </div>
+            <div class="legend-item">
+                <span class="legend-symbol" style="background-color: #3498db;"></span>
+                <strong>Entity Class</strong> - Normal class
+            </div>
+            <br>
+            <div class="legend-item">
+                <strong>→</strong> Inheritance (extends/implements)
+            </div>
+            <div class="legend-item">
+                <strong>--></strong> Association/Dependency
+            </div>
+            <div class="legend-item">
+                <strong>-..-></strong> Loose coupling
+            </div>
+            <br>
+            <div class="legend-item">
+                <strong>*</strong> Transient field (DB'ye kaydedilmez)
+            </div>
+        </div>
+
+        <div class="diagram-section">
+            <div class="diagram-title">📚 Data Structure Yapılarının Kullanım Yerleri</div>
+            
+            <pre style="background: white; padding: 30px; border-radius: 8px; overflow-x: auto; line-height: 1.8; font-size: 0.92em;">
+╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                    PLANT VILLAGE - DATA STRUCTURE UYGULAMALARI                                                ║
+╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 1. STACK → Tahmin Geçmişi Geri İşlem (Undo/Redo)                                                              │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                                  │
+│  Kod Yeri: PredictionServiceImpl.java                                                                         │
+│  ─────────────────────────────────────────────────────────────────────────────────────────────────────────────  │
+│                                                                                                                  │
+│  public class PredictionServiceImpl implements PredictionService {                                            │
+│      private Stack&lt;Prediction&gt; undoStack = new Stack&lt;&gt;();    // Geri yapma                               │
+│      private Stack&lt;Prediction&gt; redoStack = new Stack&lt;&gt;();    // İleri yapma                              │
+│                                                                                                                  │
+│      public Prediction updatePrediction(Integer predId, Prediction updated) {                                │
+│          Prediction existing = predictionRepository.findById(predId).orElse(null);                            │
+│          undoStack.push(new Prediction(existing));    // Eski halini kaydet                                  │
+│          redoStack.clear();                            // Redo temizle                                          │
+│          // ... güncelle ...                                                                                   │
+│          return predictionRepository.save(updated);                                                            │
+│      }                                                                                                          │
+│                                                                                                                  │
+│      public Prediction undo() {                                                                                │
+│          if (!undoStack.isEmpty()) {                                                                           │
+│              Prediction current = ... // mevcut durumu al                                                     │
+│              redoStack.push(current);                  // Redo stack'e koy                                     │
+│              return undoStack.pop();                   // Önceki duruma dön                                    │
+│          }                                                                                                       │
+│          return null;                                                                                           │
+│      }                                                                                                          │
+│  }                                                                                                              │
+│                                                                                                                  │
+│  Kullanım:  [STACK] User tahmin edit → Undo → Redo                                                            │
+│             LIFO (Last In First Out)                                                                          │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 2. QUEUE → Real-time Tahmin İşleme (Görev Sırası)                                                             │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                                  │
+│  Kod Yeri: Yeni servis: PredictionQueueService.java                                                           │
+│  ─────────────────────────────────────────────────────────────────────────────────────────────────────────────  │
+│                                                                                                                  │
+│  @Service                                                                                                       │
+│  public class PredictionQueueService {                                                                        │
+│      private Queue&lt;PredictionTask&gt; taskQueue = new LinkedList&lt;&gt;();                                        │
+│                                                                                                                  │
+│      public void addPredictionTask(Integer userId, String imagePath) {                                        │
+│          PredictionTask task = new PredictionTask(userId, imagePath, LocalDateTime.now());                   │
+│          taskQueue.offer(task);  // Sıraya ekle                                                               │
+│          processTasks();                                                                                        │
+│      }                                                                                                          │
+│                                                                                                                  │
+│      public void processTasks() {                                                                              │
+│          while (!taskQueue.isEmpty()) {                                                                        │
+│              PredictionTask task = taskQueue.poll();  // Sıradaki görevi al                                   │
+│              // ML model'e yolla                                                                               │
+│              // Tahmin yap                                                                                    │
+│              // Veritabanına kaydet                                                                            │
+│          }                                                                                                       │
+│      }                                                                                                          │
+│  }                                                                                                              │
+│                                                                                                                  │
+│  Kullanım:  [QUEUE] User1 tahmin → User2 tahmin → User3 tahmin → FIFO işleme                                 │
+│             FIFO (First In First Out)                                                                         │
+│             Sırasıyla işleme, load balancing                                                                   │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 3. PRIORITY QUEUE → Tahmin Önceliği (Acil Hastalık Tespiti)                                                   │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                                  │
+│  Kod Yeri: YeniServis: PredictionPriorityService.java                                                         │
+│  ─────────────────────────────────────────────────────────────────────────────────────────────────────────────  │
+│                                                                                                                  │
+│  public class PredictionTask implements Comparable&lt;PredictionTask&gt; {                                        │
+│      private Integer taskId;                                                                                   │
+│      private Integer userId;                                                                                   │
+│      private Integer priority;  // 1=HIGH (acil), 2=MEDIUM, 3=LOW                                             │
+│      private String imagePath;                                                                                 │
+│                                                                                                                  │
+│      @Override                                                                                                  │
+│      public int compareTo(PredictionTask other) {                                                              │
+│          return Integer.compare(this.priority, other.priority);  // Önceliğe göre sırala                      │
+│      }                                                                                                          │
+│  }                                                                                                              │
+│                                                                                                                  │
+│  @Service                                                                                                       │
+│  public class PredictionPriorityService {                                                                      │
+│      private PriorityQueue&lt;PredictionTask&gt; priorityQueue = new PriorityQueue&lt;&gt;();                         │
+│                                                                                                                  │
+│      public void addPredictionWithPriority(PredictionTask task, int priority) {                               │
+│          task.setPriority(priority);                                                                           │
+│          priorityQueue.offer(task);                                                                            │
+│      }                                                                                                          │
+│                                                                                                                  │
+│      public PredictionTask getNextTask() {                                                                     │
+│          return priorityQueue.poll();  // Yüksek prioriteli görev alınır                                     │
+│      }                                                                                                          │
+│  }                                                                                                              │
+│                                                                                                                  │
+│  Kullanım:  [PRIORITY QUEUE] Normal tahmin (P:3) → Acil (P:1) → Normal (P:2)                                │
+│             Acil hastalık tespitleri önce işlenecek                                                            │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 4. TREE → Hastalık Sınıflandırması (Hierarchy)                                                                │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                                  │
+│  Kod Yeri: Model: DiseaseCategory.java (Yeni Entity)                                                          │
+│  ─────────────────────────────────────────────────────────────────────────────────────────────────────────────  │
+│                                                                                                                  │
+│  @Entity                                                                                                        │
+│  public class DiseaseCategory {                                                                               │
+│      @Id                                                                                                        │
+│      @GeneratedValue                                                                                           │
+│      private Integer categoryId;                                                                               │
+│      private String name;                                                                                      │
+│      private String description;                                                                               │
+│                                                                                                                  │
+│      @ManyToOne(fetch = FetchType.LAZY)                                                                        │
+│      @JoinColumn(name = "parent_category_id")                                                                 │
+│      private DiseaseCategory parentCategory;  // Üst kategori                                                  │
+│                                                                                                                  │
+│      @OneToMany(mappedBy = "parentCategory", cascade = CascadeType.ALL)                                       │
+│      private List&lt;DiseaseCategory&gt; subCategories;  // Alt kategoriler                                       │
+│                                                                                                                  │
+│      @OneToMany(mappedBy = "category")                                                                         │
+│      private Set&lt;Disease&gt; diseases;                                                                          │
+│  }                                                                                                              │
+│                                                                                                                  │
+│  Sınıflandırma Yapısı (Tree):                                                                                 │
+│                                                                                                                  │
+│                    Bitki Hastalıkları (Root)                                                                   │
+│                    /              |              \                                                             │
+│               Fungal         Bacterial        Viral                                                             │
+│              /    |   \       /    |   \       /  |  \                                                         │
+│           Powdery Mid Rust  Spot Wilt Leaf  Mosaic Stripe Spot                                               │
+│           Mildew   ...  ...  ...  ...  ...   ...    ...   ...                                                │
+│                                                                                                                  │
+│  Service: DiseaseTreeService.java                                                                              │
+│  ─────────────────────────────────────────────────────────────────────────────────────────────────────────────  │
+│                                                                                                                  │
+│  @Service                                                                                                       │
+│  public class DiseaseTreeService {                                                                            │
+│      @Autowired                                                                                                 │
+│      private DiseaseCategoryRepository categoryRepository;                                                      │
+│                                                                                                                  │
+│      public List&lt;DiseaseCategory&gt; getDiseaseCategoryTree() {                                                 │
+│          return categoryRepository.findByParentCategoryIsNull();  // Root'ları getir                           │
+│      }                                                                                                          │
+│                                                                                                                  │
+│      public void displayCategoryTree(DiseaseCategory category, int level) {                                   │
+│          System.out.println(" ".repeat(level * 2) + "- " + category.getName());                              │
+│          for (DiseaseCategory sub : category.getSubCategories()) {                                            │
+│              displayCategoryTree(sub, level + 1);  // Recursive tree traversal                                │
+│          }                                                                                                       │
+│      }                                                                                                          │
+│  }                                                                                                              │
+│                                                                                                                  │
+│  Kullanım:  Hastalık arama, filtreleme, kategoriye göre sorgu                                                  │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 5. GRAPH → Hastalık Benzerliği / İlişkiler                                                                    │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                                  │
+│  Kod Yeri: Model: DiseaseRelationship.java (Yeni Entity)                                                       │
+│  ─────────────────────────────────────────────────────────────────────────────────────────────────────────────  │
+│                                                                                                                  │
+│  @Entity                                                                                                        │
+│  public class DiseaseRelationship {                                                                           │
+│      @Id                                                                                                        │
+│      @GeneratedValue                                                                                           │
+│      private Integer relationshipId;                                                                           │
+│                                                                                                                  │
+│      @ManyToOne                                                                                                │
+│      @JoinColumn(name = "disease_id_1")                                                                       │
+│      private Disease disease1;                                                                                 │
+│                                                                                                                  │
+│      @ManyToOne                                                                                                │
+│      @JoinColumn(name = "disease_id_2")                                                                       │
+│      private Disease disease2;                                                                                 │
+│                                                                                                                  │
+│      private Float similarityScore;  // Benzerlik skoru 0-100                                                  │
+│      private String relationshipType; // "similar", "concurrent", "progression"                               │
+│  }                                                                                                              │
+│                                                                                                                  │
+│  Service: DiseaseGraphService.java                                                                             │
+│  ─────────────────────────────────────────────────────────────────────────────────────────────────────────────  │
+│                                                                                                                  │
+│  @Service                                                                                                       │
+│  public class DiseaseGraphService {                                                                           │
+│      @Autowired                                                                                                 │
+│      private DiseaseRelationshipRepository relationshipRepository;                                             │
+│                                                                                                                  │
+│      // BFS: Benzer hastalıkları bulmak                                                                        │
+│      public Set&lt;Disease&gt; findSimilarDiseases(Integer diseaseId, float minSimilarity) {                       │
+│          Queue&lt;Disease&gt; queue = new LinkedList&lt;&gt;();                                                       │
+│          Set&lt;Disease&gt; visited = new HashSet&lt;&gt;();                                                           │
+│          // BFS traversal...                                                                                     │
+│          return visited;                                                                                        │
+│      }                                                                                                          │
+│                                                                                                                  │
+│      // DFS: Hastalık ilişkilerini incelemek                                                                   │
+│      public void dfsTraverse(Disease disease, Set&lt;Disease&gt; visited) {                                        │
+│          visited.add(disease);                                                                                 │
+│          List&lt;DiseaseRelationship&gt; related =                                                                  │
+│              relationshipRepository.findByDisease1OrDisease2(disease, disease);                                │
+│          for (DiseaseRelationship rel : related) {                                                             │
+│              Disease nextDisease = rel.getDisease1().equals(disease)                                           │
+│                  ? rel.getDisease2() : rel.getDisease1();                                                      │
+│              if (!visited.contains(nextDisease)) {                                                              │
+│                  dfsTraverse(nextDisease, visited);                                                             │
+│              }                                                                                                   │
+│          }                                                                                                       │
+│      }                                                                                                          │
+│  }                                                                                                              │
+│                                                                                                                  │
+│  Graph Yapısı:                                                                                                 │
+│                                                                                                                  │
+│         Powdery Mildew ──(similar: 85%)── Early Blight                                                        │
+│              │                                │                                                                │
+│              ├──(progression)──→─────────────┤                                                                │
+│              │                                │                                                                │
+│              └──(concurrent: 60%)──  Late Blight                                                               │
+│                                                │                                                                │
+│                                    ───(similar: 75%)─── Septoria Leaf Spot                                     │
+│                                                                                                                  │
+│  Kullanım:  Benzer hastalıkları bulma, tedavi önerileri, hastalık progresyonu takibi                         │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 6. HASH TABLE / MAP → Tahmin Sonuçlarını Cache Etme                                                            │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                                  │
+│  Kod Yeri: PredictionServiceImpl.java                                                                         │
+│  ─────────────────────────────────────────────────────────────────────────────────────────────────────────────  │
+│                                                                                                                  │
+│  @Service                                                                                                       │
+│  public class PredictionServiceImpl implements PredictionService {                                            │
+│      // LRU Cache: En yakın zaman kullanılan tahminleri memory'de tut                                         │
+│      private final Map&lt;String, PredictionCache&gt; cache =                                                      │
+│          Collections.synchronizedMap(new LinkedHashMap&lt;String, PredictionCache&gt;() {                         │
+│              protected boolean removeEldestEntry(Map.Entry eldest) {                                           │
+│                  return size() &gt; 100;  // Max 100 cache entry                                                 │
+│              }                                                                                                   │
+│          });                                                                                                     │
+│                                                                                                                  │
+│      public Prediction getPredictionFromCache(Integer predictionId) {                                         │
+│          String key = "pred_" + predictionId;                                                                 │
+│          if (cache.containsKey(key)) {                                                                          │
+│              PredictionCache cached = cache.get(key);                                                          │
+│              if (!cached.isExpired()) {                                                                         │
+│                  return cached.getPrediction();  // Cache'den döner                                           │
+│              }                                                                                                   │
+│          }                                                                                                       │
+│          // Database'den getir ve cache'ye ekle                                                                 │
+│          Prediction pred = predictionRepository.findById(predictionId).orElse(null);                          │
+│          if (pred != null) {                                                                                    │
+│              cache.put(key, new PredictionCache(pred, System.currentTimeMillis()));                          │
+│          }                                                                                                       │
+│          return pred;                                                                                           │
+│      }                                                                                                          │
+│  }                                                                                                              │
+│                                                                                                                  │
+│  Kullanım:  Sık kullanılan tahminleri hızlı erişim için memory'de tut                                        │
+│             Database yükünü azalt, response time'ı düşür                                                       │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 7. LINKED LIST → Tahmin Akışı / Notification Chain                                                             │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                                  │
+│  Kod Yeri: Model: NotificationChain.java (Yeni sınıf)                                                          │
+│  ─────────────────────────────────────────────────────────────────────────────────────────────────────────────  │
+│                                                                                                                  │
+│  public class NotificationNode {                                                                               │
+│      private String notificationType;   // "EMAIL", "SMS", "PUSH"                                             │
+│      private String message;                                                                                    │
+│      private LocalDateTime timestamp;                                                                          │
+│      private NotificationNode next;                                                                            │
+│                                                                                                                  │
+│      public void notify() {                                                                                     │
+│          // İlgili channel'a gönder                                                                             │
+│          if (next != null) {                                                                                    │
+│              next.notify();  // Zincir halinde devam et                                                         │
+│          }                                                                                                       │
+│      }                                                                                                          │
+│  }                                                                                                              │
+│                                                                                                                  │
+│  @Service                                                                                                       │
+│  public class NotificationChainService {                                                                      │
+│      private LinkedList&lt;NotificationNode&gt; notificationChain = new LinkedList&lt;&gt;();                          │
+│                                                                                                                  │
+│      public void addNotificationHandler(String type, String message) {                                         │
+│          NotificationNode node = new NotificationNode(type, message);                                         │
+│          notificationChain.add(node);  // Sona ekle (FIFO)                                                     │
+│      }                                                                                                          │
+│                                                                                                                  │
+│      public void notifyAll() {                                                                                  │
+│          if (!notificationChain.isEmpty()) {                                                                    │
+│              notificationChain.getFirst().notify();                                                             │
+│          }                                                                                                       │
+│      }                                                                                                          │
+│  }                                                                                                              │
+│                                                                                                                  │
+│  Kullanım:  Tahmin tamamlandı → EMAIL gönder → SMS gönder → PUSH notification gönder                         │
+│             Zincir halinde bildirimleri sırasıyla işle                                                          │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                               ÖZET - HER STRUCTURE NEREDE KULLANILIR                                           ║
+╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ Data Structure │ Amaç                              │ Kod Yeri / Service                                        │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ STACK          │ Undo/Redo işlemleri              │ PredictionServiceImpl                                     │
+│ QUEUE          │ Tahmin işleme sırası             │ PredictionQueueService (NEW)                             │
+│ PRIORITY QUEUE │ Acil hastalık tespiti            │ PredictionPriorityService (NEW)                          │
+│ TREE           │ Hastalık sınıflandırması         │ DiseaseTreeService (NEW)                                 │
+│ GRAPH          │ Hastalık benzerlik/ilişkiler    │ DiseaseGraphService (NEW)                                │
+│ HASH MAP       │ Cache ve quick lookup            │ PredictionServiceImpl                                     │
+│ LINKED LIST    │ Notification chain               │ NotificationChainService (NEW)                           │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+            </pre>
+        </div>
+    </div>
+</body>
+</html>

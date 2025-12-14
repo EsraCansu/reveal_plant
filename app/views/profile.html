@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - RevelPlant</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <style>
+        .sidebar {
+            background: #f8f9fa;
+            min-height: 100vh;
+            padding: 20px 0;
+            border-right: 1px solid #dee2e6;
+        }
+        .sidebar .nav-link {
+            color: #333 !important;
+            border-left: 3px solid transparent;
+            margin-bottom: 5px;
+            padding: 10px 15px;
+            font-weight: 500;
+        }
+        .sidebar .nav-link:hover {
+            color: var(--brand-light) !important;
+            background: #e8f5e9;
+            border-left-color: var(--brand-light);
+        }
+        .sidebar .nav-link.active {
+            color: white !important;
+            background: var(--brand-light);
+            border-left-color: var(--brand-light);
+        }
+        .profile-section {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        .avatar-upload {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 20px;
+        }
+        .avatar-img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #e8f5e9;
+        }
+        .avatar-overlay {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 40px;
+            height: 40px;
+            background: var(--brand-light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            border: 3px solid white;
+        }
+        .avatar-overlay:hover {
+            background: var(--brand-dark);
+        }
+    </style>
+</head>
+<body class="d-flex flex-column min-vh-100">
+    <!-- Header Component -->
+    <div id="header"></div>
+
+    <!-- Main Content -->
+    <main class="flex-grow-1">
+        <div class="container-fluid py-4">
+            <div class="row">
+                <!-- Sidebar -->
+                <div class="col-lg-3 mb-4">
+                    <div class="sidebar">
+                        <h6 class="px-3 mb-3 fw-bold">Menu</h6>
+                        <ul class="nav flex-column px-3">
+                            <li class="nav-item">
+                                <a class="nav-link" href="dashboard.html">
+                                    <i class="fas fa-chart-line me-2"></i>Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="diagnoses.html">
+                                    <i class="fas fa-history me-2"></i>My Diagnoses
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link active" href="profile.html">
+                                    <i class="fas fa-user me-2"></i>Profile
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="settings.html">
+                                    <i class="fas fa-cog me-2"></i>Settings
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="../../index.html">
+                                    <i class="fas fa-leaf me-2"></i>Back to Home
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Main Content -->
+                <div class="col-lg-9">
+                    <!-- Profile Section -->
+                    <div class="profile-section">
+                        <h5 class="mb-4 fw-bold"><i class="fas fa-user me-2"></i>Profile Information</h5>
+                        
+                        <!-- Avatar -->
+                        <div class="avatar-upload">
+                            <img id="avatarImg" src="https://via.placeholder.com/120" alt="avatar" class="avatar-img">
+                            <div class="avatar-overlay" onclick="document.getElementById('avatarInput').click()">
+                                <i class="fas fa-camera"></i>
+                            </div>
+                            <input type="file" id="avatarInput" style="display: none;" accept="image/*" onchange="uploadAvatar(event)">
+                        </div>
+
+                        <!-- Profile Form -->
+                        <form id="profileForm">
+                            <div class="mb-3">
+                                <label for="fullName" class="form-label fw-bold">Full Name</label>
+                                <input type="text" class="form-control" id="fullName" placeholder="Enter your full name">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="email" class="form-label fw-bold">Email Address</label>
+                                <input type="email" class="form-control" id="email" disabled>
+                                <small class="text-muted">Email cannot be changed</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="phone" class="form-label fw-bold">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone" placeholder="Enter your phone number">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="location" class="form-label fw-bold">Location</label>
+                                <input type="text" class="form-control" id="location" placeholder="Enter your location">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="bio" class="form-label fw-bold">Bio</label>
+                                <textarea class="form-control" id="bio" rows="3" placeholder="Tell us about yourself..."></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-accent rounded-pill px-4">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Change Password Section -->
+                    <div class="profile-section">
+                        <h5 class="mb-4 fw-bold"><i class="fas fa-lock me-2"></i>Change Password</h5>
+                        
+                        <form id="passwordForm">
+                            <div class="mb-3">
+                                <label for="currentPassword" class="form-label fw-bold">Current Password</label>
+                                <input type="password" class="form-control" id="currentPassword" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="newPassword" class="form-label fw-bold">New Password</label>
+                                <input type="password" class="form-control" id="newPassword" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="confirmPassword" class="form-label fw-bold">Confirm Password</label>
+                                <input type="password" class="form-control" id="confirmPassword" required>
+                            </div>
+
+                            <button type="submit" class="btn btn-accent rounded-pill px-4">
+                                <i class="fas fa-key me-2"></i>Update Password
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Account Stats -->
+                    <div class="profile-section">
+                        <h5 class="mb-4 fw-bold"><i class="fas fa-bar-chart me-2"></i>Account Statistics</h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <p class="text-muted mb-1">Member Since</p>
+                                <p class="fw-bold" id="memberSince">-</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <p class="text-muted mb-1">Total Diagnoses</p>
+                                <p class="fw-bold" id="totalDiagnoses">0</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-muted mb-1">Last Diagnosis</p>
+                                <p class="fw-bold" id="lastDiagnosis">-</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-muted mb-1">Account Status</p>
+                                <p class="fw-bold"><span class="badge bg-success">Active</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../../assets/js/components.js"></script>
+    <script src="../../app/routes/routes.js"></script>
+    <script src="../../app/routes/api.routes.js"></script>
+    <script>
+        function checkLogin() {
+            const isLoggedIn = localStorage.getItem('user_logged_in');
+            const userEmail = localStorage.getItem('user_email');
+            
+            if (!isLoggedIn || !userEmail) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            document.getElementById('userEmail').textContent = userEmail.split('@')[0];
+            document.getElementById('email').value = userEmail;
+            
+            loadProfileData();
+            loadDiagnosisStats();
+        }
+
+        function loadProfileData() {
+            const profile = JSON.parse(localStorage.getItem('profile') || '{}');
+            
+            document.getElementById('fullName').value = profile.fullName || '';
+            document.getElementById('phone').value = profile.phone || '';
+            document.getElementById('location').value = profile.location || '';
+            document.getElementById('bio').value = profile.bio || '';
+            
+            if (profile.avatar) {
+                document.getElementById('avatarImg').src = profile.avatar;
+            }
+        }
+
+        function loadDiagnosisStats() {
+            const diagnoses = JSON.parse(localStorage.getItem('diagnoses') || '[]');
+            const createdAt = localStorage.getItem('account_created_at') || new Date().toISOString();
+            
+            document.getElementById('totalDiagnoses').textContent = diagnoses.length;
+            document.getElementById('memberSince').textContent = new Date(createdAt).toLocaleDateString();
+            
+            if (diagnoses.length > 0) {
+                const lastDiag = diagnoses[diagnoses.length - 1];
+                document.getElementById('lastDiagnosis').textContent = new Date(lastDiag.date).toLocaleDateString();
+            } else {
+                document.getElementById('lastDiagnosis').textContent = 'No diagnoses yet';
+            }
+        }
+
+        function uploadAvatar(event) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const avatar = e.target.result;
+                    document.getElementById('avatarImg').src = avatar;
+                    
+                    const profile = JSON.parse(localStorage.getItem('profile') || '{}');
+                    profile.avatar = avatar;
+                    localStorage.setItem('profile', JSON.stringify(profile));
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        document.getElementById('profileForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const profile = {
+                fullName: document.getElementById('fullName').value,
+                phone: document.getElementById('phone').value,
+                location: document.getElementById('location').value,
+                bio: document.getElementById('bio').value
+            };
+            
+            localStorage.setItem('profile', JSON.stringify(profile));
+            alert('Profile updated successfully!');
+        });
+
+        document.getElementById('passwordForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (newPassword !== confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                alert('Password must be at least 6 characters!');
+                return;
+            }
+            
+            localStorage.setItem('user_password', newPassword);
+            alert('Password updated successfully!');
+            document.getElementById('passwordForm').reset();
+        });
+
+        function logout() {
+            localStorage.removeItem('user_logged_in');
+            localStorage.removeItem('user_email');
+            localStorage.removeItem('user_remember');
+            location.href = 'login.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAllComponents();
+            
+            // Wait for components to load, then check login
+            setTimeout(() => {
+                checkLogin();
+                
+                // Initialize Bootstrap dropdowns
+                document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(el => {
+                    new bootstrap.Dropdown(el);
+                });
+            }, 100);
+        });
+    </script>
+</body>
+</html>

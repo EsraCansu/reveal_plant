@@ -1,0 +1,278 @@
+:root {
+    --brand-dark: #2D7A4A;
+    --brand-light: #67A64B;
+    --accent: #F4D05E;
+    --earth: #733702;
+    --bg: #F6F8F5;
+    --surface: #FFFFFF;
+    --text: #122017;
+    --muted: #7A8B7A;
+    --radius: 10px;
+    --shadow-sm: 0 1px 4px rgba(18,32,23,0.06);
+    --shadow-md: 0 6px 18px rgba(18,32,23,0.08);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+}
+
+/* ==================== NAVBAR ==================== */
+.navbar {
+    background-color: var(--brand-dark) !important;
+    padding: 0.5rem 0 !important;
+}
+
+.navbar-brand img {
+    transition: transform 0.3s ease;
+}
+
+.navbar-brand img:hover {
+    transform: scale(1.05);
+}
+
+.nav-link {
+    color: rgba(255, 255, 255, 0.8) !important;
+    transition: color 0.3s ease;
+}
+
+.nav-link:hover {
+    color: white !important;
+}
+
+/* ==================== BUTTONS ==================== */
+.btn-accent {
+    background-color: var(--accent);
+    color: var(--earth);
+    font-weight: 600;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-accent:hover {
+    background-color: #e6c54f;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+    background-color: var(--muted);
+    border: none;
+}
+
+.btn-secondary:hover {
+    background-color: var(--text);
+}
+
+/* ==================== CARDS & CONTAINERS ==================== */
+.feature-card {
+    background-color: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-md);
+}
+
+.upload-area {
+    border: 2px dashed var(--brand-light);
+    border-radius: var(--radius);
+    background-color: var(--surface);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 3rem 2rem;
+    text-align: center;
+}
+
+.upload-area:hover {
+    background-color: rgba(103, 166, 75, 0.05);
+    border-color: var(--brand-dark);
+}
+
+.result-section {
+    background-color: var(--surface);
+    padding: 2rem;
+    border-radius: var(--radius);
+    margin-top: 2rem;
+    box-shadow: var(--shadow-md);
+}
+
+/* ==================== STEPS & PROGRESS ==================== */
+.step-container {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.step-container.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.progress-indicator {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    justify-content: center;
+}
+
+.progress-step {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+    background-color: var(--muted);
+    transition: all 0.3s ease;
+}
+
+.progress-step.active {
+    background-color: var(--brand-light);
+    transform: scale(1.1);
+}
+
+.progress-step.completed {
+    background-color: var(--brand-dark);
+}
+
+/* ==================== MODE SELECTOR ==================== */
+.mode-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.mode-card {
+    padding: 2rem;
+    border: 2px solid var(--brand-light);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    background-color: var(--surface);
+}
+
+.mode-card:hover {
+    background-color: rgba(103, 166, 75, 0.1);
+    transform: translateY(-5px);
+    border-color: var(--brand-dark);
+}
+
+.mode-card i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--brand-light);
+    transition: color 0.3s ease;
+}
+
+.mode-card:hover i {
+    color: var(--brand-dark);
+}
+
+/* ==================== IMAGES ==================== */
+.preview-image {
+    max-width: 100%;
+    max-height: 300px;
+    margin: 1.5rem 0;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+}
+
+/* ==================== FOOTER ==================== */
+footer {
+    background-color: var(--brand-dark);
+    color: white;
+    margin-top: auto;
+}
+
+footer a {
+    color: white;
+    transition: color 0.3s ease;
+}
+
+footer a:hover {
+    color: var(--accent);
+}
+
+/* ==================== ALERTS ==================== */
+.alert-info {
+    border-color: var(--brand-light);
+    background-color: rgba(103, 166, 75, 0.1);
+    color: var(--text);
+}
+
+.alert-warning {
+    border-color: #ffc107;
+    background-color: rgba(255, 193, 7, 0.1);
+    color: var(--text);
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+    .mode-selector {
+        grid-template-columns: 1fr;
+    }
+
+    .progress-indicator {
+        gap: 0.5rem;
+    }
+
+    .progress-step {
+        width: 35px;
+        height: 35px;
+        font-size: 0.9rem;
+    }
+
+    .upload-area {
+        padding: 2rem 1rem;
+    }
+
+    h1 {
+        font-size: 2rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .navbar-brand img {
+        height: 50px !important;
+    }
+
+    .progress-step {
+        width: 30px;
+        height: 30px;
+        font-size: 0.8rem;
+    }
+
+    .mode-card {
+        padding: 1.5rem 1rem;
+    }
+
+    .mode-card i {
+        font-size: 2rem;
+    }
+}

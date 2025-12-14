@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - RevelPlant</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <style>
+        .sidebar {
+            background: #f8f9fa;
+            min-height: 100vh;
+            padding: 20px 0;
+            border-right: 1px solid #dee2e6;
+        }
+        .sidebar .nav-link {
+            color: #333 !important;
+            border-left: 3px solid transparent;
+            margin-bottom: 5px;
+            padding: 10px 15px;
+            font-weight: 500;
+        }
+        .sidebar .nav-link:hover {
+            color: var(--brand-light) !important;
+            background: #e8f5e9;
+            border-left-color: var(--brand-light);
+        }
+        .sidebar .nav-link.active {
+            color: white !important;
+            background: var(--brand-light);
+            border-left-color: var(--brand-light);
+        }
+        .settings-section {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        .settings-item {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--brand-light);
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+<body class="d-flex flex-column min-vh-100">
+    <!-- Header Component -->
+    <div id="header"></div>
+
+    <!-- Main Content -->
+    <main class="flex-grow-1">
+        <div class="container-fluid py-4">
+            <div class="row">
+                <!-- Sidebar -->
+                <div class="col-lg-3 mb-4">
+                    <div class="sidebar">
+                        <h6 class="px-3 mb-3 fw-bold">Menu</h6>
+                        <ul class="nav flex-column px-3">
+                            <li class="nav-item">
+                                <a class="nav-link" href="dashboard.html">
+                                    <i class="fas fa-chart-line me-2"></i>Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="diagnoses.html">
+                                    <i class="fas fa-history me-2"></i>My Diagnoses
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="profile.html">
+                                    <i class="fas fa-user me-2"></i>Profile
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link active" href="settings.html">
+                                    <i class="fas fa-cog me-2"></i>Settings
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="../../index.html">
+                                    <i class="fas fa-leaf me-2"></i>Back to Home
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Main Content -->
+                <div class="col-lg-9">
+                    <!-- Notification Settings -->
+                    <div class="settings-section">
+                        <h5 class="mb-4 fw-bold"><i class="fas fa-bell me-2"></i>Notification Settings</h5>
+                        
+                        <div class="settings-item">
+                            <div>
+                                <h6 class="mb-1">Email Notifications</h6>
+                                <small class="text-muted">Receive email updates about diagnoses</small>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="emailNotif" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-item">
+                            <div>
+                                <h6 class="mb-1">Push Notifications</h6>
+                                <small class="text-muted">Receive push notifications on your device</small>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="pushNotif">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-item">
+                            <div>
+                                <h6 class="mb-1">News & Updates</h6>
+                                <small class="text-muted">Subscribe to our newsletter</small>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="newsNotif" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-item">
+                            <div>
+                                <h6 class="mb-1">Plant Care Tips</h6>
+                                <small class="text-muted">Get personalized plant care recommendations</small>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="careNotif" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Privacy Settings -->
+                    <div class="settings-section">
+                        <h5 class="mb-4 fw-bold"><i class="fas fa-shield-alt me-2"></i>Privacy Settings</h5>
+                        
+                        <div class="settings-item">
+                            <div>
+                                <h6 class="mb-1">Profile Visibility</h6>
+                                <small class="text-muted">Make your profile visible to other users</small>
+                            </div>
+                            <select class="form-select form-select-sm w-auto" id="profileVisibility">
+                                <option value="private" selected>Private</option>
+                                <option value="public">Public</option>
+                                <option value="friends">Friends Only</option>
+                            </select>
+                        </div>
+
+                        <div class="settings-item">
+                            <div>
+                                <h6 class="mb-1">Diagnoses Sharing</h6>
+                                <small class="text-muted">Allow sharing of your diagnoses with experts</small>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="shareData">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-item">
+                            <div>
+                                <h6 class="mb-1">Two-Factor Authentication</h6>
+                                <small class="text-muted">Add an extra layer of security to your account</small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary">Enable 2FA</button>
+                        </div>
+                    </div>
+
+                    <!-- Display Settings -->
+                    <div class="settings-section">
+                        <h5 class="mb-4 fw-bold"><i class="fas fa-palette me-2"></i>Display Settings</h5>
+                        
+                        <div class="settings-item">
+                            <div>
+                                <h6 class="mb-1">Language</h6>
+                                <small class="text-muted">Select your preferred language</small>
+                            </div>
+                            <select class="form-select form-select-sm w-auto" id="language">
+                                <option value="en" selected>English</option>
+                                <option value="tr">Türkçe</option>
+                                <option value="es">Español</option>
+                                <option value="de">Deutsch</option>
+                            </select>
+                        </div>
+
+                        <div class="settings-item">
+                            <div>
+                                <h6 class="mb-1">Theme</h6>
+                                <small class="text-muted">Choose your preferred theme</small>
+                            </div>
+                            <select class="form-select form-select-sm w-auto" id="theme">
+                                <option value="light" selected>Light</option>
+                                <option value="dark">Dark</option>
+                                <option value="auto">Auto</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Data Management -->
+                    <div class="settings-section">
+                        <h5 class="mb-4 fw-bold"><i class="fas fa-database me-2"></i>Data Management</h5>
+                        
+                        <div class="settings-item">
+                            <div>
+                                <h6 class="mb-1">Export My Data</h6>
+                                <small class="text-muted">Download all your personal data and diagnoses</small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary" onclick="exportData()">
+                                <i class="fas fa-download me-1"></i>Export
+                            </button>
+                        </div>
+
+                        <div class="settings-item">
+                            <div>
+                                <h6 class="mb-1">Clear Cache</h6>
+                                <small class="text-muted">Remove temporary files and cached data</small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-warning" onclick="clearCache()">
+                                <i class="fas fa-trash me-1"></i>Clear
+                            </button>
+                        </div>
+
+                        <div class="settings-item">
+                            <div>
+                                <h6 class="mb-1">Delete Account</h6>
+                                <small class="text-muted">Permanently delete your account and all data</small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteAccount()">
+                                <i class="fas fa-exclamation-triangle me-1"></i>Delete
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Save Button -->
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-accent rounded-pill px-4" onclick="saveSettings()">
+                            <i class="fas fa-save me-2"></i>Save All Settings
+                        </button>
+                        <button class="btn btn-outline-secondary rounded-pill px-4" onclick="resetSettings()">
+                            <i class="fas fa-undo me-2"></i>Reset to Default
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../../assets/js/components.js"></script>
+    <script src="../../app/routes/routes.js"></script>
+    <script src="../../app/routes/api.routes.js"></script>
+    <script>
+        function checkLogin() {
+            const isLoggedIn = localStorage.getItem('user_logged_in');
+            const userEmail = localStorage.getItem('user_email');
+            
+            if (!isLoggedIn || !userEmail) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            document.getElementById('userEmail').textContent = userEmail.split('@')[0];
+            loadSettings();
+        }
+
+        function loadSettings() {
+            const settings = JSON.parse(localStorage.getItem('settings') || '{}');
+            
+            document.getElementById('emailNotif').checked = settings.emailNotif !== false;
+            document.getElementById('pushNotif').checked = settings.pushNotif || false;
+            document.getElementById('newsNotif').checked = settings.newsNotif !== false;
+            document.getElementById('careNotif').checked = settings.careNotif !== false;
+            document.getElementById('profileVisibility').value = settings.profileVisibility || 'private';
+            document.getElementById('shareData').checked = settings.shareData || false;
+            document.getElementById('language').value = settings.language || 'en';
+            document.getElementById('theme').value = settings.theme || 'light';
+        }
+
+        function saveSettings() {
+            const settings = {
+                emailNotif: document.getElementById('emailNotif').checked,
+                pushNotif: document.getElementById('pushNotif').checked,
+                newsNotif: document.getElementById('newsNotif').checked,
+                careNotif: document.getElementById('careNotif').checked,
+                profileVisibility: document.getElementById('profileVisibility').value,
+                shareData: document.getElementById('shareData').checked,
+                language: document.getElementById('language').value,
+                theme: document.getElementById('theme').value
+            };
+            
+            localStorage.setItem('settings', JSON.stringify(settings));
+            alert('Settings saved successfully!');
+        }
+
+        function resetSettings() {
+            if (confirm('Are you sure you want to reset all settings to default?')) {
+                localStorage.removeItem('settings');
+                location.reload();
+            }
+        }
+
+        function exportData() {
+            const data = {
+                profile: JSON.parse(localStorage.getItem('profile') || '{}'),
+                diagnoses: JSON.parse(localStorage.getItem('diagnoses') || '[]'),
+                settings: JSON.parse(localStorage.getItem('settings') || '{}')
+            };
+            
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `revelplant_data_${new Date().getTime()}.json`;
+            a.click();
+        }
+
+        function clearCache() {
+            if (confirm('Are you sure you want to clear all cache?')) {
+                localStorage.clear();
+                alert('Cache cleared successfully! Redirecting to login...');
+                window.location.href = 'login.html';
+            }
+        }
+
+        function deleteAccount() {
+            if (confirm('⚠️ WARNING: This will permanently delete your account and all data. Are you sure?')) {
+                if (confirm('This action cannot be undone. Click OK to confirm deletion.')) {
+                    localStorage.clear();
+                    alert('Account deleted successfully!');
+                    window.location.href = '../../index.html';
+                }
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('user_logged_in');
+            localStorage.removeItem('user_email');
+            localStorage.removeItem('user_remember');
+            location.href = 'login.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAllComponents();
+            
+            // Wait for components to load, then check login
+            setTimeout(() => {
+                checkLogin();
+                
+                // Initialize Bootstrap dropdowns
+                document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(el => {
+                    new bootstrap.Dropdown(el);
+                });
+            }, 100);
+        });
+    </script>
+</body>
+</html>

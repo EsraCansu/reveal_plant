@@ -1,0 +1,4 @@
+{
+  "username": "KAGGLE_KULLANICI_ADIN",
+  "token": "BURAYA_KOPYALADIĞIN_TOKEN_DEĞERİ"
+}

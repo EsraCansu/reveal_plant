@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RevelPlant - AI-Powered Plant Diagnostics</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <script src="app/controllers/dummyData.js"></script>
+</head>
+<body class="d-flex flex-column min-vh-100">
+    <!-- Header Component -->
+    <div id="header"></div>
+
+    <!-- Main Content -->
+    <main class="flex-grow-1">
+        <!-- Hero Section -->
+        <section class="py-5" id="home">
+            <div class="container py-5">
+                <div class="text-center mb-5">
+                    <h1 class="display-4 fw-bold mb-3">AI-Powered Plant Diagnostics</h1>
+                    <p class="lead text-muted">Identify plants and detect diseases instantly with our advanced AI technology</p>
+                </div>
+
+                <!-- Main Application -->
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        
+                        <!-- STEP 1: Select Mode -->
+                        <div class="step-container active" id="step-mode">
+                            <div class="progress-indicator">
+                                <div class="progress-step active">1</div>
+                                <div class="progress-step">2</div>
+                                <div class="progress-step">3</div>
+                            </div>
+
+                            <h4 class="text-center mb-4">What would you like to do?</h4>
+                            <div class="mode-selector">
+                                <div class="mode-card" onclick="window.controller.selectMode('identify')">
+                                    <i class="fas fa-leaf"></i>
+                                    <h5>Plant Identification</h5>
+                                    <p class="text-muted small">Identify what plant this is</p>
+                                </div>
+                                <div class="mode-card" onclick="window.controller.selectMode('disease')">
+                                    <i class="fas fa-bug"></i>
+                                    <h5>Disease Detection</h5>
+                                    <p class="text-muted small">Check for plant diseases</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- STEP 2: Upload Image -->
+                        <div class="step-container" id="step-upload">
+                            <div class="progress-indicator">
+                                <div class="progress-step completed">1</div>
+                                <div class="progress-step active">2</div>
+                                <div class="progress-step">3</div>
+                            </div>
+
+                            <div class="upload-area p-5 text-center">
+                                <i class="fas fa-cloud-upload-alt fa-3x mb-3" style="color: var(--brand-light);"></i>
+                                <h4 class="mb-3">Upload Your Plant Image</h4>
+                                <p class="text-muted mb-4">Drag & drop your image here or click to browse</p>
+                                <button class="btn btn-accent px-4 rounded-pill" id="uploadBtn">Choose File</button>
+                                <input type="file" class="d-none" id="fileInput" accept="image/*">
+                                <div id="imagePreview"></div>
+                            </div>
+                            <button class="btn btn-secondary mt-4 w-100" onclick="window.controller.goBack('step-mode')">Back</button>
+                        </div>
+
+                        <!-- STEP 3: Results -->
+                        <div class="step-container" id="step-results">
+                            <div class="progress-indicator">
+                                <div class="progress-step completed">1</div>
+                                <div class="progress-step completed">2</div>
+                                <div class="progress-step active">3</div>
+                            </div>
+
+                            <div class="result-section" id="resultContent">
+                                <!-- Results will be displayed here -->
+                            </div>
+
+                            <div class="mt-4 d-flex gap-2">
+                                <button class="btn btn-secondary" onclick="window.controller.goBack('step-mode')">Start Over</button>
+                                <button class="btn btn-success" onclick="window.controller.downloadReport()">Download Report</button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/components.js"></script>
+    <script src="app/routes/routes.js"></script>
+    <script src="app/routes/api.routes.js"></script>
+    <script src="assets/js/app.js"></script>
+    <script>
+        function checkUserLogin() {
+            const isLoggedIn = localStorage.getItem('user_logged_in');
+            const userEmail = localStorage.getItem('user_email');
+            const loginBtn = document.querySelector('a[href="app/views/login.html"]').parentElement;
+            const registerBtn = document.querySelector('a[href="app/views/register.html"]').parentElement;
+            const profileMenu = document.getElementById('profileMenu');
+            
+            if (isLoggedIn && userEmail) {
+                loginBtn.style.display = 'none';
+                registerBtn.style.display = 'none';
+                profileMenu.style.display = 'block';
+                document.getElementById('userEmail').textContent = userEmail.split('@')[0];
+            } else {
+                loginBtn.style.display = 'block';
+                registerBtn.style.display = 'block';
+                profileMenu.style.display = 'none';
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('user_logged_in');
+            localStorage.removeItem('user_email');
+            localStorage.removeItem('user_remember');
+            location.reload();
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load components
+            loadComponent('header', 'assets/components/index-header.html');
+            loadComponent('footer', 'assets/components/index-footer.html');
+            
+            checkUserLogin();
+            
+            // Initialize Bootstrap dropdowns
+            document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(el => {
+                new bootstrap.Dropdown(el);
+            });
+        });
+    </script>
+</body>
+</html>

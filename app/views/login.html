@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - RevelPlant</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <script src="../../app/controllers/dummyData.js"></script>
+</head>
+<body class="d-flex flex-column min-vh-100">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="../../index.html">
+                <img src="../../assets/images/logo.png" alt="RevelPlant" style="height: 80px;">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="../../index.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="about.html">About</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="contact.html">Contact</a>
+                    </li>
+                    <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+                        <a class="btn btn-sm btn-outline-light rounded-pill px-3 active" href="login.html">Login</a>
+                    </li>
+                    <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+                        <a class="btn btn-sm btn-accent rounded-pill px-3" href="register.html">Register</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow-1 d-flex align-items-center py-5">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-6 col-lg-5">
+                    <div class="feature-card p-5">
+                        <div class="text-center mb-5">
+                            <h2 class="fw-bold">Welcome Back</h2>
+                            <p class="text-muted">Login to your RevelPlant account</p>
+                        </div>
+
+                        <form id="loginForm">
+                            <div class="mb-3">
+                                <label for="email" class="form-label fw-bold">Email Address</label>
+                                <input type="email" class="form-control" id="email" placeholder="john@example.com" required>
+                                <small class="text-muted d-block mt-1">Demo: john@example.com</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="password" class="form-label fw-bold">Password</label>
+                                <input type="password" class="form-control" id="password" placeholder="demo123" required>
+                                <small class="text-muted d-block mt-1">Demo: demo123</small>
+                            </div>
+
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="remember">
+                                <label class="form-check-label" for="remember">
+                                    Remember me
+                                </label>
+                            </div>
+
+                            <button type="submit" class="btn btn-accent w-100 rounded-pill fw-bold mb-3">Login</button>
+
+                            <div class="text-center">
+                                <a href="#" class="text-decoration-none text-muted small">Forgot your password?</a>
+                            </div>
+                        </form>
+                        <script>
+                            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                                e.preventDefault();
+                                const email = document.getElementById('email').value;
+                                const password = document.getElementById('password').value;
+                                const remember = document.getElementById('remember').checked;
+                                
+                                // Verify with dummy data
+                                if (verifyDummyUser(email, password)) {
+                                    localStorage.setItem('user_logged_in', 'true');
+                                    localStorage.setItem('user_email', email);
+                                    if (remember) localStorage.setItem('user_remember', 'true');
+                                    
+                                    // Initialize dummy data for this user
+                                    initializeDummyDataForUser(email);
+                                    
+                                    window.location.href = '../../index.html';
+                                } else {
+                                    alert('Invalid email or password. Please try again.\n\nDemo Credentials:\nEmail: john@example.com\nPassword: demo123');
+                                }
+                            });
+                        </script>
+
+                        <hr class="my-4">
+
+                        <div class="text-center">
+                            <p class="text-muted small mb-3">Or login with</p>
+                            <div class="d-flex gap-2 justify-content-center">
+                                <button class="btn btn-outline-secondary btn-sm rounded-pill flex-grow-1">
+                                    <i class="fab fa-google me-2"></i>Google
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm rounded-pill flex-grow-1">
+                                    <i class="fab fa-facebook me-2"></i>Facebook
+                                </button>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <p class="text-center text-muted small">
+                            Don't have an account? <a href="register.html" class="fw-bold text-decoration-none" style="color: var(--brand-light);">Register here</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="mb-0">&copy; 2024 RevelPlant. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <a href="#" class="text-white mx-2"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="text-white mx-2"><i class="fab fa-facebook"></i></a>
+                    <a href="#" class="text-white mx-2"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="text-white mx-2"><i class="fab fa-github"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../../app/routes/routes.js"></script>
+    <script src="../../app/routes/api.routes.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const remember = document.getElementById('remember').checked;
+            localStorage.setItem('user_logged_in', 'true');
+            localStorage.setItem('user_email', email);
+            if (remember) localStorage.setItem('user_remember', 'true');
+            window.location.href = '../../index.html';
+        });
+    </script>
+</body>
+</html>

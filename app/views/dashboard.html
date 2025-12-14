@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - RevelPlant</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <style>
+        .sidebar {
+            background: #f8f9fa;
+            min-height: 100vh;
+            padding: 20px 0;
+            border-right: 1px solid #dee2e6;
+        }
+        .sidebar .nav-link {
+            color: #333 !important;
+            border-left: 3px solid transparent;
+            margin-bottom: 5px;
+            padding: 10px 15px;
+            font-weight: 500;
+        }
+        .sidebar .nav-link:hover {
+            color: var(--brand-light) !important;
+            background: #e8f5e9;
+            border-left-color: var(--brand-light);
+        }
+        .sidebar .nav-link.active {
+            color: white !important;
+            background: var(--brand-light);
+            border-left-color: var(--brand-light);
+        }
+        .stat-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .stat-card i {
+            font-size: 2rem;
+            color: var(--brand-light);
+            margin-bottom: 10px;
+        }
+        .stat-card h5 {
+            color: #495057;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--brand-dark);
+        }
+        .recent-diagnosis {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .recent-diagnosis:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-color: var(--brand-light);
+        }
+        .diagnosis-badge {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+        }
+        .welcome-section {
+            background: linear-gradient(135deg, var(--brand-light) 0%, var(--brand-dark) 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body class="d-flex flex-column min-vh-100">
+    <!-- Header Component -->
+    <div id="header"></div>
+
+    <!-- Main Content -->
+    <main class="flex-grow-1">
+        <div class="container-fluid py-4">
+            <!-- Welcome Section -->
+            <div class="welcome-section">
+                <h2 class="mb-2">Welcome back, <span id="userName">User</span>! 🌱</h2>
+                <p class="mb-0">Here's your RevelPlant activity overview</p>
+            </div>
+
+            <div class="row">
+                <!-- Sidebar -->
+                <div class="col-lg-3 mb-4">
+                    <div class="sidebar">
+                        <h6 class="px-3 mb-3 fw-bold">Menu</h6>
+                        <ul class="nav flex-column px-3">
+                            <li class="nav-item">
+                                <a class="nav-link active" href="dashboard.html">
+                                    <i class="fas fa-chart-line me-2"></i>Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="diagnoses.html">
+                                    <i class="fas fa-history me-2"></i>My Diagnoses
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="profile.html">
+                                    <i class="fas fa-user me-2"></i>Profile
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="settings.html">
+                                    <i class="fas fa-cog me-2"></i>Settings
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="../../index.html">
+                                    <i class="fas fa-leaf me-2"></i>Back to Home
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Main Content -->
+                <div class="col-lg-9">
+                    <!-- Statistics -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="stat-card">
+                                <i class="fas fa-history"></i>
+                                <h5>Total Diagnoses</h5>
+                                <div class="number" id="totalDiagnoses">0</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="stat-card">
+                                <i class="fas fa-bug"></i>
+                                <h5>Diseases Found</h5>
+                                <div class="number" id="diseasesFound">0</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="stat-card">
+                                <i class="fas fa-leaf"></i>
+                                <h5>Plants Identified</h5>
+                                <div class="number" id="plantsIdentified">0</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="stat-card">
+                                <i class="fas fa-calendar"></i>
+                                <h5>This Month</h5>
+                                <div class="number" id="thisMonth">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Diagnoses -->
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0 fw-bold">
+                                <i class="fas fa-list me-2"></i>Recent Diagnoses
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="recentDiagnosesList">
+                                <p class="text-muted text-center py-4">
+                                    <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                                    No diagnoses yet. Start by uploading a plant image!
+                                </p>
+                            </div>
+                            <div class="text-center mt-3">
+                                <a href="../../index.html" class="btn btn-accent rounded-pill px-4">
+                                    <i class="fas fa-plus me-2"></i>New Diagnosis
+                                </a>
+                                <a href="diagnoses.html" class="btn btn-outline-accent rounded-pill px-4">
+                                    <i class="fas fa-list me-2"></i>View All
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../../assets/js/components.js"></script>
+    <script src="../../app/routes/routes.js"></script>
+    <script src="../../app/routes/api.routes.js"></script>
+    <script>
+        // Check login status
+        function checkLogin() {
+            const isLoggedIn = localStorage.getItem('user_logged_in');
+            const userEmail = localStorage.getItem('user_email');
+            
+            if (!isLoggedIn || !userEmail) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            document.getElementById('userEmail').textContent = userEmail.split('@')[0];
+            document.getElementById('userName').textContent = userEmail.split('@')[0];
+            
+            loadDashboardData();
+        }
+
+        function logout() {
+            localStorage.removeItem('user_logged_in');
+            localStorage.removeItem('user_email');
+            localStorage.removeItem('user_remember');
+            localStorage.removeItem('diagnoses');
+            location.href = 'login.html';
+        }
+
+        function loadDashboardData() {
+            // Get diagnoses from localStorage (mock data)
+            const diagnoses = JSON.parse(localStorage.getItem('diagnoses') || '[]');
+            
+            let totalDiagnoses = diagnoses.length;
+            let diseasesFound = diagnoses.filter(d => d.mode === 'disease').length;
+            let plantsIdentified = diagnoses.filter(d => d.mode === 'identify').length;
+            
+            const today = new Date();
+            const thisMonth = diagnoses.filter(d => {
+                const dDate = new Date(d.date);
+                return dDate.getMonth() === today.getMonth() && dDate.getFullYear() === today.getFullYear();
+            }).length;
+
+            document.getElementById('totalDiagnoses').textContent = totalDiagnoses;
+            document.getElementById('diseasesFound').textContent = diseasesFound;
+            document.getElementById('plantsIdentified').textContent = plantsIdentified;
+            document.getElementById('thisMonth').textContent = thisMonth;
+
+            // Show recent diagnoses
+            const recentList = document.getElementById('recentDiagnosesList');
+            if (diagnoses.length > 0) {
+                const recent = diagnoses.slice(-5).reverse();
+                recentList.innerHTML = recent.map(d => `
+                    <div class="recent-diagnosis">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="text-start">
+                                <h6 class="mb-1"><strong>${d.name || 'Diagnosis'}</strong></h6>
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar me-1"></i>${new Date(d.date).toLocaleDateString()}
+                                    <i class="fas fa-clock me-1 ms-2"></i>${new Date(d.date).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
+                                </small>
+                            </div>
+                            <span class="badge diagnosis-badge bg-${d.mode === 'disease' ? 'warning' : 'info'}">
+                                ${d.mode === 'disease' ? 'Disease' : 'Plant ID'}
+                            </span>
+                        </div>
+                        <p class="mb-2 mt-2 small">${d.result || 'No result'}</p>
+                        <small class="text-muted">Confidence: ${d.confidence || 'N/A'}%</small>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAllComponents();
+            
+            // Wait for components to load, then check login
+            setTimeout(() => {
+                checkLogin();
+                
+                // Initialize Bootstrap dropdowns
+                document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(el => {
+                    new bootstrap.Dropdown(el);
+                });
+            }, 100);
+        });
+    </script>
+</body>
+</html>

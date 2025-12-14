@@ -1,0 +1,30 @@
+<!-- Navigation Header - Minimal for User Pages -->
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="../../index.html">
+            <img src="../../assets/images/logo.png" alt="RevelPlant" style="height: 80px;">
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item ms-lg-2 mt-2 mt-lg-0" id="profileMenu">
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-secondary rounded-pill px-3 dropdown-toggle" type="button" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle me-2"></i><span id="userEmail">User</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                            <li><a class="dropdown-item" href="dashboard.html"><i class="fas fa-chart-line me-2"></i>Dashboard</a></li>
+                            <li><a class="dropdown-item" href="diagnoses.html"><i class="fas fa-history me-2"></i>My Diagnoses</a></li>
+                            <li><a class="dropdown-item" href="profile.html"><i class="fas fa-user me-2"></i>Profile</a></li>
+                            <li><a class="dropdown-item" href="settings.html"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="logout(); return false;"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        </ul>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>

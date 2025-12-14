@@ -1,0 +1,50 @@
+<!-- Navigation Header for Index Page -->
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="index.html">
+            <img src="assets/images/logo.png" alt="RevelPlant" style="height: 80px;">
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link active" href="index.html">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="app/views/about.html">About</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="app/views/contact.html">Contact</a>
+                </li>
+                <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+                    <a class="btn btn-sm btn-outline-light rounded-pill px-3" href="app/views/login.html">Login</a>
+                </li>
+                <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+                    <a class="btn btn-sm btn-accent rounded-pill px-3" href="app/views/register.html">Register</a>
+                </li>
+                <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+                    <a class="btn btn-sm btn-outline-warning rounded-pill px-3" href="demo.html">
+                        <i class="fas fa-flask-vial me-1"></i>Demo
+                    </a>
+                </li>
+                <li class="nav-item ms-lg-2 mt-2 mt-lg-0" id="profileMenu" style="display: none;">
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-secondary rounded-pill px-3 dropdown-toggle" type="button" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle me-2"></i><span id="userEmail"></span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                            <li><a class="dropdown-item" href="app/views/dashboard.html"><i class="fas fa-chart-line me-2"></i>Dashboard</a></li>
+                            <li><a class="dropdown-item" href="app/views/diagnoses.html"><i class="fas fa-history me-2"></i>My Diagnoses</a></li>
+                            <li><a class="dropdown-item" href="app/views/profile.html"><i class="fas fa-user me-2"></i>Profile</a></li>
+                            <li><a class="dropdown-item" href="app/views/settings.html"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="logout(); return false;"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        </ul>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
