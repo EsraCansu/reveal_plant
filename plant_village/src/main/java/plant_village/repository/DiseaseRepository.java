@@ -11,7 +11,10 @@ public interface DiseaseRepository extends JpaRepository<Disease, Integer> {
 
     // result demonstrating in detail
     // find disease features getter from modal
-    Optional<Disease> findByName(String name); // Disease Entity's area name is 'name' 
+    Optional<Disease> findByName(String name); // Disease Entity's area name is 'name'
+    
+    // Case-insensitive disease search
+    Optional<Disease> findByNameIgnoreCase(String name);
     
     // Belirli bir bitki türüne ait olası tüm hastalıkları listelemek.
    // List<Disease> findByPlant_PlantId(Integer plantId);

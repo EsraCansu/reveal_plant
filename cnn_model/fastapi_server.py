@@ -6,12 +6,15 @@ Resim yükleme ve bitki/hastalık tanımlama
 import os
 import sys
 import traceback
+import base64
+import json
+from datetime import datetime
 try:
     import cv2
 except ImportError:
     cv2 = None
 import numpy as np
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 try:
@@ -42,14 +45,23 @@ CLASS_LABELS = {
     # ... Tüm sınıflar
 }
 
+# Disease recommendations mapping
+DISEASE_RECOMMENDATIONS = {
+    "apple_scab": "Apply fungicide treatments. Remove infected leaves. Improve air circulation.",
+    "black_rot": "Prune infected branches. Apply copper-based fungicide. Sanitize tools.",
+    "powdery_mildew": "Use sulfur or neem oil spray. Ensure proper spacing between plants.",
+    "leaf_spot": "Remove affected leaves. Apply fungicide. Increase air circulation.",
+}
+
 # ===================== FastAPI Setup =====================
-app = FastAPI(title="PlantVillage CNN API", version="1.0")
+app = FastAPI(title="PlantVillage CNN API", version="2.0")
 
 # CORS Configuration - Java Backend erişimi için
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", 
-                   "http://localhost:8080", "http://127.0.0.1:8080"],
+                   "http://localhost:8080", "http://127.0.0.1:8080",
+                   "http://localhost:8000", "http://127.0.0.1:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -107,6 +119,15 @@ def predict(image_batch, mode):
         # Tahmin yap
         predictions = model.predict(image_batch, verbose=0)
         
+        # Top-3 predictions
+        top_3_indices = np.argsort(predictions[0])[-3:][::-1]
+        top_3_predictions = {}
+        
+        for idx in top_3_indices:
+            class_name = CLASS_LABELS.get(int(idx), f"Class_{idx}")
+            confidence = float(predictions[0][idx])
+            top_3_predictions[class_name] = confidence
+        
         # En yüksek confidence'ı bul
         class_idx = np.argmax(predictions[0])
         confidence = float(predictions[0][class_idx])
@@ -115,34 +136,31 @@ def predict(image_batch, mode):
         # "healthy" kontrolü
         is_healthy = "healthy" in class_name.lower()
         
-        if mode == "identify":
-            # Bitki türünü ayıkla (___'dan önceki kısım)
-            plant_type = class_name.split("___")[0].replace("_(", " (")
-            return {
-                "type": "identify",
-                "plant": plant_type,
-                "plant_id": class_idx,
-                "confidence": round(confidence * 100, 2),
-                "is_healthy": is_healthy
-            }, None
+        # Parse plant and disease
+        parts = class_name.split("___")
+        plant_name = parts[0].replace("_(", " (")
+        disease_name = parts[1] if len(parts) > 1 else "Unknown"
         
-        elif mode == "disease":
-            # Hastalığı ayıkla
-            parts = class_name.split("___")
-            plant = parts[0].replace("_(", " (")
-            disease = parts[1] if len(parts) > 1 else "Unknown"
-            
-            return {
-                "type": "disease",
-                "plant": plant,
-                "disease": disease,
-                "disease_id": class_idx,
-                "confidence": round(confidence * 100, 2),
-                "is_healthy": is_healthy
-            }, None
-        
-        else:
-            return None, "Invalid mode. Use 'identify' or 'disease'"
+        return {
+            "status": "success",
+            "predictions": top_3_predictions,
+            "topPrediction": disease_name,
+            "topConfidence": round(confidence, 4),
+            "plantName": plant_name,
+            "diseaseName": disease_name if not is_healthy else "Healthy",
+            "isHealthy": is_healthy,
+            "recommendedAction": DISEASE_RECOMMENDATIONS.get(
+                disease_name.lower().replace(" ", "_"), 
+                "Continue monitoring the plant. Apply general plant care practices."
+            ),
+            "symptoms": [],
+            "metadata": {
+                "modelVersion": "ResNet101",
+                "imageSize": IMAGE_SIZE,
+                "classIndex": int(class_idx)
+            },
+            "processingTimeMs": 0
+        }, None
             
     except Exception as e:
         return None, str(e)
@@ -155,16 +173,86 @@ async def health_check():
     return {
         "status": "ok",
         "model_loaded": model is not None,
-        "timestamp": pd.Timestamp.now().isoformat()
+        "timestamp": datetime.now().isoformat()
     }
 
 @app.post("/predict")
-async def predict_endpoint(
+async def predict_endpoint(request: Request):
+    """
+    REST API - JSON based prediction request
+    
+    Expected JSON payload:
+    {
+        "imageBase64": "data:image/jpeg;base64,...",
+        "imageType": "jpg",
+        "plantId": 1,
+        "description": "Yellow spots on leaves"
+    }
+    
+    Returns:
+        JSON with predictions matching FastAPIResponse model
+    """
+    try:
+        # Parse JSON request
+        body = await request.json()
+        image_base64 = body.get("imageBase64", "")
+        image_type = body.get("imageType", "jpg")
+        plant_id = body.get("plantId")
+        description = body.get("description", "")
+        
+        # Validate image
+        if not image_base64:
+            return JSONResponse(
+                status_code=400,
+                content={"status": "error", "message": "Missing imageBase64"}
+            )
+        
+        # Extract base64 data from data URI
+        if image_base64.startswith("data:image/"):
+            image_base64 = image_base64.split(",")[1]
+        
+        # Decode base64 to bytes
+        try:
+            image_bytes = base64.b64decode(image_base64)
+        except Exception as e:
+            return JSONResponse(
+                status_code=400,
+                content={"status": "error", "message": f"Invalid base64 encoding: {str(e)}"}
+            )
+        
+        # Preprocess image
+        img_batch, error = preprocess_image(image_bytes)
+        if error:
+            return JSONResponse(
+                status_code=400,
+                content={"status": "error", "message": error}
+            )
+        
+        # Predict
+        result, error = predict(img_batch, "disease")
+        if error:
+            return JSONResponse(
+                status_code=500,
+                content={"status": "error", "message": error}
+            )
+        
+        return JSONResponse(content=result)
+        
+    except Exception as e:
+        print(f"Error: {e}")
+        traceback.print_exc()
+        return JSONResponse(
+            status_code=500,
+            content={"status": "error", "message": str(e)}
+        )
+
+@app.post("/predict-file")
+async def predict_file_endpoint(
     file: UploadFile = File(...),
-    mode: str = Form(...)  # "identify" veya "disease"
+    mode: str = Form(default="disease")
 ):
     """
-    Resim yükle ve tahmin yap
+    File upload based prediction (original endpoint)
     
     Args:
         file: JPG/PNG resim dosyası
@@ -178,7 +266,7 @@ async def predict_endpoint(
         if file.content_type not in ["image/jpeg", "image/png", "image/jpg"]:
             return JSONResponse(
                 status_code=400,
-                content={"error": "Only JPEG/PNG images allowed"}
+                content={"status": "error", "message": "Only JPEG/PNG images allowed"}
             )
         
         # Resim oku
@@ -189,7 +277,7 @@ async def predict_endpoint(
         if error:
             return JSONResponse(
                 status_code=400,
-                content={"error": error}
+                content={"status": "error", "message": error}
             )
         
         # Tahmin yap
@@ -197,7 +285,7 @@ async def predict_endpoint(
         if error:
             return JSONResponse(
                 status_code=500,
-                content={"error": error}
+                content={"status": "error", "message": error}
             )
         
         return JSONResponse(content=result)
@@ -207,19 +295,27 @@ async def predict_endpoint(
         traceback.print_exc()
         return JSONResponse(
             status_code=500,
-            content={"error": str(e)}
+            content={"status": "error", "message": str(e)}
         )
 
-@app.post("/batch-predict")
-async def batch_predict_endpoint(files: list[UploadFile] = File(...), mode: str = Form(...)):
-    """Birden fazla resim tahmin et"""
-    results = []
-    for file in files:
-        image_bytes = await file.read()
-        img_batch, _ = preprocess_image(image_bytes)
-        result, _ = predict(img_batch, mode)
-        results.append(result)
-    return {"predictions": results}
+@app.get("/plants")
+async def get_available_plants():
+    """Available plants list"""
+    plants = sorted(list(set([
+        CLASS_LABELS[idx].split("___")[0] 
+        for idx in CLASS_LABELS.keys()
+    ])))
+    return {"plants": plants}
+
+@app.get("/diseases")
+async def get_available_diseases():
+    """Available diseases list"""
+    diseases = sorted(list(set([
+        CLASS_LABELS[idx].split("___")[1] 
+        for idx in CLASS_LABELS.keys()
+        if "___" in CLASS_LABELS[idx]
+    ])))
+    return {"diseases": diseases}
 
 # ===================== Startup Events =====================
 
@@ -230,8 +326,14 @@ async def startup_event():
     print("🚀 FastAPI Server Starting...")
     print("="*50)
     if load_model_safe():
-        print("✅ Server ready at http://localhost:5000")
-        print("📚 API Docs: http://localhost:5000/docs")
+        print("✅ Server ready at http://localhost:8000")
+        print("📚 API Docs: http://localhost:8000/docs")
+        print("📊 Endpoints:")
+        print("  POST /predict - JSON based prediction")
+        print("  POST /predict-file - File upload prediction")
+        print("  GET /health - Health check")
+        print("  GET /plants - Available plants")
+        print("  GET /diseases - Available diseases")
     else:
         print("⚠️  Server started but model not loaded!")
     print("="*50 + "\n")
@@ -242,6 +344,4 @@ if __name__ == "__main__":
     uvicorn.run(
         app,
         host="0.0.0.0",
-        port=5000,
-        log_level="info"
-    )
+        port=8000,
