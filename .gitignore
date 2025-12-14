@@ -81,3 +81,6 @@ temp/
 *.tmp
 
 DEPLOYMENT.md
+V1__Initial_Schema.sql
+DATABASE_MIGRATION.md
+WEBSOCKET_IMPLEMENTATION.md

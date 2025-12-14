@@ -87,4 +87,19 @@ public class PredictionServiceImpl implements PredictionService {
 
         return savedPrediction;
     }
+
+    /**
+     * Real-time prediction API
+     * Integrates with FastAPI ML server for image analysis
+     */
+    @Override
+    public Prediction predictPlantDisease(Long userId, Long plantId, String imageBase64, String description) {
+        // TODO: Implement FastAPI integration to get disease predictions
+        // 1. Send image to FastAPI /predict endpoint
+        // 2. Parse response for disease probabilities
+        // 3. Create Prediction record with linked PredictionPlant and PredictionDiseases
+        // 4. Save to database and return
+        
+        throw new UnsupportedOperationException("FastAPI integration pending implementation");
+    }
 }

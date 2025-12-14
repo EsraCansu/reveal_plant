@@ -21,4 +21,10 @@ public interface PredictionService {
 
     // get the prediction log with predictionId
     Optional<Prediction> findById(Integer predictionId);
+
+    /**
+     * Real-time prediction API
+     * Processes plant disease prediction with image and sends result via WebSocket
+     */
+    Prediction predictPlantDisease(Long userId, Long plantId, String imageBase64, String description);
 }
