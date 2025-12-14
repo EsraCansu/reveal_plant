@@ -26,7 +26,9 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Statik dosyaları sunmak için
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname)));  // Root klasöründeki tüm dosyaları sun
+app.use('/assets', express.static(path.join(__dirname, 'assets')));  // Assets klasörü
+app.use('/app', express.static(path.join(__dirname, 'app')));  // App klasörü
 
 // ======================== ROUTES ========================
 
