@@ -6,13 +6,20 @@ Resim yükleme ve bitki/hastalık tanımlama
 import os
 import sys
 import traceback
-import cv2
+try:
+    import cv2
+except ImportError:
+    cv2 = None
 import numpy as np
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from tensorflow.keras.models import load_model
-from tensorflow.keras.applications.resnet import preprocess_input
+try:
+    from tensorflow.keras.models import load_model
+    from tensorflow.keras.applications.resnet import preprocess_input
+except ImportError:
+    load_model = None
+    preprocess_input = None
 import uvicorn
 
 # ===================== CONFIG =====================
