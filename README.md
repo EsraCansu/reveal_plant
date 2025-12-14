@@ -2,7 +2,7 @@
 
 ## 🧪 Demo & Test
 
-**Sityi hemen test etmek için:**
+**Siteyi hemen test etmek için:**
 - 👉 `/demo.html` sayfasına gidin
 - 4 demo kullanıcıdan birini seçin (bir tık ile giriş yapın)
 - Önceden yüklü verileri keşfedin:

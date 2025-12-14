@@ -1,1 +1,11 @@
-.vscode
+__pycache__/
+*.pyc
+venv/
+.vscode/
+.idea/
+models/*.keras
+models/*.h5
+.kaggle/
+.DS_Store
+Thumbs.db
+*.log
