@@ -42,6 +42,11 @@ app.get('/demo', (req, res) => {
   res.sendFile(path.join(__dirname, 'demo.html'));
 });
 
+// WebSocket Test Suite
+app.get('/websocket-test.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'WEBSOCKET_TEST.html'));
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
@@ -56,7 +61,17 @@ app.get('/api/health', (req, res) => {
 // Java API proxy'si - Kullanıcı işlemleri
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const response = await axios.post(`${JAVA_API_URL}/api/auth/register`, req.body);
+    const response = await axios.post(`${JAVA_API_URL}/api/users/register`, req.body);
+    res.json(response.data);
+  } catch (error) {
+    console.error('Registration error:', error.message);
+    res.status(error.response?.status || 500).json(error.response?.data || { error: 'Registration failed' });
+  }
+});
+
+app.post('/api/users/register', async (req, res) => {
+  try {
+    const response = await axios.post(`${JAVA_API_URL}/api/users/register`, req.body);
     res.json(response.data);
   } catch (error) {
     console.error('Registration error:', error.message);
