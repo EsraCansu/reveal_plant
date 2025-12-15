@@ -9,7 +9,28 @@ import sys
 import json
 import cv2
 import numpy as np
-from tensorflow import keras
+import shutil
+
+# TensorFlow/Keras import
+try:
+    from keras.models import load_model
+    KERAS_AVAILABLE = True
+except ImportError:
+    try:
+        from tensorflow import keras
+        load_model = keras.models.load_model
+        KERAS_AVAILABLE = True
+    except (ImportError, AttributeError):
+        print("⚠️  TensorFlow/Keras yüklenmedi!")
+        KERAS_AVAILABLE = False
+
+# Kaggle API'si için (optional)
+try:
+    from kaggle.api.kaggle_api_extended import KaggleApi
+    KAGGLE_AVAILABLE = True
+except ImportError:
+    KAGGLE_AVAILABLE = False
+    print("⚠️  Uyarı: Kaggle API yüklenmedi. Modeli manuel olarak indirmelisiniz.")
 
 # Sınıf isimleri
 CLASS_NAMES = [
@@ -28,6 +49,47 @@ CLASS_NAMES = [
     'Tomato___Target_Spot', 'Tomato___Tomato_Yellow_Leaf_Curl_Virus', 'Tomato___Tomato_mosaic_virus',
     'Tomato___healthy'
 ]
+
+def download_model_from_kaggle(dataset_name="muhammetyusufyilmaz/resnet101", download_path="./models"):
+    """Kaggle'dan modeli indir"""
+    if not KAGGLE_AVAILABLE:
+        print(f"\n⚠️  HATA: Kaggle API yüklenmedi!")
+        print(f"   Fix: pip install kaggle")
+        return False
+    
+    # Kaggle credentials kontrolü
+    kaggle_username = os.getenv('KAGGLE_USERNAME')
+    kaggle_key = os.getenv('KAGGLE_KEY')
+    
+    if not kaggle_username or not kaggle_key:
+        print(f"\n⚠️  HATA: Kaggle credentials bulunamadı!")
+        print(f"   KAGGLE_USERNAME ve KAGGLE_KEY environment variables'ini ayarla")
+        print(f"   veya ~/.kaggle/kaggle.json dosyasını oluştur")
+        return False
+    
+    print(f"\n📥 Kaggle'dan model indiriliyor...")
+    print(f"Dataset: {dataset_name}")
+    
+    try:
+        # Kaggle API'sini başlat
+        api = KaggleApi()
+        api.authenticate()
+        print("✓ Kaggle API'ye bağlandı\n")
+        
+        # Model klasörünü oluştur
+        os.makedirs(download_path, exist_ok=True)
+        
+        # Dataset'i indir
+        api.dataset_download_files(dataset_name, path=download_path, unzip=True)
+        print(f"✓ Model indirildi: {download_path}\n")
+        return True
+        
+    except Exception as e:
+        print(f"✗ Kaggle'dan indirme başarısız: {e}")
+        print("💡 İpucu:")
+        print(f"  1. Kaggle API key'ini kontrol et: ~/.kaggle/kaggle.json")
+        print(f"  2. Dataset adını kontrol et: {dataset_name}")
+        return False
 
 def find_model_file(search_dir):
     """Model dosyasını bul"""
@@ -129,29 +191,79 @@ def predict_batch(model, image_folder, output_file='results/predictions.json'):
 def main():
     print("\n🌱 REVEAL PLANT - Bitki Hastalığı Tespiti\n")
     
-    # Model yükle
-    model_path = find_model_file("./models")
-    print(f"\nModel yükleniyor...")
-    model = keras.models.load_model(model_path)
-    print(f"✓ Model yüklendi: {model.output_shape[-1]} sınıf\n")
-    
-    # Tahmin yap
-    test_folder = "./test_images"
-    if not os.path.exists(test_folder):
-        print(f"✗ Klasör bulunamadı: {test_folder}")
+    if not KERAS_AVAILABLE:
+        print("✗ HATA: TensorFlow/Keras yüklenmedi!")
+        print("Kurmak için: pip install tensorflow")
         sys.exit(1)
     
-    results = predict_batch(model, test_folder)
+    # Model klasörü
+    model_dir = "./models"
+    model_needs_cleanup = False
     
-    if results:
-        print("✅ Tahminler tamamlandı!")
-    else:
-        print("⚠️  Hiç tahmin yapılamadı!")
-        sys.exit(1)
+    try:
+        # Model klasörü kontrol et
+        if not os.path.exists(model_dir):
+            print(f"📂 {model_dir} klasörü bulunamadı")
+            download_model_from_kaggle()
+            model_needs_cleanup = True
+        else:
+            # Klasörde model var mı kontrol et
+            model_files = [f for f in os.listdir(model_dir) 
+                          if f.endswith(('.keras', '.h5', '.hdf5'))]
+            if not model_files:
+                print(f"📦 {model_dir} klasörü boş, model indiriliyor...")
+                download_model_from_kaggle()
+                model_needs_cleanup = True
+        
+        # Model yükle
+        try:
+            model_path = find_model_file(model_dir)
+            print(f"\nModel yükleniyor...")
+            model = load_model(model_path)
+            print(f"✓ Model yüklendi: {model.output_shape[-1]} sınıf\n")
+        except FileNotFoundError as e:
+            print(f"\n✗ {e}")
+            print("💡 Kaggle'dan model indirmek için: pip install kaggle")
+            sys.exit(1)
+        
+        # Tahmin yap
+        test_folder = "./test_images"
+        if not os.path.exists(test_folder):
+            print(f"✗ Klasör bulunamadı: {test_folder}")
+            sys.exit(1)
+        
+        results = predict_batch(model, test_folder)
+        
+        if results:
+            print("✅ Tahminler tamamlandı!")
+        else:
+            print("⚠️  Hiç tahmin yapılamadı!")
+            sys.exit(1)
+    
+    finally:
+        # Modeli sil (cleanup)
+        if model_needs_cleanup and os.path.exists(model_dir):
+            try:
+                shutil.rmtree(model_dir)
+                print(f"\n🗑️  Model klasörü silindi: {model_dir}")
+            except Exception as e:
+                print(f"\n⚠️  Model klasörü silinemedi: {e}")
 
 if __name__ == "__main__":
+    # Command line arguments
+    download_only = '--download-only' in sys.argv
+    
     try:
-        main()
+        if download_only:
+            print("\n📥 Model indirme modu...")
+            if download_model_from_kaggle():
+                print("✅ Model başarıyla indirildi")
+                sys.exit(0)
+            else:
+                print("❌ Model indirme başarısız")
+                sys.exit(1)
+        else:
+            main()
     except Exception as e:
         print(f"\n✗ Hata: {e}")
         import traceback
