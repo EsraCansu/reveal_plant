@@ -1,0 +1,9 @@
+[
+  {
+    "image": "test_image.jpg",
+    "success": false,
+    "error": "Notebook execution failed - model could not be loaded locally",
+    "note": "Bu lokal fallback sonucudur. Gerçek tahmin için Kaggle'da çalıştırılmalı.",
+    "fallback": true
+  }
+]

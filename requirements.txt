@@ -1,0 +1,4 @@
+tensorflow>=2.10.0
+kaggle>=1.5.12
+opencv-python>=4.8.0
+numpy>=1.24.0

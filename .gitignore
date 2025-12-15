@@ -1,3 +1,16 @@
+<<<<<<< HEAD
+__pycache__/
+*.pyc
+venv/
+.vscode/
+.idea/
+models/*.keras
+models/*.h5
+.kaggle/
+.DS_Store
+Thumbs.db
+*.log
+=======
 # IDE Settings
 .vscode
 .idea
@@ -85,3 +98,4 @@ V1__Initial_Schema.sql
 DATABASE_MIGRATION.md
 WEBSOCKET_IMPLEMENTATION.md
 FASTAPI_INTEGRATION.md
+>>>>>>> 1c12eb730f6b2c81064260ff51faab5363c8cbaa
