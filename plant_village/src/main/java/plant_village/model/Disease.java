@@ -1,85 +1,43 @@
 package plant_village.model;
-import plant_village.model.*;
 
 import jakarta.persistence.*;
-import java.util.HashSet;
-import java.util.Set;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "Disease")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Disease {
-
-    // Attributs
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "disease_id", unique = true, nullable = false)
-    private Integer diseaseId;
-
-    @Column(name = "symptom_description", length = 50, nullable = true)
-    private String symptomDescription; 
-
-    @Column(columnDefinition = "NTEXT", nullable = true)
-    private String name; 
-
-    @Column(columnDefinition = "NTEXT", nullable = true)
-    private String cause; 
-
-    @Column(nullable = true)
-    private Float confidence; 
-
-    @Column(name = "example_image_url", columnDefinition = "VARCHAR(MAX)", nullable = true)
-    private String exampleImageUrl; 
-
-    @Column(columnDefinition = "NTEXT", nullable = true)
-    private String treatment; 
-
-    //one to many between disease and plant .
+    @Column(name = "disease_id")
+    private Integer id;
+    
+    @Column(name = "disease_name", length = 50)
+    private String diseaseName;
+    
+    @Column(name = "symptom_description")
+    private String symptomDescription;
+    
+    @Column(name = "cause")
+    private String cause;
+    
+    @Column(name = "confidence")
+    private Integer confidence;
+    
+    @Column(name = "example_image_url")
+    private String exampleImageUrl;
+    
+    @Column(name = "treatment")
+    private String treatment;
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "plant_id", nullable = false)
     private Plant plant;
-
-    // Disease -> PredictionDisease (disease_id's foreign key in PredictionDisease table)
-    @OneToMany(mappedBy = "disease", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<PredictionDisease> predictionDiseases = new HashSet<>();
-
-
-    // Constructors
-    public Disease() {
-    }
-    
-    public Disease(String name, String cause, String treatment, Plant plant) {
-        this.name = name;
-        this.cause = cause;
-        this.treatment = treatment;
-        this.plant = plant;
-    }
-    
-    // Getters and Setters
-    public Integer getDiseaseId() {
-        return diseaseId;
-    }
-    
-    // Getter/Setter methods
-
-    public Plant getPlant() {
-        return plant;
-    }
-
-    public void setPlant(Plant plant) {
-        this.plant = plant;
-    }
-
-    public Set<PredictionDisease> getPredictionDiseases() {
-        return predictionDiseases;
-    }
-
-    public void setPredictionDiseases(Set<PredictionDisease> predictionDiseases) {
-        this.predictionDiseases = predictionDiseases;
-    }
-
-    // Method toString()
-    @Override
-    public String toString() {
-        return "Disease{id=" + diseaseId + ", name='" + name + "'}";
-    }
 }

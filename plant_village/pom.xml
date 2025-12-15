@@ -47,6 +47,13 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- H2 In-Memory Database (for testing/docker profile) -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- Flyway Database Migration -->
         <dependency>
             <groupId>org.flywaydb</groupId>

@@ -14,7 +14,4 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     
     // register name control at registering moment
     boolean existsByUserName(String userName);
-    
-    // findById(Integer) 
-    Optional<User> findByUserId(Integer userId);
 }

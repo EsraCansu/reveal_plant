@@ -8,8 +8,6 @@ import java.util.List;
 @Repository
 public interface PredictionPlantRepository extends JpaRepository<PredictionPlant, Integer> {
     
-    // Result display
-    // getting plant relations some spesific plant
-    List<PredictionPlant> findByPrediction_PredictionId(Integer predictionId);
+    // Result display - get plant relations for specific prediction
+    List<PredictionPlant> findByPrediction_Id(Integer predictionId);
 }
-

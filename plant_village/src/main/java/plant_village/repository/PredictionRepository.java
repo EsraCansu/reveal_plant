@@ -9,12 +9,12 @@ import java.util.Optional;
 @Repository
 public interface PredictionRepository extends JpaRepository<Prediction, Integer> {
 
-    // user prediction
-    // The newest predictions will be listed at the top
-    List<Prediction> findByUser_UserIdOrderByCreatedAtDesc(Integer userId);
+    // user prediction - newest predictions first
+    List<Prediction> findByUser_IdOrderByCreatedAtDesc(Integer userId);
 
-    Optional<Prediction> findByPredictionId(Integer predictionId);
-    
+    // findById is already provided by JpaRepository<Prediction, Integer>
+    // Optional<Prediction> findById(Long id); // inherited
+
     // admin control
     List<Prediction> findByIsValid(Boolean isValid);
 }

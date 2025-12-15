@@ -34,12 +34,15 @@ public class UserServiceImpl implements UserService { // interface
         }
 
         user.setCreatedAt(LocalDateTime.now());
+        user.setLastLogin(LocalDateTime.now());
         if (user.getRole() == null || user.getRole().isEmpty()) {
             user.setRole("USER");
         }
-        String plainPassword = user.getPassword();
+        
+        // Hash password from frontend (or passwordHash if already sent)
+        String plainPassword = user.getPasswordHash();
         String hashedPassword = passwordEncoder.encode(plainPassword);
-        user.setPassword(hashedPassword);
+        user.setPasswordHash(hashedPassword);
         
         return userRepository.save(user);
     }
@@ -65,13 +68,13 @@ public class UserServiceImpl implements UserService { // interface
 
     public User updateUser(User user) {
         // check the user exist
-        if (!findById(user.getUserId()).isPresent()) {
+        if (!findById(user.getId()).isPresent()) {
             throw new ResourceNotFoundException("Kullanıcı bulunamadı.");
         }
-        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-            if (!user.getPassword().startsWith("$2a$")) {
-                String hashedPassword = passwordEncoder.encode(user.getPassword());
-                user.setPassword(hashedPassword);
+        if (user.getPasswordHash() != null && !user.getPasswordHash().isEmpty()) {
+            if (!user.getPasswordHash().startsWith("$2a$")) {
+                String hashedPassword = passwordEncoder.encode(user.getPasswordHash());
+                user.setPasswordHash(hashedPassword);
             }
         }
         return userRepository.save(user);
