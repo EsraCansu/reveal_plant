@@ -1,11 +1,7 @@
 # ========================
 # Frontend (Node.js)
 # ========================
-<<<<<<< HEAD
 FROM node:18-alpine AS frontend
-=======
-FROM node:18-alpine as frontend
->>>>>>> 1bcfebd949ca5169c9d152616eca3d47c0bb7e14
 
 WORKDIR /app
 
@@ -29,14 +25,7 @@ CMD ["npm", "start"]
 # ========================
 # CNN Model Server (Python)
 # ========================
-<<<<<<< HEAD
 FROM python:3.11-slim AS fastapi
-=======
-FROM python:3.11-slim as fastapi
->>>>>>> 1bcfebd949ca5169c9d152616eca3d47c0bb7e14
-
-WORKDIR /app/cnn_model
-
 # Sistem bağımlılıkları
 RUN apt-get update && apt-get install -y \
     libsm6 \
