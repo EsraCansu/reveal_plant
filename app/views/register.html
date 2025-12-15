@@ -134,18 +134,64 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.getElementById('registerForm').addEventListener('submit', function(e) {
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            const fullname = document.getElementById('fullname').value.trim();
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            // Validation
+            if (!fullname || !email || !password) {
+                alert('Please fill all required fields!');
+                return;
+            }
             
             if (password !== confirmPassword) {
                 alert('Passwords do not match!');
                 return;
             }
             
-            alert('Registration successful! Please verify your email.');
-            // window.location.href = 'login.html';
+            if (password.length < 8) {
+                alert('Password must be at least 8 characters!');
+                return;
+            }
+            
+            try {
+                // Send to backend
+                const response = await fetch('/api/users/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userName: fullname,
+                        email: email,
+                        passwordHash: password,
+                        role: 'USER'
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    alert('Registration successful! Redirecting to login...');
+                    // Save user to localStorage temporarily
+                    localStorage.setItem('user_logged_in', JSON.stringify({
+                        userId: data.userId || 1,
+                        userName: fullname,
+                        email: email,
+                        role: 'USER'
+                    }));
+                    window.location.href = 'login.html';
+                } else {
+                    const error = await response.json();
+                    alert('Registration failed: ' + (error.message || error.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                alert('Registration failed: ' + error.message);
+            }
         });
     </script>
 </body>
