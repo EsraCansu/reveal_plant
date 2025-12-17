@@ -1,0 +1,17 @@
+/* Home Page Styles */
+
+.ant-layout-content {
+  background: #ffffff;
+}
+
+h1 {
+  color: #1890ff;
+  font-size: 32px;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  h1 {
+    font-size: 24px;
+  }
+}

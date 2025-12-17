@@ -52,6 +52,13 @@ wheels/
 .installed.cfg
 *.egg
 
+# Kaggle staff
+.kaggle_notebook/
+.github/workflows/kaggle_inference.yml
+run_kaggle.py
+predict_script.py
+
+
 # FastAPI
 .env
 .env.local

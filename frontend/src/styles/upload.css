@@ -1,0 +1,20 @@
+/* Upload Component Styles */
+
+.upload-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.preview-container {
+  padding: 20px;
+  background: #fafafa;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 400px;
+  border-radius: 4px;
+  object-fit: contain;
+}
