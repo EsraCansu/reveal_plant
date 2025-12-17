@@ -26,5 +26,5 @@ public interface PredictionService {
      * Real-time prediction API
      * Processes plant disease prediction with image and sends result via WebSocket
      */
-    Prediction predictPlantDisease(Long userId, Long plantId, String imageBase64, String description);
+    Prediction predictPlantDisease(Integer userId, Integer plantId, String imageBase64, String description);
 }

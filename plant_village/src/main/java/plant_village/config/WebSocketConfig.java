@@ -1,7 +1,10 @@
 package plant_village.config;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
@@ -20,6 +23,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
  */
 @Configuration
 @EnableWebSocketMessageBroker
+@ConditionalOnProperty(name = "app.websocket.enabled", havingValue = "true", matchIfMissing = true)
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     /**
@@ -40,6 +44,18 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
             .withSockJS()                          // Enable SockJS fallback for older browsers
             .setHeartbeatTime(25000)              // Keep-alive heartbeat every 25 seconds
             .setSessionCookieNeeded(true);         // Use cookies for session management
+    }
+
+    /**
+     * Task scheduler for WebSocket heartbeat
+     */
+    @Bean
+    public ThreadPoolTaskScheduler taskScheduler() {
+        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(1);
+        scheduler.setThreadNamePrefix("ws-scheduler-");
+        scheduler.initialize();
+        return scheduler;
     }
 
     /**

@@ -1,74 +1,30 @@
+version: '3.8'
+
 services:
-  # ========================
-  # Frontend Service (Node.js)
-  # ========================
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: frontend
-    container_name: reveal_plant_frontend
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
     ports:
-      - "3000:3000"
+      - "1433:1433"
     environment:
-      NODE_ENV: development
-      PORT: 3000
-      JAVA_API_URL: http://java_backend:8080
-      FASTAPI_URL: http://fastapi_server:8000
-    depends_on:
-      - fastapi_server
-    restart: unless-stopped
+      ACCEPT_EULA: Y
+      MSSQL_SA_PASSWORD: "Sql_Password@2025"
     networks:
-      - reveal_plant_network
-    volumes:
-      - ./:/app
-      - /app/node_modules
+      - plant-network
 
-  # ========================
-  # Python FastAPI ML Server
-  # ========================
-  fastapi_server:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: fastapi
-    container_name: reveal_plant_fastapi
-    ports:
-      - "8000:8000"
-    environment:
-      PYTHONUNBUFFERED: 1
-    restart: unless-stopped
-    networks:
-      - reveal_plant_network
-    volumes:
-      - ./cnn_model:/app/cnn_model
-
-  # ========================
-  # Java Spring Boot Backend
-  # ========================
-  java_backend:
-    build:
-      context: ./plant_village
-      dockerfile: Dockerfile.simple
-    container_name: reveal_plant_backend
+  backend:
+    image: plant-village-backend:latest
     ports:
       - "8080:8080"
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
     depends_on:
-      - fastapi_server
-    restart: unless-stopped
+      - sqlserver
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:sqlserver://sqlserver:1433;databaseName=plant_village;encrypt=false;trustServerCertificate=true
+      SPRING_DATASOURCE_USERNAME: sa
+      SPRING_DATASOURCE_PASSWORD: "Sql_Password@2025"
+      SPRING_PROFILES_ACTIVE: docker
     networks:
-      - reveal_plant_network
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
-      interval: 30s
-      timeout: 15s
-      retries: 5
-      start_period: 90s
+      - plant-network
 
 networks:
-  reveal_plant_network:
+  plant-network:
     driver: bridge

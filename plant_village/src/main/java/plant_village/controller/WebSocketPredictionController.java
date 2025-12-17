@@ -40,7 +40,7 @@ public class WebSocketPredictionController {
     @MessageMapping("/predict/{userId}")
     public void processPrediction(
             @Payload PredictionRequest request,
-            @DestinationVariable Long userId) {
+            @DestinationVariable Integer userId) {
         
         try {
             log.info("Received prediction request from user: {}, plant: {}", userId, request.getPlantId());
@@ -60,19 +60,19 @@ public class WebSocketPredictionController {
             // Call prediction service
             Prediction prediction = predictionService.predictPlantDisease(
                     userId,
-                    Long.valueOf(request.getPlantId()),
+                    request.getPlantId(),
                     request.getImageBase64(),
                     request.getDescription()
             );
 
             // Send status update - COMPLETE
-            sendStatusUpdate(userId, Long.valueOf(prediction.getId()), "COMPLETE", 100, "Prediction completed successfully");
+            sendStatusUpdate(userId, prediction.getId(), "COMPLETE", 100, "Prediction completed successfully");
 
             // Prepare response - TODO: Fix null pointer exceptions when relations are null
             PredictionResponse response = PredictionResponse.builder()
-                    .predictionId(Long.valueOf(prediction.getId()))
+                    .predictionId(prediction.getId())
                     .userId(userId)
-                    .plantId(Long.valueOf(request.getPlantId()))
+                    .plantId(request.getPlantId())
                     .plantName("Unknown")
                     .diseaseName("Unknown")
                     .confidence(prediction.getConfidence().doubleValue())
@@ -103,7 +103,7 @@ public class WebSocketPredictionController {
     /**
      * Send status update to specific user
      */
-    private void sendStatusUpdate(Long userId, Long predictionId, String status, 
+    private void sendStatusUpdate(Integer userId, Integer predictionId, String status, 
                                    Integer progress, String message) {
         PredictionStatusUpdate update = PredictionStatusUpdate.builder()
                 .predictionId(predictionId)
@@ -123,7 +123,7 @@ public class WebSocketPredictionController {
     /**
      * Send error message to specific user
      */
-    private void sendError(Long userId, String errorCode, String errorMessage) {
+    private void sendError(Integer userId, String errorCode, String errorMessage) {
         WebSocketError error = WebSocketError.builder()
                 .errorCode(errorCode)
                 .message(errorMessage)

@@ -32,7 +32,7 @@ public class FastAPIClientService {
      * @param description User description of plant/symptoms
      * @return FastAPI prediction response with disease probabilities
      */
-    public FastAPIResponse predictDisease(Long plantId, String imageBase64, String description) {
+    public FastAPIResponse predictDisease(Integer plantId, String imageBase64, String description) {
         try {
             log.info("Sending prediction request to FastAPI for plant: {}", plantId);
 

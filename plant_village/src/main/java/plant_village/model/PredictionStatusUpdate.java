@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PredictionStatusUpdate {
-    private Long predictionId;
+    private Integer predictionId;
     private String status;  // UPLOADED, PROCESSING, ANALYZING, COMPLETE, ERROR
     private Integer progressPercentage;
     private String message;

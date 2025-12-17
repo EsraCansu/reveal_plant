@@ -18,7 +18,7 @@ public class FastAPIPredictionRequest {
     private String imageType;
     
     @JsonProperty("plant_id")
-    private Long plantId;
+    private Integer plantId;
     
     private String description;
 }

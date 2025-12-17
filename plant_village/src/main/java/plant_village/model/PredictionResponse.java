@@ -12,9 +12,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PredictionResponse {
-    private Long predictionId;
-    private Long userId;
-    private Long plantId;
+    private Integer predictionId;
+    private Integer userId;
+    private Integer plantId;
     private String plantName;
     private String diseaseName;
     private Double confidence;

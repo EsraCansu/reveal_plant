@@ -47,10 +47,11 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- H2 In-Memory Database (for testing/docker profile) -->
+        <!-- H2 In-Memory Database (for testing/local profile) -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
+            <version>2.2.224</version>
             <scope>runtime</scope>
         </dependency>
 

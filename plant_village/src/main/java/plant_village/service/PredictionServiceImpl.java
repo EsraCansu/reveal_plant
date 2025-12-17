@@ -106,7 +106,7 @@ public class PredictionServiceImpl implements PredictionService {
      * TODO: Implement full prediction logic
      */
     @Override
-    public Prediction predictPlantDisease(Long userId, Long plantId, String imageBase64, String description) {
+    public Prediction predictPlantDisease(Integer userId, Integer plantId, String imageBase64, String description) {
         // TODO: Implement full prediction flow
         // For now, return stub implementation to allow compilation
         Prediction prediction = new Prediction();
