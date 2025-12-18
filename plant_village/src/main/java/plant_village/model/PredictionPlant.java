@@ -21,9 +21,11 @@ public class PredictionPlant {
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "prediction_id", nullable = false)
-    private Prediction prediction;
+    private Prediction prediction; // main processing record 
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "plant_id", nullable = false)
-    private Plant plant;
+    private Plant plant; // connection with Plant Table
+
+
 }

@@ -1,19 +1,20 @@
-package plant_village.service.impl;
+package plant_village.service;
 
 import plant_village.model.User;
 import plant_village.repository.UserRepository;
-import plant_village.service.UserService;
 import plant_village.exception.ValidationException;
 import plant_village.exception.ResourceNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-@Service // it provide managing Spring this class
-public class UserServiceImpl implements UserService { // interface
+@Service
+public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
@@ -21,28 +22,33 @@ public class UserServiceImpl implements UserService { // interface
     @Autowired
     public UserServiceImpl(UserRepository userRepository) {
         this.userRepository = userRepository;
-        this.passwordEncoder = new BCryptPasswordEncoder(); // default strength 10
+        this.passwordEncoder = new BCryptPasswordEncoder();
     }
 
     @Override
+    @Transactional
     public User registerNewUser(User user) {
-        if (checkUsernameExists(user.getUserName())) {
+        // 1. Kullanıcı adı kontrolü (UserRepository ile koordine edildi)
+        if (userRepository.findByUserName(user.getUserName()).isPresent()) {
             throw new ValidationException("Bu kullanıcı adı zaten kullanılıyor.");
         }
-        if (findByEmail(user.getEmail()).isPresent()) {
+
+        // 2. Email kontrolü
+        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
             throw new ValidationException("Bu e-posta adresi zaten kayıtlı.");
         }
 
+        // 3. Varsayılan değerler
         user.setCreatedAt(LocalDateTime.now());
         user.setLastLogin(LocalDateTime.now());
         if (user.getRole() == null || user.getRole().isEmpty()) {
             user.setRole("USER");
         }
         
-        // Hash password from frontend (or passwordHash if already sent)
-        String plainPassword = user.getPasswordHash();
-        String hashedPassword = passwordEncoder.encode(plainPassword);
-        user.setPasswordHash(hashedPassword);
+        // 4. Şifreleme (Güvenlik Koordinasyonu)
+        if (user.getPasswordHash() != null) {
+            user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
+        }
         
         return userRepository.save(user);
     }
@@ -59,29 +65,35 @@ public class UserServiceImpl implements UserService { // interface
     
     @Override
     public boolean checkUsernameExists(String userName) {
-        return userRepository.existsByUserName(userName);
+        // existsByUserName yerine findByUserName üzerinden kontrol daha güvenlidir
+        return userRepository.findByUserName(userName).isPresent();
     }
     
     public boolean verifyPassword(String rawPassword, String encodedPassword) {
         return passwordEncoder.matches(rawPassword, encodedPassword);
     }
 
+    @Transactional
     public User updateUser(User user) {
-        // check the user exist
-        if (!findById(user.getId()).isPresent()) {
-            throw new ResourceNotFoundException("Kullanıcı bulunamadı.");
-        }
+        User existingUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı."));
+
+        // Sadece şifre değişmişse tekrar hash'le
         if (user.getPasswordHash() != null && !user.getPasswordHash().isEmpty()) {
-            if (!user.getPasswordHash().startsWith("$2a$")) {
-                String hashedPassword = passwordEncoder.encode(user.getPasswordHash());
-                user.setPasswordHash(hashedPassword);
+            if (!user.getPasswordHash().startsWith("$2a$")) { // BCrypt kontrolü
+                user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
             }
         }
+        
+        // Diğer alanları güncelle (Koordinasyon: Mevcut tarihi koru vb.)
+        user.setCreatedAt(existingUser.getCreatedAt()); 
+        
         return userRepository.save(user);
     }
 
+    @Transactional
     public void deleteUser(Integer userId) {
-        if (!findById(userId).isPresent()) {
+        if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("Kullanıcı bulunamadı.");
         }
         userRepository.deleteById(userId);

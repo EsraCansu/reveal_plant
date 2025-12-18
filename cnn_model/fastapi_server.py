@@ -26,7 +26,7 @@ except ImportError:
 import uvicorn
 
 # ===================== CONFIG =====================
-MODEL_PATH = r'PlantVillage_Resnet101_FineTuning.keras'
+MODEL_PATH = r'C:\Users\esracansu\OneDrive\Belgeler\GitHub\reveal_plant\ml-api\model\PlantVillage_Resnet101_FineTuning.keras'
 IMAGE_SIZE = 224
 
 # Class labels for PlantVillage dataset
@@ -192,10 +192,18 @@ async def predict_endpoint(request: Request):
     Returns:
         JSON with predictions matching FastAPIResponse model
     """
+# cnn_model/fastapi_server.py (Düzeltilmiş)
+
+@app.post("/predict")
+async def predict_endpoint(request: Request):
+    
     try:
         # Parse JSON request
         body = await request.json()
-        image_base64 = body.get("imageBase64", "")
+        
+        # ⬅️ Kritik Düzeltme: Hem camelCase hem de snake_case'i kontrol et.
+        image_base64 = body.get("imageBase64") or body.get("image_base64", "")
+        
         image_type = body.get("imageType", "jpg")
         plant_id = body.get("plantId")
         description = body.get("description", "")
@@ -204,8 +212,9 @@ async def predict_endpoint(request: Request):
         if not image_base64:
             return JSONResponse(
                 status_code=400,
-                content={"status": "error", "message": "Missing imageBase64"}
+                content={"status": "error", "message": "Missing imageBase64 or image_base64"} # Hata mesajını da güncelle
             )
+        
         
         # Extract base64 data from data URI
         if image_base64.startswith("data:image/"):

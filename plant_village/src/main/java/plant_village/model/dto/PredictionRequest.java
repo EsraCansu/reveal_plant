@@ -1,4 +1,4 @@
-package plant_village.model;
+package plant_village.model.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

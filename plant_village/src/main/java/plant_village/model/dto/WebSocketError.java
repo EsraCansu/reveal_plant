@@ -1,5 +1,6 @@
-package plant_village.model;
+package plant_village.model.dto;
 
+import plant_village.model.dto.PredictionRequest;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
