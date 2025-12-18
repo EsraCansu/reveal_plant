@@ -15,4 +15,5 @@ public class DiseasePrediction {
     
     @JsonProperty("confidence_score")
     private Double confidenceScore;
+    
 }
