@@ -48,7 +48,7 @@ public class WebSocketPredictionController {
                     request.getDescription()
             );
 
-            sendStatusUpdate(userId, Long.valueOf(prediction.getId()), "COMPLETE", 100, "Prediction completed successfully");
+            sendStatusUpdate(userId, prediction.getId(), "COMPLETE", 100, "Prediction completed successfully");
 
             PredictionResponse response = PredictionResponse.builder()
                     .predictionId(prediction.getId())
@@ -76,7 +76,7 @@ public class WebSocketPredictionController {
         }
     }
 
-    private void sendStatusUpdate(Long userId, Long predictionId, String status, 
+    private void sendStatusUpdate(Integer userId, Integer predictionId, String status, 
                                    Integer progress, String message) {
         PredictionStatusUpdate update = PredictionStatusUpdate.builder()
                 .predictionId(predictionId)
@@ -87,13 +87,13 @@ public class WebSocketPredictionController {
                 .build();
 
         messagingTemplate.convertAndSendToUser(
-                userId.toString(),
+            userId.toString(),
                 "/queue/status",
                 update
         );
     }
 
-    private void sendError(Long userId, String errorCode, String errorMessage) {
+        private void sendError(Integer userId, String errorCode, String errorMessage) {
         WebSocketError error = WebSocketError.builder()
                 .errorCode(errorCode)
                 .message(errorMessage)
@@ -101,7 +101,7 @@ public class WebSocketPredictionController {
                 .build();
 
         messagingTemplate.convertAndSendToUser(
-                userId.toString(),
+            userId.toString(),
                 "/queue/errors",
                 error
         );

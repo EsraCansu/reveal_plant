@@ -61,7 +61,7 @@ public class PredictionServiceImpl implements PredictionService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı"));
 
-        Long fastApiPlantId = (plantId != null) ? plantId.longValue() : 0L;
+        Integer fastApiPlantId = plantId != null ? plantId : 0;
         FastAPIResponse apiResponse = fastAPIClientService.predictDisease(fastApiPlantId, imageBase64, description);
 
         // Sonra Builder içinde kullanıyoruz
