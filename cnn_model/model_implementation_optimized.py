@@ -7,7 +7,7 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.applications.resnet import preprocess_input  # ÖNEMLİ!
 
 # Dosya yolları
-MODEL_PATH = r'C:\Users\esracansu\OneDrive\Masaüstü\transfer_function\cnn\transfer_function\PlantVillage_Resnet101_FineTuning.keras'
+MODEL_PATH = r'C:\Users\esracansu\OneDrive\Belgeler\GitHub\reveal_plant\ml-api\model\PlantVillage_Resnet101_FineTuning.keras'
 IMAGE_PATH = r'C:\Users\esracansu\OneDrive\Masaüstü\transfer_function\uzum.jpg'
 
 def load_model_checked(model_path):

@@ -1,7 +1,5 @@
 package plant_village.repository;
 import plant_village.model.*;
-
-import plant_village.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;
@@ -14,4 +12,6 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     
     // register name control at registering moment
     boolean existsByUserName(String userName);
+
+    Optional<User> findByUserName(String userName);
 }

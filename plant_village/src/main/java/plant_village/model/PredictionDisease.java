@@ -21,12 +21,12 @@ public class PredictionDisease {
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "prediction_id", nullable = false)
-    private Prediction prediction;
+    private Prediction prediction; // connection to Prediction Table 
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "disease_id", nullable = false)
-    private Disease disease;
+    private Disease disease;  // for Disease information in detail
     
     @Column(name = "is_healthy")
-    private Boolean isHealthy;
+    private Boolean isHealthy; // to indicate if the plant is healthy or not
 }

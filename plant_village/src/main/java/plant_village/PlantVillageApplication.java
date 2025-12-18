@@ -3,7 +3,6 @@ package plant_village;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * Reveal Plant - Spring Boot Application
@@ -22,7 +21,6 @@ import lombok.extern.slf4j.Slf4j;
  *                            → FastAPI ML Server
  *                            → SQL Server Database
  */
-@Slf4j
 @SpringBootApplication
 @ComponentScan(basePackages = {
     "plant_village.config",
@@ -36,15 +34,14 @@ public class PlantVillageApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(PlantVillageApplication.class, args);
-        
-        log.info("╔═══════════════════════════════════════════════════════════╗");
-        log.info("║       🌿 REVEAL PLANT - SPRING BOOT BACKEND START 🌿       ║");
-        log.info("╠═══════════════════════════════════════════════════════════╣");
-        log.info("║  ✅ Application started successfully                       ║");
-        log.info("║  📡 REST API: http://localhost:8080                        ║");
-        log.info("║  🔌 WebSocket: ws://localhost:8080/ws/predictions          ║");
-        log.info("║  🗄️  Database: MS SQL Server (plant_village)              ║");
-        log.info("║  🔬 ML Server: http://localhost:8000 (FastAPI)             ║");
-        log.info("╚═══════════════════════════════════════════════════════════╝");
+        System.out.println("╔═══════════════════════════════════════════════════════════╗");
+        System.out.println("║       🌿 REVEAL PLANT - SPRING BOOT BACKEND START 🌿       ║");
+        System.out.println("╠═══════════════════════════════════════════════════════════╣");
+        System.out.println("║  ✅ Application started successfully                       ║");
+        System.out.println("║  📡 REST API: http://localhost:8080                        ║");
+        System.out.println("║  🔌 WebSocket: ws://localhost:8080/ws/predictions          ║");
+        System.out.println("║  🗄️  Database: MS SQL Server (plant_village)              ║");
+        System.out.println("║  🔬 ML Server: http://localhost:8000 (FastAPI)             ║");
+        System.out.println("╚═══════════════════════════════════════════════════════════╝");
     }
 }

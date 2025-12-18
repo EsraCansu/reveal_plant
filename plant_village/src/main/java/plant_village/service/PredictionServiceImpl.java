@@ -1,21 +1,18 @@
-package plant_village.service.impl;
+package plant_village.service;
 
 import plant_village.model.*;
 import plant_village.model.dto.FastAPIResponse;
-import plant_village.model.dto.DiseasePrediction;
 import plant_village.repository.*;
-import plant_village.service.PredictionService;
-import plant_village.service.FastAPIClientService;
+import plant_village.service.*;
 import plant_village.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -49,15 +46,64 @@ public class PredictionServiceImpl implements PredictionService {
         this.userRepository = userRepository;
     }
 
+    // EKSİK OLAN METOT EKLENDİ (Hata 1 Çözümü)
     @Override
+    @Transactional
     public Prediction createPrediction(Prediction prediction) {
         prediction.setCreatedAt(LocalDateTime.now());
-        prediction.setIsValid(true); // new predictions may change for default prediction
-        
-        // **NOT:** Burası ML model çıktısını işleme, Plant/Disease ilişkilerini kurma 
-        // mantığının yazılacağı yerdir.
-        
+        prediction.setIsValid(true);
         return predictionRepository.save(prediction);
+    }
+
+    @Override
+    @Transactional
+    public Prediction predictPlantDisease(Integer userId, Integer plantId, String imageBase64, String description) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı"));
+
+        Long fastApiPlantId = (plantId != null) ? plantId.longValue() : 0L;
+        FastAPIResponse apiResponse = fastAPIClientService.predictDisease(fastApiPlantId, imageBase64, description);
+
+        // Sonra Builder içinde kullanıyoruz
+        Prediction prediction = Prediction.builder()
+                .user(user)
+                .confidence(apiResponse.getTopConfidence()) // Artık tertemiz bir Integer
+                .createdAt(LocalDateTime.now())
+                .predictionType(plantId == null ? "PLANT_PREDICTION" : "DISEASE_PREDICTION")
+                .isValid(true)
+                .uploadedImageUrl("uploads/" + LocalDateTime.now().getNano() + ".jpg")
+                .build();
+
+        Prediction savedPrediction = predictionRepository.save(prediction);
+
+        boolean isPlantRequest = (plantId == null); 
+        boolean isHealthy = apiResponse.getTopPrediction().toLowerCase().contains("healthy");
+
+        if (isPlantRequest || isHealthy) {
+            plantRepository.findByPlantName(apiResponse.getTopPrediction())
+                .ifPresent(plant -> {
+                    PredictionPlant pp = PredictionPlant.builder()
+                            .prediction(savedPrediction)
+                            .plant(plant)
+                            .build();
+                    predictionPlantRepository.save(pp);
+                });
+            log.info("Sonuç Sağlıklı veya Bitki Tahmini: PredictionPlant tablosuna kaydedildi.");
+        } 
+        else {
+            diseaseRepository.findByNameIgnoreCase(apiResponse.getTopPrediction())
+                .ifPresent(disease -> {
+                    PredictionDisease pd = PredictionDisease.builder()
+                            .prediction(savedPrediction)
+                            .disease(disease)
+                            .isHealthy(false) 
+                            .build();
+                    predictionDiseaseRepository.save(pd);
+                });
+            log.info("Sonuç Hastalıklı: PredictionDisease tablosuna kaydedildi.");
+        }
+
+        return savedPrediction;
     }
 
     @Override
@@ -76,43 +122,29 @@ public class PredictionServiceImpl implements PredictionService {
     }
     
     @Override
+    @Transactional
     public Prediction updatePrediction(Integer predictionId, Prediction updatedPrediction, User adminUser) {
         Prediction existingPrediction = predictionRepository.findById(predictionId)
                                          .orElseThrow(() -> new ResourceNotFoundException("Tahmin kaydı bulunamadı."));
         
-        // record the old values for second log
-        String oldValue = existingPrediction.toString(); 
+        String oldValue = "Confidence: " + existingPrediction.getConfidence() + ", Valid: " + existingPrediction.getIsValid(); 
 
         existingPrediction.setConfidence(updatedPrediction.getConfidence());
         existingPrediction.setIsValid(updatedPrediction.getIsValid());
 
         Prediction savedPrediction = predictionRepository.save(existingPrediction);
 
-        PredictionLog log = new PredictionLog();
-        log.setPrediction(savedPrediction);
-        log.setAdminUser(adminUser); 
-        log.setActionType("UPDATE");
-        log.setTimestamp(LocalDateTime.now());
-        log.setOldValue(oldValue);
-        log.setNewValue(savedPrediction.toString()); 
+        PredictionLog logEntry = PredictionLog.builder()
+                .prediction(savedPrediction)
+                .adminUser(adminUser)
+                .actionType("UPDATE")
+                .timestamp(LocalDateTime.now())
+                .oldValue(oldValue)
+                .newValue("Confidence: " + savedPrediction.getConfidence() + ", Valid: " + savedPrediction.getIsValid())
+                .build();
 
-        predictionLogRepository.save(log); // record the log
+        predictionLogRepository.save(logEntry);
 
         return savedPrediction;
-    }
-
-    /**
-     * Real-time prediction API with FastAPI integration
-     * TODO: Implement full prediction logic
-     */
-    @Override
-    public Prediction predictPlantDisease(Integer userId, Integer plantId, String imageBase64, String description) {
-        // TODO: Implement full prediction flow
-        // For now, return stub implementation to allow compilation
-        Prediction prediction = new Prediction();
-        prediction.setCreatedAt(LocalDateTime.now());
-        prediction.setIsValid(true);
-        prediction.setConfidence(0);
-        return predictionRepository.save(prediction);
     }
 }

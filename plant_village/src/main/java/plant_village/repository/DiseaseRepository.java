@@ -1,21 +1,21 @@
 package plant_village.repository;
 
-import plant_village.model.*;
+import plant_village.model.Disease;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import java.util.List;
 import java.util.Optional;
+import java.util.List;
 
 @Repository
 public interface DiseaseRepository extends JpaRepository<Disease, Integer> {
 
-    // result demonstrating in detail
-    // find disease features getter from modal
-    Optional<Disease> findByDiseaseName(String diseaseName);
+    // 1. Bitki ID'sine göre hastalıkları bul (Doğru)
+    List<Disease> findByPlant_Id(Integer plantId);
     
-    // Case-insensitive disease search
-    Optional<Disease> findByDiseaseNameIgnoreCase(String diseaseName);
-    
-    // Belirli bir bitki türüne ait olası tüm hastalıkları listelemek.
-   // List<Disease> findByPlant_PlantId(Integer plantId);
+    // 2. İsim ve Bitki ID'sine göre (GÜNCELLENDİ: DiseaseName -> Name)
+    List<Disease> findByNameAndPlant_Id(String name, Integer plantId);
+
+    // 3. Büyük/Küçük harf duyarsız isimle arama (GÜNCELLENDİ: DiseaseName -> Name)
+    // Service katmanında çağırdığımız metot bu!
+    Optional<Disease> findByNameIgnoreCase(String name);
 }

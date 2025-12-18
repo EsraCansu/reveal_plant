@@ -1,11 +1,9 @@
 package plant_village.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import java.time.LocalDateTime;
+import java.util.*;
 
 @Entity
 @Table(name = "Prediction")
@@ -23,12 +21,12 @@ public class Prediction {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-    
+
     @Column(name = "prediction_type", length = 50)
     private String predictionType;
     
     @Column(name = "confidence")
-    private Integer confidence;
+    private Double confidence;
     
     @Column(name = "uploaded_image_url")
     private String uploadedImageUrl;
@@ -38,4 +36,16 @@ public class Prediction {
     
     @Column(name = "is_valid")
     private Boolean isValid;
+
+    // --- One-to-One connections ---
+    @OneToMany(mappedBy = "prediction", cascade = CascadeType.ALL)
+    private List<PredictionPlant> plantDetails;
+
+    @OneToMany(mappedBy = "prediction", cascade = CascadeType.ALL)
+    private List<PredictionDisease> diseaseDetails;
+
+    @OneToMany(mappedBy = "prediction", cascade = CascadeType.ALL)
+    private List<PredictionLog> logDetails;
+
+    // we connect the datas where from FASTAPI
 }

@@ -1,3 +1,4 @@
+import multer from 'multer';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -24,6 +25,10 @@ const FASTAPI_URL = process.env.FASTAPI_URL || 'http://localhost:8000';
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Yüklenen dosyayı bellekte saklamak için ayar
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 // Statik dosyaları sunmak için
 app.use(express.static(path.join(__dirname)));  // Root klasöründeki tüm dosyaları sun
@@ -59,13 +64,45 @@ app.get('/api/health', (req, res) => {
 // ======================== PROXY ENDPOINTS ========================
 
 // Java API proxy'si - Kullanıcı işlemleri
-app.post('/api/auth/register', async (req, res) => {
+/*app.post('/api/auth/register', async (req, res) => {
   try {
     const response = await axios.post(`${JAVA_API_URL}/api/users/register`, req.body);
     res.json(response.data);
   } catch (error) {
     console.error('Registration error:', error.message);
     res.status(error.response?.status || 500).json(error.response?.data || { error: 'Registration failed' });
+  }
+});*/
+// Python FastAPI proxy'si - Model tahminleri
+// upload.single('image') middleware'i, yüklenen dosyayı req.file objesine yerleştirir.
+app.post('/api/predict', upload.single('image'), async (req, res) => {
+  
+  if (!req.file) {
+    return res.status(400).json({ error: 'Resim dosyası yüklenmedi. Lütfen bir resim yükleyin.' });
+  }
+
+  try {
+    // 1. Yüklenen resmin Buffer'ını (bellekteki ikili verisini) Base64 string'e dönüştür
+    const base64Image = req.file.buffer.toString('base64');
+    
+    // 2. FastAPI'nin beklediği payload yapısını oluşturun
+    // req.body içindeki diğer form verileri (örneğin 'mode') burada hala mevcuttur.
+    const fastApiPayload = {
+      image_base64: base64Image,
+      mode: req.body.mode || 'detect-disease' // İstemciden gelen modu al
+    };
+
+    // 3. FastAPI servisine isteği gönder
+    const response = await axios.post(`${FASTAPI_URL}/predict`, fastApiPayload);
+    
+    // 4. Yanıtı istemciye döndür
+    res.json(response.data);
+
+  } catch (error) {
+    console.error('Prediction error:', error.message);
+    // Hata detaylarını kontrol et
+    const errorMessage = error.response?.data?.detail || 'Tahmin işlemi başarısız oldu';
+    res.status(error.response?.status || 500).json({ error: errorMessage });
   }
 });
 

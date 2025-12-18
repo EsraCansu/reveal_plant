@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "User")
+@Table(name = "[User]")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -37,4 +37,7 @@ public class User {
     
     @Column(name = "role", nullable = false, length = 10)
     private String role;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private java.util.List<Prediction> predictions;
 }

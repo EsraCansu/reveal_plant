@@ -20,7 +20,7 @@ public class Disease {
     private Integer id;
     
     @Column(name = "disease_name", length = 50)
-    private String diseaseName;
+    private String name;
     
     @Column(name = "symptom_description")
     private String symptomDescription;

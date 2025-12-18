@@ -1,9 +1,8 @@
 package plant_village.service;
 
-import plant_village.model.Prediction;
-import plant_village.model.User;
-import java.util.List;
-import java.util.Optional;
+import plant_village.model.*;
+import lombok.extern.slf4j.Slf4j;
+import java.util.*;
 
 public interface PredictionService {
     
