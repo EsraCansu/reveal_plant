@@ -35,7 +35,7 @@ public class PlantVillageApplication {
     public static void main(String[] args) {
         SpringApplication.run(PlantVillageApplication.class, args);
         System.out.println("╔═══════════════════════════════════════════════════════════╗");
-        System.out.println("║       🌿 REVEAL PLANT - SPRING BOOT BACKEND START 🌿     ║");
+        System.out.println("║       - REVEAL PLANT - SPRING BOOT BACKEND START -        ║");
         System.out.println("╠═══════════════════════════════════════════════════════════╣");
         System.out.println("║  - Application started successfully                       ║");
         System.out.println("║  - REST API: http://localhost:8080                        ║");

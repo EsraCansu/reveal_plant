@@ -46,7 +46,6 @@ public class PredictionServiceImpl implements PredictionService {
         this.userRepository = userRepository;
     }
 
-    // EKSİK OLAN METOT EKLENDİ (Hata 1 Çözümü)
     @Override
     @Transactional
     public Prediction createPrediction(Prediction prediction) {
