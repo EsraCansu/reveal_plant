@@ -5,18 +5,19 @@
   "description": "Bitki Hastalığı Tespiti - React Frontend",
   "main": "index.js",
   "dependencies": {
+    "@ant-design/icons": "^5.2.6",
+    "antd": "^5.11.0",
+    "axios": "^1.6.0",
+    "eslint": "^8.54.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.20.0",
-    "axios": "^1.6.0",
-    "antd": "^5.11.0",
-    "@ant-design/icons": "^5.2.6",
-    "eslint": "^8.54.0"
+    "react-grid-system": "^8.2.1",
+    "react-router-dom": "^6.20.0"
   },
   "devDependencies": {
-    "react-scripts": "5.0.1",
+    "@testing-library/jest-dom": "^6.1.5",
     "@testing-library/react": "^14.0.0",
-    "@testing-library/jest-dom": "^6.1.5"
+    "react-scripts": "^5.0.1"
   },
   "scripts": {
     "start": "react-scripts start",
