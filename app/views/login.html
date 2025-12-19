@@ -79,24 +79,34 @@
                             </div>
                         </form>
                         <script>
-                            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                            document.getElementById('loginForm').addEventListener('submit', async function(e) {
                                 e.preventDefault();
                                 const email = document.getElementById('email').value;
                                 const password = document.getElementById('password').value;
                                 const remember = document.getElementById('remember').checked;
-                                
-                                // Verify with dummy data
-                                if (verifyDummyUser(email, password)) {
-                                    localStorage.setItem('user_logged_in', 'true');
-                                    localStorage.setItem('user_email', email);
-                                    if (remember) localStorage.setItem('user_remember', 'true');
-                                    
-                                    // Initialize dummy data for this user
-                                    initializeDummyDataForUser(email);
-                                    
-                                    window.location.href = '../../index.html';
-                                } else {
-                                    alert('Invalid email or password. Please try again.\n\nDemo Credentials:\nEmail: john@example.com\nPassword: demo123');
+                                try {
+                                    const res = await fetch('/api/auth/login', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ email, password })
+                                    });
+                                    if (res.ok) {
+                                        const data = await res.json();
+                                        localStorage.setItem('user_logged_in', 'true');
+                                        localStorage.setItem('user_email', data.email);
+                                        localStorage.setItem('user_role', data.role);
+                                        if (remember) localStorage.setItem('user_remember', 'true');
+                                        if (data.role && data.role.toLowerCase() === 'admin') {
+                                            window.location.href = '../../app/views/admin.html';
+                                        } else {
+                                            window.location.href = '../../index.html';
+                                        }
+                                    } else {
+                                        const err = await res.text();
+                                        alert('Login failed: ' + err);
+                                    }
+                                } catch (err) {
+                                    alert('Login error: ' + err);
                                 }
                             });
                         </script>
