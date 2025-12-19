@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 @Slf4j
 @Controller
 @RequiredArgsConstructor
+@MessageMapping("/predict/{userId}")
 public class WebSocketPredictionController {
 
     private final PredictionService predictionService;

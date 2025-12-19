@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController // Bu sınıfın HTTP isteklerini işleyeceğini belirtir
 @RequestMapping("/api/users") // Temel yol: /api/users
+@CrossOrigin(origins = "*")
 public class UserController {
 
     private final UserService userService;
@@ -26,18 +27,15 @@ public class UserController {
      * @return new user object and HTTP 201 Created
      */
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody User user) {
-        try {
-            User newUser = userService.registerNewUser(user);
-            // Şifre hash'ini güvenlik nedeniyle yanıtta döndürmemelisin!
-            // Gerçek projede bir DTO (Data Transfer Object) kullanmalısın.
-            return new ResponseEntity<>(newUser, HttpStatus.CREATED);
-        } catch (IllegalArgumentException e) {
-            // Servis katmanından gelen iş mantığı hatasını yakala
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        } catch (Exception e) {
-            return new ResponseEntity<>("Kayıt sırasında bir hata oluştu: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        public ResponseEntity<?> registerUser(@RequestBody User user) {
+            try {
+                User newUser = userService.registerNewUser(user);
+                return new ResponseEntity<>(newUser, HttpStatus.CREATED);
+            } catch (Exception e) {
+                // Hata mesajını düz yazı değil, JSON objesi olarak dönüyoruz:
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(java.util.Map.of("message", e.getMessage()));
+            }
     }
 
     /**
