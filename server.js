@@ -42,11 +42,6 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Demo sayfası
-app.get('/demo', (req, res) => {
-  res.sendFile(path.join(__dirname, 'demo.html'));
-});
-
 // WebSocket Test Suite
 app.get('/websocket-test.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'WEBSOCKET_TEST.html'));

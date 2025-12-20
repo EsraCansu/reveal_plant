@@ -1,23 +1,11 @@
 # RevealPlant - AI Plant Diagnostics Platform
 
-## 🧪 Demo & Test
+## 🚀 Başlangıç
 
-**Siteyi hemen test etmek için:**
-- 👉 `/demo.html` sayfasına gidin
-- 4 demo kullanıcıdan birini seçin (bir tık ile giriş yapın)
-- Önceden yüklü verileri keşfedin:
-  - 6 tanılama örneği (3 bitki tanımlama + 3 hastalık tespiti)
-  - Tam profil bilgileri
-  - Detaylı istatistikler
-  - Tüm özellikleri test edin
-
-### Demo Kullanıcıları
-```
-1. John Doe        → john@example.com    / demo123
-2. Sarah Smith     → sarah@example.com   / demo123
-3. Mike Johnson    → mike@example.com    / demo123
-4. Emma Williams   → emma@example.com    / demo123
-```
+**Siteyi test etmek için:**
+1. Backend ve frontend sunucularını başlatın
+2. Kayıt sayfasından yeni bir kullanıcı oluşturun veya test kullanıcılarıyla giriş yapın
+3. Bitki tanılama ve hastalık tespit özelliklerini keşfedin
 
 ---
 
@@ -26,12 +14,10 @@
 ```
 plantreval/
 ├── index.html                # Ana giriş noktası
-├── demo.html                 # Demo & Test sayfası
 ├── README.md                 # Proje dokümantasyonu
 │
 ├── app/                      # Uygulama mantığı (MVC)
 │   ├── controllers/
-│   │   └── dummyData.js     # Demo veri ve kullanıcılar
 │   ├── models/              # Veri modelleri (hazırlanıyor)
 │   ├── routes/
 │   │   ├── routes.js        # Frontend router
