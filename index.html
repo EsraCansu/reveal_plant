@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
+    <script src="assets/js/auth.js"></script>
     <script src="app/controllers/dummyData.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.0/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
@@ -106,29 +107,38 @@
     <script src="assets/js/app.js"></script>
     <script>
         function checkUserLogin() {
-            const isLoggedIn = localStorage.getItem('user_logged_in');
-            const userEmail = localStorage.getItem('user_email');
-            const loginBtn = document.querySelector('a[href="app/views/login.html"]').parentElement;
-            const registerBtn = document.querySelector('a[href="app/views/register.html"]').parentElement;
-            const profileMenu = document.getElementById('profileMenu');
+            const userEmail = getCookie('userEmail');
+            const userName = getCookie('userName');
+            const userRole = getCookie('userRole');
             
-            if (isLoggedIn && userEmail) {
-                loginBtn.style.display = 'none';
-                registerBtn.style.display = 'none';
+            const loginBtn = document.querySelector('a[href="app/views/login.html"]');
+            const registerBtn = document.querySelector('a[href="app/views/register.html"]');
+            const profileMenu = document.getElementById('profileMenu');
+            const userEmailEl = document.getElementById('userEmail');
+            
+            if (userEmail && loginBtn && registerBtn && profileMenu) {
+                loginBtn.parentElement.style.display = 'none';
+                registerBtn.parentElement.style.display = 'none';
                 profileMenu.style.display = 'block';
-                document.getElementById('userEmail').textContent = userEmail.split('@')[0];
+                
+                if (userEmailEl) {
+                    userEmailEl.textContent = sanitizeHTML(userName || userEmail.split('@')[0]);
+                }
+                
+                // Show admin link only for admin users
+                const adminLinkEl = profileMenu.querySelector('a[href*="admin.html"]');
+                if (adminLinkEl) {
+                    adminLinkEl.style.display = (userRole === 'ADMIN' || userRole === 'admin') ? 'block' : 'none';
+                }
             } else {
-                loginBtn.style.display = 'block';
-                registerBtn.style.display = 'block';
-                profileMenu.style.display = 'none';
+                if (loginBtn) loginBtn.parentElement.style.display = 'block';
+                if (registerBtn) registerBtn.parentElement.style.display = 'block';
+                if (profileMenu) profileMenu.style.display = 'none';
             }
         }
         
-        function logout() {
-            localStorage.removeItem('user_logged_in');
-            localStorage.removeItem('user_email');
-            localStorage.removeItem('user_remember');
-            location.reload();
+        function logoutUser() {
+            logout();
         }
         
         document.addEventListener('DOMContentLoaded', () => {

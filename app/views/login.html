@@ -155,8 +155,65 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../../assets/js/auth.js"></script>
     <script src="../../app/routes/routes.js"></script>
     <script src="../../app/routes/api.routes.js"></script>
+    <script>
+        // ✅ GÜNCELLEME: Cookie tabanlı güvenli login
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const remember = document.getElementById('remember').checked;
+            
+            // XSS koruması - input validation
+            if (!isValidEmail(email)) {
+                alert('Geçersiz email formatı!');
+                return;
+            }
+            
+            // Email'i sanitize et
+            const sanitizedEmail = escapeHTML(email);
+            
+            try {
+                const res = await fetch('/api/users/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include', // ✅ Cookie'leri gönder/al
+                    body: JSON.stringify({ 
+                        email: sanitizedEmail, 
+                        password: password 
+                    })
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    
+                    // ✅ Cookie'ler backend tarafından otomatik set edildi
+                    // localStorage kullanımı kaldırıldı (güvenlik için)
+                    
+                    // Remember me için ek cookie
+                    if (remember) {
+                        setCookie('remember_me', 'true', 30); // 30 gün
+                    }
+                    
+                    // Yönlendirme
+                    if (data.role && data.role.toLowerCase() === 'admin') {
+                        window.location.href = 'admin.html';
+                    } else {
+                        window.location.href = 'dashboard.html';
+                    }
+                } else {
+                    const err = await res.text();
+                    alert('Login failed: ' + err);
+                }
+            } catch (err) {
+                console.error('Login error:', err);
+                alert('Login error: ' + err.message);
+            }
+        });
+    </script>
     <!-- ✅ DÜZELTME: Çift handler kaldırıldı, sadece backend kullanan handler kaldı -->
 </body>
 </html>
