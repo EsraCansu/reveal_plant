@@ -1,5 +1,15 @@
 <!-- Navigation Header - Minimal for User Pages -->
 <nav class="navbar navbar-expand-lg navbar-dark">
+<script>
+// Update dropdown with user name when component loads
+window.addEventListener('DOMContentLoaded', function() {
+    const user = getCurrentUser();
+    const dropdownElement = document.getElementById('userNameDropdown');
+    if (dropdownElement && user.name) {
+        dropdownElement.textContent = user.name;
+    }
+});
+</script>
     <div class="container-fluid">
         <a class="navbar-brand fw-bold" href="../../index.html">
             <img src="../../assets/images/logo.png" alt="RevelPlant" style="height: 80px;">
@@ -12,7 +22,7 @@
                 <li class="nav-item ms-lg-2 mt-2 mt-lg-0" id="profileMenu">
                     <div class="dropdown">
                         <button class="btn btn-sm btn-secondary rounded-pill px-3 dropdown-toggle" type="button" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-user-circle me-2"></i><span id="userEmail">User</span>
+                            <i class="fas fa-user-circle me-2"></i><span id="userNameDropdown">User</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
                             <li><a class="dropdown-item" href="dashboard.html"><i class="fas fa-chart-line me-2"></i>Dashboard</a></li>

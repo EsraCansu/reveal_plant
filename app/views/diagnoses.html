@@ -8,10 +8,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../../assets/css/style.css">
     <script src="../../assets/js/auth.js"></script>
-    <script>
-        // Require authentication before page loads
-        requireAuth();
-    </script>
     <!-- WebSocket Libraries for Real-time Predictions -->
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
@@ -213,15 +209,17 @@
         let currentDiagnosisId = null;
 
         function checkLogin() {
-            const isLoggedIn = localStorage.getItem('user_logged_in');
-            const userEmail = localStorage.getItem('user_email');
-            
-            if (!isLoggedIn || !userEmail) {
+            // Check cookie-based authentication
+            if (!isLoggedIn()) {
                 window.location.href = 'login.html';
                 return;
             }
             
-            document.getElementById('userEmail').textContent = userEmail.split('@')[0];
+            const user = getCurrentUser();
+            const userNameEl = document.getElementById('userNameDropdown');
+            if (userNameEl && user.name) {
+                userNameEl.textContent = user.name;
+            }
             loadDiagnoses();
         }
 
@@ -344,13 +342,6 @@ Details: ${diagnosis.details || 'N/A'}
             a.href = url;
             a.download = `diagnosis_${new Date().getTime()}.txt`;
             a.click();
-        }
-
-        function logout() {
-            localStorage.removeItem('user_logged_in');
-            localStorage.removeItem('user_email');
-            localStorage.removeItem('user_remember');
-            location.href = 'login.html';
         }
 
         document.addEventListener('DOMContentLoaded', () => {

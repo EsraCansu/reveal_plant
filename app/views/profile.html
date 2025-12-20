@@ -8,10 +8,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../../assets/css/style.css">
     <script src="../../assets/js/auth.js"></script>
-    <script>
-        // Require authentication before page loads
-        requireAuth();
-    </script>
     <style>
         .sidebar {
             background: #f8f9fa;
@@ -230,28 +226,27 @@
     <script src="../../app/routes/api.routes.js"></script>
     <script>
         function checkLogin() {
-            const isLoggedIn = localStorage.getItem('user_logged_in');
-            const userEmail = localStorage.getItem('user_email');
-            
-            if (!isLoggedIn || !userEmail) {
+            // Check cookie-based authentication
+            if (!isLoggedIn()) {
                 window.location.href = 'login.html';
                 return;
             }
             
-            document.getElementById('userEmail').textContent = userEmail.split('@')[0];
-            document.getElementById('email').value = userEmail;
+            const user = getCurrentUser();
+            const userNameEl = document.getElementById('userNameDropdown');
+            if (userNameEl && user.name) {
+                userNameEl.textContent = user.name;
+            }
             
             loadProfileData();
             loadDiagnosisStats();
         }
 
         function loadProfileData() {
-            const profile = JSON.parse(localStorage.getItem('profile') || '{}');
+            const user = getCurrentUser();
             
-            document.getElementById('fullName').value = profile.fullName || '';
-            document.getElementById('phone').value = profile.phone || '';
-            document.getElementById('location').value = profile.location || '';
-            document.getElementById('bio').value = profile.bio || '';
+            document.getElementById('fullName').value = user.name || '';
+            document.getElementById('email').value = user.email || '';
             
             if (profile.avatar) {
                 document.getElementById('avatarImg').src = profile.avatar;
@@ -323,13 +318,6 @@
             alert('Password updated successfully!');
             document.getElementById('passwordForm').reset();
         });
-
-        function logout() {
-            localStorage.removeItem('user_logged_in');
-            localStorage.removeItem('user_email');
-            localStorage.removeItem('user_remember');
-            location.href = 'login.html';
-        }
 
         document.addEventListener('DOMContentLoaded', () => {
             loadAllComponents();
