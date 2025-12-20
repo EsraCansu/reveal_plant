@@ -10,7 +10,13 @@ function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2) {
-        return parts.pop().split(';').shift();
+        const cookieValue = parts.pop().split(';').shift();
+        // URL decode cookie value (backend URL encode yapıyor)
+        try {
+            return decodeURIComponent(cookieValue);
+        } catch (e) {
+            return cookieValue;
+        }
     }
     return null;
 }
@@ -35,7 +41,7 @@ function deleteCookie(name) {
  * Check if user is logged in (via cookie)
  */
 function isLoggedIn() {
-    return getCookie('user_info') !== null;
+    return getCookie('userEmail') !== null;
 }
 
 /**
@@ -43,8 +49,9 @@ function isLoggedIn() {
  */
 function getCurrentUser() {
     return {
-        email: getCookie('user_info'),
-        role: getCookie('user_role')
+        email: getCookie('userEmail'),
+        name: getCookie('userName'),
+        role: getCookie('userRole')
     };
 }
 
@@ -54,7 +61,7 @@ function getCurrentUser() {
 async function logout() {
     try {
         // Backend'e logout isteği gönder (cookie'leri sunucu tarafında temizlemek için)
-        await fetch('/api/users/auth/logout', {
+        await fetch('http://localhost:8080/api/users/auth/logout', {
             method: 'POST',
             credentials: 'include' // Cookie'leri gönder
         });
@@ -63,9 +70,11 @@ async function logout() {
     }
     
     // Client-side cookie'leri temizle
-    deleteCookie('user_info');
-    deleteCookie('user_role');
+    deleteCookie('userEmail');
+    deleteCookie('userName');
+    deleteCookie('userRole');
     deleteCookie('jwt_token');
+    deleteCookie('remember_me');
     
     // localStorage'ı da temizle (eski veri varsa)
     localStorage.removeItem('user_logged_in');

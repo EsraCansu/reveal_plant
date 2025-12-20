@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users") 
@@ -71,12 +74,22 @@ public class UserController {
                             response.addCookie(jwtCookie);
                             
                             // Kullanıcı bilgisi için ayrı cookie (frontend'de okunabilir)
-                            Cookie userInfoCookie = new Cookie("user_info", user.getEmail());
-                            userInfoCookie.setPath("/");
-                            userInfoCookie.setMaxAge(24 * 60 * 60);
-                            response.addCookie(userInfoCookie);
+                            // Cookie değerlerini URL encode et (boşluk ve özel karakterler için)
+                            String encodedEmail = URLEncoder.encode(user.getEmail(), StandardCharsets.UTF_8);
+                            String encodedName = URLEncoder.encode(user.getUserName(), StandardCharsets.UTF_8);
+                            String encodedRole = URLEncoder.encode(user.getRole(), StandardCharsets.UTF_8);
                             
-                            Cookie roleCookie = new Cookie("user_role", user.getRole());
+                            Cookie userEmailCookie = new Cookie("userEmail", encodedEmail);
+                            userEmailCookie.setPath("/");
+                            userEmailCookie.setMaxAge(24 * 60 * 60);
+                            response.addCookie(userEmailCookie);
+                            
+                            Cookie userNameCookie = new Cookie("userName", encodedName);
+                            userNameCookie.setPath("/");
+                            userNameCookie.setMaxAge(24 * 60 * 60);
+                            response.addCookie(userNameCookie);
+                            
+                            Cookie roleCookie = new Cookie("userRole", encodedRole);
                             roleCookie.setPath("/");
                             roleCookie.setMaxAge(24 * 60 * 60);
                             response.addCookie(roleCookie);
@@ -93,9 +106,15 @@ public class UserController {
                             return ResponseEntity.ok(result);
                         }
                     }
-                    return ResponseEntity.status(401).body("Geçersiz şifre.");
+                    java.util.Map<String, String> error = new java.util.HashMap<>();
+                    error.put("error", "Geçersiz şifre");
+                    return ResponseEntity.status(401).body(error);
                 })
-                .orElse(ResponseEntity.status(404).body("Kullanıcı bulunamadı."));
+                .orElseGet(() -> {
+                    java.util.Map<String, String> error = new java.util.HashMap<>();
+                    error.put("error", "Kullanıcı bulunamadı");
+                    return ResponseEntity.status(404).body(error);
+                });
     }
 
     /**
@@ -111,17 +130,24 @@ public class UserController {
         response.addCookie(jwtCookie);
         
         // Diğer cookie'leri sil
-        Cookie userInfoCookie = new Cookie("user_info", null);
-        userInfoCookie.setPath("/");
-        userInfoCookie.setMaxAge(0);
-        response.addCookie(userInfoCookie);
+        Cookie userEmailCookie = new Cookie("userEmail", null);
+        userEmailCookie.setPath("/");
+        userEmailCookie.setMaxAge(0);
+        response.addCookie(userEmailCookie);
         
-        Cookie roleCookie = new Cookie("user_role", null);
+        Cookie userNameCookie = new Cookie("userName", null);
+        userNameCookie.setPath("/");
+        userNameCookie.setMaxAge(0);
+        response.addCookie(userNameCookie);
+        
+        Cookie roleCookie = new Cookie("userRole", null);
         roleCookie.setPath("/");
         roleCookie.setMaxAge(0);
         response.addCookie(roleCookie);
         
-        return ResponseEntity.ok().body("Logout successful");
+        java.util.Map<String, String> result = new java.util.HashMap<>();
+        result.put("message", "Logout successful");
+        return ResponseEntity.ok(result);
     }
 
     /**
@@ -133,12 +159,16 @@ public class UserController {
             // XSS koruması
             if (xssProtection.isDangerous(user.getEmail()) || 
                 xssProtection.isDangerous(user.getUserName())) {
-                return new ResponseEntity<>("Invalid input detected", HttpStatus.BAD_REQUEST);
+                java.util.Map<String, String> error = new java.util.HashMap<>();
+                error.put("error", "Invalid input detected");
+                return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
             }
             
             // Email validation
             if (!xssProtection.isValidEmail(user.getEmail())) {
-                return new ResponseEntity<>("Geçersiz email formatı", HttpStatus.BAD_REQUEST);
+                java.util.Map<String, String> error = new java.util.HashMap<>();
+                error.put("error", "Geçersiz email formatı");
+                return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
             }
             
             // Input sanitization
@@ -146,11 +176,50 @@ public class UserController {
             user.setUserName(xssProtection.sanitize(user.getUserName()));
             
             User newUser = userService.registerNewUser(user);
-            return new ResponseEntity<>(newUser, HttpStatus.CREATED);
+            
+            // Success response
+            java.util.Map<String, Object> response = new java.util.HashMap<>();
+            response.put("success", true);
+            response.put("message", "Kayıt başarılı");
+            response.put("user", newUser);
+            
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            java.util.Map<String, String> error = new java.util.HashMap<>();
+            error.put("error", e.getMessage());
+            return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
-            return new ResponseEntity<>("Kayıt sırasında bir hata oluştu: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            java.util.Map<String, String> error = new java.util.HashMap<>();
+            error.put("error", "Kayıt sırasında bir hata oluştu: " + e.getMessage());
+            return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Get user by email (for frontend auth)
+     * GET /api/users/by-email?email={email}
+     * @param email User email
+     * @return user instance or HTTP 404 Not Found
+     */
+    @GetMapping("/by-email")
+    public ResponseEntity<?> getUserByEmail(@RequestParam String email) {
+        Optional<User> userOpt = userService.findByEmail(email);
+        
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            // Password'u response'a dahil etme (güvenlik)
+            java.util.Map<String, Object> result = new java.util.HashMap<>();
+            result.put("id", user.getId());
+            result.put("email", user.getEmail());
+            result.put("userName", user.getUserName());
+            result.put("role", user.getRole());
+            result.put("createdAt", user.getCreatedAt());
+            result.put("lastLogin", user.getLastLogin());
+            return ResponseEntity.ok(result);
+        } else {
+            java.util.Map<String, String> error = new java.util.HashMap<>();
+            error.put("error", "Kullanıcı bulunamadı");
+            return ResponseEntity.status(404).body(error);
         }
     }
 

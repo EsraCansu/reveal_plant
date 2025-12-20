@@ -207,86 +207,178 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../../assets/js/components.js"></script>
-    <script src="../../app/routes/routes.js"></script>
-    <script src="../../app/routes/api.routes.js"></script>
+    <script src="../../assets/js/auth.js"></script>
     <script>
-        // Check login status
-        function checkLogin() {
-            const isLoggedIn = localStorage.getItem('user_logged_in');
-            const userEmail = localStorage.getItem('user_email');
+        // ✅ BACKEND ENTEGRASYONUconst BACKEND_URL = 'http://localhost:8080';
+        let currentUser = null;
+
+        // ✅ Kullanıcı bilgilerini cookie'den al
+        function loadUserInfo() {
+            const user = getCurrentUser();
             
-            if (!isLoggedIn || !userEmail) {
+            if (!user.email) {
                 window.location.href = 'login.html';
-                return;
+                return null;
             }
             
-            document.getElementById('userEmail').textContent = userEmail.split('@')[0];
-            document.getElementById('userName').textContent = userEmail.split('@')[0];
+            // İsim gösterimi
+            const displayName = user.name || user.email.split('@')[0];
+            document.getElementById('userName').textContent = displayName;
             
-            loadDashboardData();
+            return user;
         }
 
-        function logout() {
-            localStorage.removeItem('user_logged_in');
-            localStorage.removeItem('user_email');
-            localStorage.removeItem('user_remember');
-            localStorage.removeItem('diagnoses');
-            location.href = 'login.html';
+        // ✅ Dashboard verilerini backend'den yükle
+        async function loadDashboardData() {
+            try {
+                currentUser = loadUserInfo();
+                if (!currentUser) return;
+                
+                // ✅ Kullanıcı ID'sini backend'den al
+                const userEmailResponse = await authenticatedFetch(
+                    `${BACKEND_URL}/api/users/by-email?email=${encodeURIComponent(currentUser.email)}`
+                );
+                
+                if (!userEmailResponse.ok) {
+                    console.error('User not found in backend');
+                    // Yine de cookie bilgisi ile devam et
+                    loadEmptyDashboard();
+                    return;
+                }
+                
+                const userData = await userEmailResponse.json();
+                const userId = userData.id || userData.userId;
+                
+                if (!userId) {
+                    console.error('Could not get user ID');
+                    loadEmptyDashboard();
+                    return;
+                }
+                
+                // ✅ Prediction geçmişini backend'den al
+                const response = await authenticatedFetch(
+                    `${BACKEND_URL}/api/predictions/history/${userId}`
+                );
+                
+                if (!response.ok) {
+                    console.error('Failed to load predictions');
+                    loadEmptyDashboard();
+                    return;
+                }
+                
+                const predictions = await response.json();
+                console.log('✅ Loaded predictions:', predictions);
+                
+                // ✅ İstatistikleri hesapla
+                updateStatistics(predictions);
+                
+                // ✅ Son teşhisleri göster
+                displayRecentDiagnoses(predictions);
+                
+            } catch (error) {
+                console.error('❌ Dashboard load error:', error);
+                loadEmptyDashboard();
+            }
         }
 
-        function loadDashboardData() {
-            // Get diagnoses from localStorage (mock data)
-            const diagnoses = JSON.parse(localStorage.getItem('diagnoses') || '[]');
+        // ✅ İstatistikleri güncelle
+        function updateStatistics(predictions) {
+            const totalDiagnoses = predictions.length;
             
-            let totalDiagnoses = diagnoses.length;
-            let diseasesFound = diagnoses.filter(d => d.mode === 'disease').length;
-            let plantsIdentified = diagnoses.filter(d => d.mode === 'identify').length;
+            // Hastalık tespit sayısı (isValid === false olanlar)
+            const diseasesFound = predictions.filter(p => p.isValid === false).length;
             
+            // Sağlıklı bitki sayısı (isValid === true olanlar)
+            const plantsIdentified = predictions.filter(p => p.isValid === true).length;
+            
+            // Bu ay yapılan teşhis sayısı
             const today = new Date();
-            const thisMonth = diagnoses.filter(d => {
-                const dDate = new Date(d.date);
-                return dDate.getMonth() === today.getMonth() && dDate.getFullYear() === today.getFullYear();
+            const thisMonth = predictions.filter(p => {
+                const pDate = new Date(p.predictedAt);
+                return pDate.getMonth() === today.getMonth() && 
+                       pDate.getFullYear() === today.getFullYear();
             }).length;
 
             document.getElementById('totalDiagnoses').textContent = totalDiagnoses;
             document.getElementById('diseasesFound').textContent = diseasesFound;
             document.getElementById('plantsIdentified').textContent = plantsIdentified;
             document.getElementById('thisMonth').textContent = thisMonth;
+        }
 
-            // Show recent diagnoses
+        // ✅ Son teşhisleri göster
+        function displayRecentDiagnoses(predictions) {
             const recentList = document.getElementById('recentDiagnosesList');
-            if (diagnoses.length > 0) {
-                const recent = diagnoses.slice(-5).reverse();
-                recentList.innerHTML = recent.map(d => `
+            
+            if (predictions.length === 0) {
+                recentList.innerHTML = `
+                    <p class="text-muted text-center py-4">
+                        <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                        Henüz teşhis yok. Bitki görselinizi yükleyerek başlayın!
+                    </p>
+                `;
+                return;
+            }
+            
+            // En son 5 teşhisi göster
+            const recent = predictions.slice(-5).reverse();
+            
+            recentList.innerHTML = recent.map(p => {
+                const date = new Date(p.predictedAt);
+                const isDisease = p.isValid === false;
+                const status = isDisease ? 'Hastalık Tespit' : 'Sağlıklı';
+                const badgeClass = isDisease ? 'warning' : 'success';
+                
+                return `
                     <div class="recent-diagnosis">
                         <div class="d-flex justify-content-between align-items-start">
                             <div class="text-start">
-                                <h6 class="mb-1"><strong>${d.name || 'Diagnosis'}</strong></h6>
+                                <h6 class="mb-1"><strong>Teşhis #${p.id}</strong></h6>
                                 <small class="text-muted">
-                                    <i class="fas fa-calendar me-1"></i>${new Date(d.date).toLocaleDateString()}
-                                    <i class="fas fa-clock me-1 ms-2"></i>${new Date(d.date).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
+                                    <i class="fas fa-calendar me-1"></i>${date.toLocaleDateString('tr-TR')}
+                                    <i class="fas fa-clock me-1 ms-2"></i>${date.toLocaleTimeString('tr-TR', {hour: '2-digit', minute: '2-digit'})}
                                 </small>
                             </div>
-                            <span class="badge diagnosis-badge bg-${d.mode === 'disease' ? 'warning' : 'info'}">
-                                ${d.mode === 'disease' ? 'Disease' : 'Plant ID'}
+                            <span class="badge diagnosis-badge bg-${badgeClass}">
+                                ${status}
                             </span>
                         </div>
-                        <p class="mb-2 mt-2 small">${d.result || 'No result'}</p>
-                        <small class="text-muted">Confidence: ${d.confidence || 'N/A'}%</small>
+                        <p class="mb-2 mt-2 small">${p.notes || 'Açıklama yok'}</p>
+                        <small class="text-muted">Güven: ${p.confidence ? (p.confidence * 100).toFixed(1) : 'N/A'}%</small>
                     </div>
-                `).join('');
-            }
+                `;
+            }).join('');
         }
 
-        // Initialize on page load
+        // ✅ Boş dashboard göster
+        function loadEmptyDashboard() {
+            document.getElementById('totalDiagnoses').textContent = '0';
+            document.getElementById('diseasesFound').textContent = '0';
+            document.getElementById('plantsIdentified').textContent = '0';
+            document.getElementById('thisMonth').textContent = '0';
+            
+            document.getElementById('recentDiagnosesList').innerHTML = `
+                <p class="text-muted text-center py-4">
+                    <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                    Veri yüklenemedi veya henüz teşhis yok.
+                </p>
+            `;
+        }
+
+        // ✅ Sayfa yüklendiğinde
         document.addEventListener('DOMContentLoaded', () => {
+            // Auth kontrolü
+            if (!requireAuth()) {
+                return;
+            }
+            
+            // Component'leri yükle
             loadAllComponents();
             
-            // Wait for components to load, then check login
+            // Dashboard verilerini yükle
             setTimeout(() => {
-                checkLogin();
+                loadDashboardData();
                 
-                // Initialize Bootstrap dropdowns
+                // Bootstrap dropdown'larını başlat
                 document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(el => {
                     new bootstrap.Dropdown(el);
                 });

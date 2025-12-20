@@ -28,24 +28,19 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User registerNewUser(User user) {
-        // 1. Kullanıcı adı kontrolü (UserRepository ile koordine edildi)
-        if (userRepository.findByUserName(user.getUserName()).isPresent()) {
-            throw new ValidationException("Bu kullanıcı adı zaten kullanılıyor.");
-        }
-
-        // 2. Email kontrolü
+        // 1. Email kontrolü (Primary check - email must be unique)
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
             throw new ValidationException("Bu e-posta adresi zaten kayıtlı.");
         }
 
-        // 3. Varsayılan değerler
+        // 2. Varsayılan değerler
         user.setCreatedAt(LocalDateTime.now());
         user.setLastLogin(LocalDateTime.now());
         if (user.getRole() == null || user.getRole().isEmpty()) {
             user.setRole("USER");
         }
         
-        // 4. Şifreleme (Güvenlik Koordinasyonu)
+        // 3. Şifreleme (Güvenlik Koordinasyonu)
         if (user.getPasswordHash() != null) {
             user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
         }
