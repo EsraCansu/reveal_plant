@@ -447,6 +447,7 @@ class PredictionWebSocketClient {
 // Initialize controller when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.diagnosticsController = new DiagnosticsController();
+    window.controller = window.diagnosticsController; // ✅ DÜZELTME: index.html'deki onclick için alias
     window.webSocketClient = new PredictionWebSocketClient();
 
     // Send heartbeat every 30 seconds
