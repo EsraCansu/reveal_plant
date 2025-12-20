@@ -378,11 +378,20 @@
             setTimeout(() => {
                 loadDashboardData();
                 
+                // Kullanıcı ismini dropdown'a yükle
+                const user = getCurrentUser();
+                if (user && user.name) {
+                    const dropdownElement = document.getElementById('userNameDropdown');
+                    if (dropdownElement) {
+                        dropdownElement.textContent = user.name;
+                    }
+                }
+                
                 // Bootstrap dropdown'larını başlat
                 document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(el => {
                     new bootstrap.Dropdown(el);
                 });
-            }, 100);
+            }, 300);
         });
     </script>
 </body>

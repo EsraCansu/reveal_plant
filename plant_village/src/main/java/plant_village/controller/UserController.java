@@ -336,5 +336,245 @@ public class UserController {
                 .map(user -> new ResponseEntity<>(user, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND)); 
     }
+    
+    /**
+     * Update user profile
+     * PUT /api/users/profile
+     * @param profileRequest Contains profile fields to update
+     * @return updated user info
+     */
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateProfile(@RequestBody java.util.Map<String, String> profileRequest) {
+        try {
+            String email = profileRequest.get("email");
+            
+            if (email == null) {
+                java.util.Map<String, String> error = new java.util.HashMap<>();
+                error.put("error", "Email gereklidir");
+                return ResponseEntity.badRequest().body(error);
+            }
+            
+            Optional<User> userOpt = userService.findByEmail(email);
+            if (!userOpt.isPresent()) {
+                java.util.Map<String, String> error = new java.util.HashMap<>();
+                error.put("error", "Kullanıcı bulunamadı");
+                return ResponseEntity.status(404).body(error);
+            }
+            
+            User user = userOpt.get();
+            
+            // Update fields if provided
+            if (profileRequest.containsKey("userName")) {
+                String userName = xssProtection.sanitize(profileRequest.get("userName"));
+                user.setUserName(userName);
+            }
+            
+            if (profileRequest.containsKey("phone")) {
+                user.setPhone(xssProtection.sanitize(profileRequest.get("phone")));
+            }
+            
+            if (profileRequest.containsKey("location")) {
+                user.setLocation(xssProtection.sanitize(profileRequest.get("location")));
+            }
+            
+            if (profileRequest.containsKey("bio")) {
+                user.setBio(xssProtection.sanitize(profileRequest.get("bio")));
+            }
+            
+            if (profileRequest.containsKey("avatarUrl")) {
+                user.setAvatarUrl(profileRequest.get("avatarUrl"));
+            }
+            
+            User updatedUser = userService.updateUser(user);
+            
+            // Return sanitized response
+            java.util.Map<String, Object> result = new java.util.HashMap<>();
+            result.put("success", true);
+            result.put("message", "Profile updated successfully");
+            result.put("user", java.util.Map.of(
+                "id", updatedUser.getId(),
+                "userName", updatedUser.getUserName(),
+                "email", updatedUser.getEmail(),
+                "phone", updatedUser.getPhone() != null ? updatedUser.getPhone() : "",
+                "location", updatedUser.getLocation() != null ? updatedUser.getLocation() : "",
+                "bio", updatedUser.getBio() != null ? updatedUser.getBio() : "",
+                "avatarUrl", updatedUser.getAvatarUrl() != null ? updatedUser.getAvatarUrl() : "",
+                "role", updatedUser.getRole(),
+                "createdAt", updatedUser.getCreatedAt()
+            ));
+            
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            java.util.Map<String, String> error = new java.util.HashMap<>();
+            error.put("error", "Profile güncellenemedi: " + e.getMessage());
+            return ResponseEntity.status(500).body(error);
+        }
+    }
+    
+    /**
+     * Change user password
+     * PUT /api/users/password
+     * @param passwordRequest Contains email, currentPassword, newPassword
+     * @return success message
+     */
+    @PutMapping("/password")
+    public ResponseEntity<?> changePassword(@RequestBody java.util.Map<String, String> passwordRequest) {
+        try {
+            String email = passwordRequest.get("email");
+            String currentPassword = passwordRequest.get("currentPassword");
+            String newPassword = passwordRequest.get("newPassword");
+            
+            if (email == null || currentPassword == null || newPassword == null) {
+                java.util.Map<String, String> error = new java.util.HashMap<>();
+                error.put("error", "Email, current password ve new password gereklidir");
+                return ResponseEntity.badRequest().body(error);
+            }
+            
+            if (newPassword.length() < 6) {
+                java.util.Map<String, String> error = new java.util.HashMap<>();
+                error.put("error", "Şifre en az 6 karakter olmalıdır");
+                return ResponseEntity.badRequest().body(error);
+            }
+            
+            Optional<User> userOpt = userService.findByEmail(email);
+            if (!userOpt.isPresent()) {
+                java.util.Map<String, String> error = new java.util.HashMap<>();
+                error.put("error", "Kullanıcı bulunamadı");
+                return ResponseEntity.status(404).body(error);
+            }
+            
+            User user = userOpt.get();
+            
+            // Verify current password
+            if (userService instanceof plant_village.service.UserServiceImpl) {
+                plant_village.service.UserServiceImpl impl = (plant_village.service.UserServiceImpl) userService;
+                if (!impl.verifyPassword(currentPassword, user.getPasswordHash())) {
+                    java.util.Map<String, String> error = new java.util.HashMap<>();
+                    error.put("error", "Mevcut şifre yanlış");
+                    return ResponseEntity.status(401).body(error);
+                }
+                
+                // Hash and update new password using BCrypt
+                String newPasswordHash = impl.getPasswordEncoder().encode(newPassword);
+                user.setPasswordHash(newPasswordHash);
+                userService.updateUser(user);
+                
+                java.util.Map<String, Object> result = new java.util.HashMap<>();
+                result.put("success", true);
+                result.put("message", "Şifre başarıyla güncellendi");
+                
+                return ResponseEntity.ok(result);
+            }
+            
+            java.util.Map<String, String> error = new java.util.HashMap<>();
+            error.put("error", "Şifre güncellenemedi");
+            return ResponseEntity.status(500).body(error);
+            
+        } catch (Exception e) {
+            java.util.Map<String, String> error = new java.util.HashMap<>();
+            error.put("error", "Şifre güncellenemedi: " + e.getMessage());
+            return ResponseEntity.status(500).body(error);
+        }
+    }
+    
+    /**
+     * Get user statistics (diagnoses count, etc.)
+     * GET /api/users/{userId}/stats
+     * @param userId User ID
+     * @return user statistics
+     */
+    @GetMapping("/{userId}/stats")
+    public ResponseEntity<?> getUserStats(@PathVariable Integer userId) {
+        try {
+            Optional<User> userOpt = userService.findById(userId);
+            if (!userOpt.isPresent()) {
+                java.util.Map<String, String> error = new java.util.HashMap<>();
+                error.put("error", "Kullanıcı bulunamadı");
+                return ResponseEntity.status(404).body(error);
+            }
+            
+            User user = userOpt.get();
+            
+            java.util.Map<String, Object> stats = new java.util.HashMap<>();
+            stats.put("userId", user.getId());
+            stats.put("memberSince", user.getCreatedAt());
+            stats.put("lastLogin", user.getLastLogin());
+            stats.put("totalDiagnoses", user.getPredictions() != null ? user.getPredictions().size() : 0);
+            
+            // Get last diagnosis date if exists
+            if (user.getPredictions() != null && !user.getPredictions().isEmpty()) {
+                java.time.LocalDateTime lastDiagnosisDate = user.getPredictions().stream()
+                    .map(p -> p.getCreatedAt())
+                    .filter(date -> date != null)
+                    .max(java.time.LocalDateTime::compareTo)
+                    .orElse(null);
+                stats.put("lastDiagnosis", lastDiagnosisDate);
+            } else {
+                stats.put("lastDiagnosis", null);
+            }
+            
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            java.util.Map<String, String> error = new java.util.HashMap<>();
+            error.put("error", "İstatistikler yüklenemedi: " + e.getMessage());
+            return ResponseEntity.status(500).body(error);
+        }
+    }
+
+    /**
+     * Upload user avatar
+     * POST /api/users/avatar
+     */
+    @PostMapping("/avatar")
+    public ResponseEntity<?> uploadAvatar(@RequestBody java.util.Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            String base64Image = request.get("avatar");
+            
+            if (email == null || base64Image == null) {
+                return ResponseEntity.badRequest().body(java.util.Map.of("error", "Email ve avatar gerekli"));
+            }
+            
+            // Remove data:image/...;base64, prefix if exists
+            String base64Data = base64Image;
+            if (base64Image.contains(",")) {
+                base64Data = base64Image.split(",")[1];
+            }
+            
+            // Decode base64
+            byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Data);
+            
+            // Create uploads directory if not exists
+            java.nio.file.Path uploadDir = java.nio.file.Paths.get("uploads", "avatars");
+            if (!java.nio.file.Files.exists(uploadDir)) {
+                java.nio.file.Files.createDirectories(uploadDir);
+            }
+            
+            // Generate unique filename
+            String fileName = email.replace("@", "_").replace(".", "_") + "_" + 
+                            System.currentTimeMillis() + ".jpg";
+            java.nio.file.Path filePath = uploadDir.resolve(fileName);
+            
+            // Save file
+            java.nio.file.Files.write(filePath, imageBytes);
+            
+            // Update user's avatar_url
+            User user = userService.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+            
+            user.setAvatarUrl("/uploads/avatars/" + fileName);
+            userService.updateUser(user);
+            
+            java.util.Map<String, String> response = new java.util.HashMap<>();
+            response.put("message", "Avatar başarıyla yüklendi");
+            response.put("avatarUrl", user.getAvatarUrl());
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            java.util.Map<String, String> error = new java.util.HashMap<>();
+            error.put("error", "Avatar yüklenemedi: " + e.getMessage());
+            return ResponseEntity.status(500).body(error);
+        }
+    }
 }
 

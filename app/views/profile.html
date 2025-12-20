@@ -238,69 +238,180 @@
                 userNameEl.textContent = user.name;
             }
             
+            // Load profile data from backend
             loadProfileData();
-            loadDiagnosisStats();
         }
 
-        function loadProfileData() {
+        async function loadProfileData() {
             const user = getCurrentUser();
+            if (!user || !user.email) {
+                return;
+            }
             
-            document.getElementById('fullName').value = user.name || '';
-            document.getElementById('email').value = user.email || '';
-            
-            if (profile.avatar) {
-                document.getElementById('avatarImg').src = profile.avatar;
+            try {
+                const response = await fetch(`http://localhost:8080/api/users/by-email?email=${encodeURIComponent(user.email)}`);
+                
+                if (response.ok) {
+                    const userData = await response.json();
+                    
+                    document.getElementById('fullName').value = userData.userName || '';
+                    document.getElementById('email').value = userData.email || '';
+                    document.getElementById('phone').value = userData.phone || '';
+                    document.getElementById('location').value = userData.location || '';
+                    document.getElementById('bio').value = userData.bio || '';
+                    
+                    if (userData.avatarUrl) {
+                        // Avatar URL backend'den geliyor, tam URL oluştur
+                        const avatarSrc = userData.avatarUrl.startsWith('data:') 
+                            ? userData.avatarUrl 
+                            : `http://localhost:8080${userData.avatarUrl}`;
+                        document.getElementById('avatarImg').src = avatarSrc;
+                    }
+                    
+                    // Load diagnosis stats if we have userId
+                    if (userData.id) {
+                        loadDiagnosisStats(userData.id);
+                    }
+                } else {
+                    console.error('Failed to load profile data');
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
             }
         }
 
-        function loadDiagnosisStats() {
-            const diagnoses = JSON.parse(localStorage.getItem('diagnoses') || '[]');
-            const createdAt = localStorage.getItem('account_created_at') || new Date().toISOString();
+        async function loadDiagnosisStats(userId) {
+            if (!userId) {
+                return;
+            }
             
-            document.getElementById('totalDiagnoses').textContent = diagnoses.length;
-            document.getElementById('memberSince').textContent = new Date(createdAt).toLocaleDateString();
-            
-            if (diagnoses.length > 0) {
-                const lastDiag = diagnoses[diagnoses.length - 1];
-                document.getElementById('lastDiagnosis').textContent = new Date(lastDiag.date).toLocaleDateString();
-            } else {
-                document.getElementById('lastDiagnosis').textContent = 'No diagnoses yet';
+            try {
+                const response = await fetch(`http://localhost:8080/api/users/${userId}/stats`);
+                
+                if (response.ok) {
+                    const stats = await response.json();
+                    
+                    document.getElementById('memberSince').textContent = 
+                        stats.memberSince ? new Date(stats.memberSince).toLocaleDateString() : '-';
+                    document.getElementById('totalDiagnoses').textContent = stats.totalDiagnoses || 0;
+                    document.getElementById('lastDiagnosis').textContent = 
+                        stats.lastDiagnosis ? new Date(stats.lastDiagnosis).toLocaleDateString() : 'No diagnoses yet';
+                } else {
+                    console.error('Failed to load diagnosis stats');
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
             }
         }
 
-        function uploadAvatar(event) {
+        async function uploadAvatar(event) {
             const file = event.target.files[0];
             if (file && file.type.startsWith('image/')) {
+                // Check file size (max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Dosya boyutu 5MB\'dan küçük olmalıdır');
+                    return;
+                }
+                
                 const reader = new FileReader();
-                reader.onload = (e) => {
-                    const avatar = e.target.result;
-                    document.getElementById('avatarImg').src = avatar;
+                reader.onload = async (e) => {
+                    const avatarDataUrl = e.target.result;
                     
-                    const profile = JSON.parse(localStorage.getItem('profile') || '{}');
-                    profile.avatar = avatar;
-                    localStorage.setItem('profile', JSON.stringify(profile));
+                    // Update preview immediately
+                    document.getElementById('avatarImg').src = avatarDataUrl;
+                    
+                    // Save to backend
+                    const user = getCurrentUser();
+                    if (user && user.email) {
+                        try {
+                            const response = await fetch('http://localhost:8080/api/users/avatar', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    email: user.email,
+                                    avatar: avatarDataUrl
+                                })
+                            });
+                            
+                            const result = await response.json();
+                            
+                            if (response.ok) {
+                                console.log('Avatar uploaded successfully:', result.avatarUrl);
+                                alert('Profil resmi başarıyla güncellendi!');
+                            } else {
+                                console.error('Failed to upload avatar:', result.error);
+                                alert('Resim yüklenemedi: ' + (result.error || 'Bilinmeyen hata'));
+                            }
+                        } catch (error) {
+                            console.error('Error uploading avatar:', error);
+                            alert('Resim yüklenirken bir hata oluştu');
+                        }
+                    }
                 };
                 reader.readAsDataURL(file);
             }
         }
 
-        document.getElementById('profileForm').addEventListener('submit', (e) => {
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const profile = {
-                fullName: document.getElementById('fullName').value,
+            const user = getCurrentUser();
+            if (!user || !user.email) {
+                alert('User not found. Please login again.');
+                return;
+            }
+            
+            const profileData = {
+                email: user.email,
+                userName: document.getElementById('fullName').value,
                 phone: document.getElementById('phone').value,
                 location: document.getElementById('location').value,
                 bio: document.getElementById('bio').value
             };
             
-            localStorage.setItem('profile', JSON.stringify(profile));
-            alert('Profile updated successfully!');
+            try {
+                const response = await fetch('http://localhost:8080/api/users/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(profileData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    // Update cookie with new name
+                    if (result.user.userName) {
+                        document.cookie = `userName=${encodeURIComponent(result.user.userName)}; path=/`;
+                        // Update dropdown
+                        const dropdownEl = document.getElementById('userNameDropdown');
+                        if (dropdownEl) {
+                            dropdownEl.textContent = result.user.userName;
+                        }
+                    }
+                    alert('Profile updated successfully!');
+                } else {
+                    alert('Error: ' + (result.error || 'Failed to update profile'));
+                }
+            } catch (error) {
+                console.error('Profile update error:', error);
+                alert('Failed to update profile. Please make sure the backend is running.');
+            }
         });
 
-        document.getElementById('passwordForm').addEventListener('submit', (e) => {
+        document.getElementById('passwordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            const user = getCurrentUser();
+            if (!user || !user.email) {
+                alert('User not found. Please login again.');
+                return;
+            }
+            
+            const currentPassword = document.getElementById('currentPassword').value;
             const newPassword = document.getElementById('newPassword').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
             
@@ -314,9 +425,33 @@
                 return;
             }
             
-            localStorage.setItem('user_password', newPassword);
-            alert('Password updated successfully!');
-            document.getElementById('passwordForm').reset();
+            const passwordData = {
+                email: user.email,
+                currentPassword: currentPassword,
+                newPassword: newPassword
+            };
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/users/password', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(passwordData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    alert('Password updated successfully!');
+                    document.getElementById('passwordForm').reset();
+                } else {
+                    alert('Error: ' + (result.error || 'Failed to update password'));
+                }
+            } catch (error) {
+                console.error('Password update error:', error);
+                alert('Failed to update password. Please make sure the backend is running.');
+            }
         });
 
         document.addEventListener('DOMContentLoaded', () => {

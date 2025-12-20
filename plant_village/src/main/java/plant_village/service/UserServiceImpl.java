@@ -68,6 +68,10 @@ public class UserServiceImpl implements UserService {
         return passwordEncoder.matches(rawPassword, encodedPassword);
     }
     
+    public BCryptPasswordEncoder getPasswordEncoder() {
+        return this.passwordEncoder;
+    }
+    
     @Override
     public java.util.List<User> findAll() {
         return userRepository.findAll();

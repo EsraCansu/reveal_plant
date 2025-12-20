@@ -37,6 +37,18 @@ public class User {
     
     @Column(name = "role", nullable = false, length = 10)
     private String role;
+    
+    @Column(name = "phone", length = 20)
+    private String phone;
+    
+    @Column(name = "location", length = 100)
+    private String location;
+    
+    @Column(name = "bio", columnDefinition = "TEXT")
+    private String bio;
+    
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private java.util.List<Prediction> predictions;
