@@ -1,33 +1,3 @@
-    /**
-     * Kullanıcı girişi (login)
-     * POST /api/auth/login
-     * @param loginRequest {"email": "...", "password": "..."}
-     * @return Kullanıcı bilgisi ve rolü (admin/user) veya hata
-     */
-    @PostMapping("/auth/login")
-    public ResponseEntity<?> login(@RequestBody java.util.Map<String, String> loginRequest) {
-        String email = loginRequest.get("email");
-        String password = loginRequest.get("password");
-        if (email == null || password == null) {
-            return ResponseEntity.badRequest().body("Email ve şifre gereklidir.");
-        }
-        return userService.findByEmail(email)
-                .map(user -> {
-                    if (userService instanceof plant_village.service.UserServiceImpl) {
-                        plant_village.service.UserServiceImpl impl = (plant_village.service.UserServiceImpl) userService;
-                        if (impl.verifyPassword(password, user.getPasswordHash())) {
-                            java.util.Map<String, Object> result = new java.util.HashMap<>();
-                            result.put("id", user.getId());
-                            result.put("email", user.getEmail());
-                            result.put("role", user.getRole());
-                            result.put("name", user.getUserName());
-                            return ResponseEntity.ok(result);
-                        }
-                    }
-                    return ResponseEntity.status(401).body("Geçersiz şifre.");
-                })
-                .orElse(ResponseEntity.status(404).body("Kullanıcı bulunamadı."));
-    }
 package plant_village.controller;
 
 import plant_village.model.User;
