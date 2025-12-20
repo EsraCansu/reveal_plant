@@ -196,6 +196,107 @@ public class UserController {
     }
 
     /**
+     * Get all users (Admin only)
+     * GET /api/users/all
+     * @return list of all users
+     */
+    @GetMapping("/all")
+    public ResponseEntity<?> getAllUsers() {
+        try {
+            java.util.List<User> users = userService.findAll();
+            
+            // Password'ları çıkar (güvenlik)
+            java.util.List<java.util.Map<String, Object>> sanitizedUsers = users.stream()
+                .map(user -> {
+                    java.util.Map<String, Object> userMap = new java.util.HashMap<>();
+                    userMap.put("id", user.getId());
+                    userMap.put("userName", user.getUserName());
+                    userMap.put("email", user.getEmail());
+                    userMap.put("role", user.getRole());
+                    userMap.put("createdAt", user.getCreatedAt());
+                    userMap.put("lastLogin", user.getLastLogin());
+                    return userMap;
+                })
+                .collect(java.util.stream.Collectors.toList());
+            
+            return ResponseEntity.ok(sanitizedUsers);
+        } catch (Exception e) {
+            java.util.Map<String, String> error = new java.util.HashMap<>();
+            error.put("error", "Kullanıcılar yüklenemedi: " + e.getMessage());
+            return ResponseEntity.status(500).body(error);
+        }
+    }
+    
+    /**
+     * Update user role (Admin only)
+     * PUT /api/users/{userId}/role
+     * @param userId User ID
+     * @param request Contains new role
+     * @return updated user
+     */
+    @PutMapping("/{userId}/role")
+    public ResponseEntity<?> updateUserRole(
+            @PathVariable Integer userId,
+            @RequestBody java.util.Map<String, String> request) {
+        try {
+            String newRole = request.get("role");
+            
+            if (newRole == null || (!newRole.equals("USER") && !newRole.equals("ADMIN"))) {
+                java.util.Map<String, String> error = new java.util.HashMap<>();
+                error.put("error", "Geçersiz rol. USER veya ADMIN olmalı.");
+                return ResponseEntity.badRequest().body(error);
+            }
+            
+            Optional<User> userOpt = userService.findById(userId);
+            if (!userOpt.isPresent()) {
+                java.util.Map<String, String> error = new java.util.HashMap<>();
+                error.put("error", "Kullanıcı bulunamadı");
+                return ResponseEntity.status(404).body(error);
+            }
+            
+            User user = userOpt.get();
+            user.setRole(newRole);
+            User updatedUser = userService.updateUser(user);
+            
+            java.util.Map<String, Object> result = new java.util.HashMap<>();
+            result.put("success", true);
+            result.put("message", "Rol güncellendi");
+            result.put("userId", updatedUser.getId());
+            result.put("newRole", updatedUser.getRole());
+            
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            java.util.Map<String, String> error = new java.util.HashMap<>();
+            error.put("error", "Rol güncellenemedi: " + e.getMessage());
+            return ResponseEntity.status(500).body(error);
+        }
+    }
+    
+    /**
+     * Delete user (Admin only)
+     * DELETE /api/users/{userId}
+     * @param userId User ID to delete
+     * @return success message
+     */
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<?> deleteUser(@PathVariable Integer userId) {
+        try {
+            userService.deleteUser(userId);
+            
+            java.util.Map<String, Object> result = new java.util.HashMap<>();
+            result.put("success", true);
+            result.put("message", "Kullanıcı silindi");
+            result.put("userId", userId);
+            
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            java.util.Map<String, String> error = new java.util.HashMap<>();
+            error.put("error", "Kullanıcı silinemedi: " + e.getMessage());
+            return ResponseEntity.status(500).body(error);
+        }
+    }
+
+    /**
      * Get user by email (for frontend auth)
      * GET /api/users/by-email?email={email}
      * @param email User email

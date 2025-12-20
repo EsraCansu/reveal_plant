@@ -19,6 +19,16 @@ public class Plant {
     @Column(name = "plant_id")
     private Integer id;
     
+    // Getter alias for ID consistency
+    public Integer getPlantId() {
+        return this.id;
+    }
+    
+    // Setter alias for ID consistency
+    public void setPlantId(Integer plantId) {
+        this.id = plantId;
+    }
+    
     @Column(name = "plant_name", length = 50)
     private String plantName;
     

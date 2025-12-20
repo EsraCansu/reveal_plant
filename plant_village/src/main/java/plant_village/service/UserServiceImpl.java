@@ -67,7 +67,13 @@ public class UserServiceImpl implements UserService {
     public boolean verifyPassword(String rawPassword, String encodedPassword) {
         return passwordEncoder.matches(rawPassword, encodedPassword);
     }
+    
+    @Override
+    public java.util.List<User> findAll() {
+        return userRepository.findAll();
+    }
 
+    @Override
     @Transactional
     public User updateUser(User user) {
         User existingUser = userRepository.findById(user.getId())
@@ -86,6 +92,7 @@ public class UserServiceImpl implements UserService {
         return userRepository.save(user);
     }
 
+    @Override
     @Transactional
     public void deleteUser(Integer userId) {
         if (!userRepository.existsById(userId)) {

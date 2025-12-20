@@ -8,124 +8,563 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../../assets/css/style.css">
     <script src="../../assets/js/auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
-        // Require admin role before page loads
-        requireAdmin();
+        if (!requireAdmin()) {
+            window.location.href = 'login.html';
+        }
     </script>
     <style>
-        .admin-header { background: var(--brand-dark, #2d4739); color: #fff; padding: 20px 0; }
-        .admin-sidebar { background: #f8f9fa; min-height: 100vh; border-right: 1px solid #dee2e6; }
-        .admin-sidebar .nav-link { color: #333 !important; border-left: 3px solid transparent; margin-bottom: 5px; padding: 10px 15px; font-weight: 500; }
-        .admin-sidebar .nav-link.active, .admin-sidebar .nav-link:hover { color: #fff !important; background: var(--brand-light, #4caf50); border-left-color: var(--brand-light, #4caf50); }
-        .admin-content { padding: 30px; }
-        .admin-table th, .admin-table td { vertical-align: middle; }
+        :root {
+            --admin-primary: #461b58;
+            --admin-secondary: #4caf50;
+        }
+        body { background: #f5f7fa; }
+        .admin-header {
+            background: linear-gradient(135deg, var(--admin-primary) 0%, var(--admin-secondary) 100%);
+            color: #fff;
+            padding: 25px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .admin-sidebar {
+            background: #fff;
+            min-height: calc(100vh - 120px);
+            border-right: 1px solid #e0e0e0;
+            padding: 20px 0;
+        }
+        .admin-sidebar .nav-link {
+            color: #555 !important;
+            border-left: 3px solid transparent;
+            padding: 12px 20px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .admin-sidebar .nav-link:hover {
+            background: #f0f8f0;
+            color: var(--admin-secondary) !important;
+        }
+        .admin-sidebar .nav-link.active {
+            background: var(--admin-secondary);
+            color: #fff !important;
+        }
+        .stat-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        .stat-card i { font-size: 2.5rem; color: var(--admin-secondary); }
+        .stat-card h3 { font-size: 2.5rem; font-weight: bold; color: var(--admin-primary); margin: 10px 0; }
+        .user-table thead { background: linear-gradient(135deg, var(--admin-primary) 0%, var(--admin-secondary) 100%); color: #fff; }
+        .role-badge { padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+        .role-admin { background: #fff3cd; color: #856404; }
+        .role-user { background: #d1ecf1; color: #0c5460; }
+        .feedback-item { border-left: 4px solid #e0e0e0; padding: 15px; margin-bottom: 15px; background: #f9f9f9; border-radius: 8px; }
+        .feedback-item.correct { border-left-color: #4caf50; }
+        .feedback-item.incorrect { border-left-color: #f44336; }
     </style>
 </head>
-<body class="d-flex flex-column min-vh-100">
-    <div class="admin-header text-center">
-        <h2 class="mb-0">RevealPlant Admin Panel</h2>
-        <small>Manage users, diagnoses, and system settings</small>
+<body>
+    <div class="admin-header">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <img src="../../assets/images/logo.png" alt="RevealPlant" style="height: 60px; margin-right: 15px;">
+                    <div>
+                        <h2 class="mb-0">RevealPlant Admin Panel</h2>
+                        <small>User & System Management</small>
+                    </div>
+                </div>
+                <div>
+                    <span class="me-3"><i class="fas fa-user-circle me-1"></i><span id="adminName">Admin</span></span>
+                    <button class="btn btn-light btn-sm" onclick="logout()">
+                        <i class="fas fa-sign-out-alt me-1"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
+
     <div class="container-fluid">
         <div class="row">
-            <!-- Sidebar -->
-            <nav class="col-md-2 admin-sidebar d-none d-md-block">
-                <ul class="nav flex-column mt-4">
-                    <li class="nav-item"><a class="nav-link active" href="#" id="admin-users-link"><i class="fas fa-users me-2"></i>Users</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#" id="admin-diagnoses-link"><i class="fas fa-notes-medical me-2"></i>Diagnoses</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#" id="admin-logs-link"><i class="fas fa-file-alt me-2"></i>Logs</a></li>
-                    <li class="nav-item"><a class="nav-link" href="../../index.html"><i class="fas fa-home me-2"></i>Back to Home</a></li>
+            <nav class="col-md-2 admin-sidebar">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" onclick="showSection('users'); return false;">
+                            <i class="fas fa-users me-2"></i>Users
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showSection('logs'); return false;">
+                            <i class="fas fa-file-alt me-2"></i>Logs
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showSection('feedback'); return false;">
+                            <i class="fas fa-thumbs-up me-2"></i>Prediction Feedback
+                        </a>
+                    </li>
                 </ul>
             </nav>
-            <!-- Main Content -->
-            <main class="col-md-10 ms-sm-auto admin-content" id="admin-main-content">
-                <div id="admin-users-section">
-                    <h4>Users</h4>
-                    <table class="table table-bordered admin-table">
-                        <thead class="table-light">
-                            <tr><th>ID</th><th>Email</th><th>Role</th><th>Actions</th></tr>
-                        </thead>
-                        <tbody id="admin-users-table">
-                            <!-- User rows will be injected here -->
-                        </tbody>
-                    </table>
+
+            <main class="col-md-10 p-4">
+                <!-- Users Section -->
+                <div id="users-section">
+                    <div class="d-flex justify-content-between mb-4">
+                        <h4><i class="fas fa-users me-2"></i>User Management</h4>
+                        <button class="btn btn-success" onclick="loadUsers()"><i class="fas fa-sync-alt me-1"></i>Refresh</button>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="stat-card">
+                                <i class="fas fa-users"></i>
+                                <h3 id="userStatsTotal">0</h3>
+                                <p>Total Users</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-card">
+                                <i class="fas fa-user-shield"></i>
+                                <h3 id="userStatsAdmin">0</h3>
+                                <p>Admins</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-card">
+                                <i class="fas fa-user"></i>
+                                <h3 id="userStatsRegular">0</h3>
+                                <p>Regular Users</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body">
+                            <input type="text" class="form-control mb-3" id="searchInput" placeholder="Search..." onkeyup="filterUsers()">
+                            <div id="userTableContainer">Loading...</div>
+                        </div>
+                    </div>
                 </div>
-                <div id="admin-diagnoses-section" style="display:none;">
-                    <h4>Diagnoses</h4>
-                    <table class="table table-bordered admin-table">
-                        <thead class="table-light">
-                            <tr><th>ID</th><th>User</th><th>Plant</th><th>Disease</th><th>Date</th></tr>
-                        </thead>
-                        <tbody id="admin-diagnoses-table">
-                            <!-- Diagnosis rows will be injected here -->
-                        </tbody>
-                    </table>
+
+                <!-- Logs Section -->
+                <div id="logs-section" style="display:none;">
+                    <div class="d-flex justify-content-between mb-4">
+                        <h4><i class="fas fa-file-alt me-2"></i>System Logs</h4>
+                        <button class="btn btn-success" onclick="loadLogs()"><i class="fas fa-sync-alt me-1"></i>Refresh</button>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Log Level:</label>
+                                <select class="form-select" id="logLevelFilter" onchange="filterLogs()">
+                                    <option value="all">All</option>
+                                    <option value="INFO">INFO</option>
+                                    <option value="WARNING">WARNING</option>
+                                    <option value="ERROR">ERROR</option>
+                                </select>
+                            </div>
+                            <div id="logsContainer" style="max-height: 600px; overflow-y: auto;">
+                                <div class="alert alert-info">Loading logs...</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div id="admin-logs-section" style="display:none;">
-                    <h4>System Logs</h4>
-                    <pre id="admin-logs-content">No logs available.</pre>
+
+                <!-- Prediction Feedback Section -->
+                <div id="feedback-section" style="display:none;">
+                    <div class="d-flex justify-content-between mb-4">
+                        <h4><i class="fas fa-thumbs-up me-2"></i>Prediction Feedback Analytics</h4>
+                        <button class="btn btn-success" onclick="loadFeedback()"><i class="fas fa-sync-alt me-1"></i>Refresh</button>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <i class="fas fa-chart-pie"></i>
+                                <h3 id="feedbackTotal">0</h3>
+                                <p>Total Feedback</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <i class="fas fa-thumbs-up" style="color: #4caf50;"></i>
+                                <h3 id="feedbackCorrect">0</h3>
+                                <p>Correct Predictions</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <i class="fas fa-thumbs-down" style="color: #f44336;"></i>
+                                <h3 id="feedbackIncorrect">0</h3>
+                                <p>Incorrect Predictions</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <i class="fas fa-percentage" style="color: #2196f3;"></i>
+                                <h3 id="feedbackAccuracy">0%</h3>
+                                <p>Accuracy Rate</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Accuracy Chart</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="feedbackChart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>How Feedback Works</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>User Feedback System:</strong></p>
+                                    <ul>
+                                        <li>Users can rate predictions after diagnosis</li>
+                                        <li><i class="fas fa-thumbs-up text-success"></i> = Prediction was correct</li>
+                                        <li><i class="fas fa-thumbs-down text-danger"></i> = Prediction was incorrect</li>
+                                        <li>Hover over result image to see feedback buttons</li>
+                                        <li>Only logged-in users can submit feedback</li>
+                                        <li>This data helps improve ML model accuracy</li>
+                                    </ul>
+                                    <p class="mt-3 mb-0"><small class="text-muted">
+                                        <strong>Backend Implementation:</strong><br>
+                                        • Table: <code>prediction_feedback</code><br>
+                                        • Controller: <code>PredictionController.java</code><br>
+                                        • Endpoint: <code>POST /api/predictions/{id}/feedback</code><br>
+                                        • Auto-save: Positive feedback images → plant/disease tables
+                                    </small></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="fas fa-list me-2"></i>Recent Feedback</h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="feedbackContainer">
+                                <div class="alert alert-info">Loading feedback...</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </main>
         </div>
     </div>
+
+    <!-- Change Role Modal -->
+    <div class="modal fade" id="changeRoleModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Change User Role</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>User:</strong> <span id="modalUserName"></span></p>
+                    <select class="form-select" id="newRoleSelect">
+                        <option value="USER">USER</option>
+                        <option value="ADMIN">ADMIN</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmRoleChange()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete User Modal -->
+    <div class="modal fade" id="deleteUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Delete User</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>WARNING:</strong> This action cannot be undone!</p>
+                    <p><strong>User:</strong> <span id="deleteUserName"></span></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Sidebar navigation
-        document.getElementById('admin-users-link').onclick = function() {
-            showSection('users');
-        };
-        document.getElementById('admin-diagnoses-link').onclick = function() {
-            showSection('diagnoses');
-        };
-        document.getElementById('admin-logs-link').onclick = function() {
-            showSection('logs');
-        };
+        const BACKEND_URL = 'http://localhost:8080';
+        let allUsers = [];
+        let selectedUserId = null;
+        let changeRoleModal, deleteUserModal;
+        let feedbackChart = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const admin = getCurrentUser();
+            document.getElementById('adminName').textContent = admin.name || admin.email?.split('@')[0] || 'Admin';
+            
+            changeRoleModal = new bootstrap.Modal(document.getElementById('changeRoleModal'));
+            deleteUserModal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
+            loadUsers();
+        });
+
         function showSection(section) {
-            document.getElementById('admin-users-section').style.display = section === 'users' ? '' : 'none';
-            document.getElementById('admin-diagnoses-section').style.display = section === 'diagnoses' ? '' : 'none';
-            document.getElementById('admin-logs-section').style.display = section === 'logs' ? '' : 'none';
-            document.getElementById('admin-users-link').classList.toggle('active', section === 'users');
-            document.getElementById('admin-diagnoses-link').classList.toggle('active', section === 'diagnoses');
-            document.getElementById('admin-logs-link').classList.toggle('active', section === 'logs');
+            document.getElementById('users-section').style.display = 'none';
+            document.getElementById('logs-section').style.display = 'none';
+            document.getElementById('feedback-section').style.display = 'none';
+            document.getElementById(section + '-section').style.display = 'block';
+            
+            document.querySelectorAll('.admin-sidebar .nav-link').forEach(link => link.classList.remove('active'));
+            event.target.closest('.nav-link').classList.add('active');
+            
+            if (section === 'logs') loadLogs();
+            else if (section === 'feedback') loadFeedback();
         }
-        // Kullanıcıları backend'den çek
-        async function fetchUsers() {
+
+        async function loadUsers() {
             try {
-                const res = await fetch('/api/users');
-                const users = await res.json();
-                document.getElementById('admin-users-table').innerHTML = users.map(u => `
-                    <tr><td>${u.id || u.userId || ''}</td><td>${u.email || u.username || ''}</td><td>${u.role || ''}</td><td><button class='btn btn-sm btn-danger'>Delete</button></td></tr>
-                `).join('');
-            } catch (e) {
-                document.getElementById('admin-users-table').innerHTML = `<tr><td colspan='4'>Kullanıcılar yüklenemedi.</td></tr>`;
+                const res = await authenticatedFetch(`${BACKEND_URL}/api/users/all`);
+                if (!res.ok) throw new Error('Failed to load');
+                
+                allUsers = await res.json();
+                displayUsers(allUsers);
+                updateUserStats();
+            } catch (error) {
+                document.getElementById('userTableContainer').innerHTML = '<div class="alert alert-danger">Error: ' + error.message + '</div>';
             }
         }
 
-        // Teşhisleri backend'den veya localStorage'dan çek
-        async function fetchDiagnoses() {
-            try {
-                // Önce backend'den dene
-                const res = await fetch('/api/predictions');
-                if (res.ok) {
-                    const diagnoses = await res.json();
-                    document.getElementById('admin-diagnoses-table').innerHTML = diagnoses.map(d => `
-                        <tr><td>${d.id || ''}</td><td>${d.user?.email || d.userId || ''}</td><td>${d.plantName || ''}</td><td>${d.diseaseName || ''}</td><td>${d.predictedAt || d.date || ''}</td></tr>
-                    `).join('');
-                    return;
-                }
-            } catch (e) {}
-            // Backend başarısızsa localStorage'dan dene
-            const diagnoses = JSON.parse(localStorage.getItem('diagnoses') || '[]');
-            document.getElementById('admin-diagnoses-table').innerHTML = diagnoses.map(d => `
-                <tr><td>${d.id || ''}</td><td>${d.user || ''}</td><td>${d.plant || d.plantName || ''}</td><td>${d.disease || d.diseaseName || ''}</td><td>${d.date || ''}</td></tr>
-            `).join('');
+        function displayUsers(users) {
+            if (!users.length) {
+                document.getElementById('userTableContainer').innerHTML = '<p>No users found.</p>';
+                return;
+            }
+            
+            const tableHTML = `
+                <table class="table user-table">
+                    <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead>
+                    <tbody>
+                        ${users.map(u => `
+                            <tr>
+                                <td>${u.id}</td>
+                                <td>${u.userName || 'N/A'}</td>
+                                <td>${u.email}</td>
+                                <td><span class="role-badge role-${u.role.toLowerCase()}">${u.role}</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" onclick="openChangeRoleModal(${u.id})" title="Change Role">
+                                        <i class="fas fa-user-tag"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="openDeleteModal(${u.id})" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('userTableContainer').innerHTML = tableHTML;
         }
 
-        // Sayfa yüklenince verileri çek
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchUsers();
-            fetchDiagnoses();
-        });
+        function updateUserStats() {
+            document.getElementById('userStatsTotal').textContent = allUsers.length;
+            document.getElementById('userStatsAdmin').textContent = allUsers.filter(u => u.role === 'ADMIN').length;
+            document.getElementById('userStatsRegular').textContent = allUsers.filter(u => u.role === 'USER').length;
+        }
+
+        function filterUsers() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allUsers.filter(u => 
+                u.userName.toLowerCase().includes(search) || u.email.toLowerCase().includes(search)
+            );
+            displayUsers(filtered);
+        }
+
+        function openChangeRoleModal(userId) {
+            const user = allUsers.find(u => u.id === userId);
+            selectedUserId = userId;
+            document.getElementById('modalUserName').textContent = user.userName;
+            document.getElementById('newRoleSelect').value = user.role;
+            changeRoleModal.show();
+        }
+
+        async function confirmRoleChange() {
+            const newRole = document.getElementById('newRoleSelect').value;
+            try {
+                const res = await authenticatedFetch(`${BACKEND_URL}/api/users/${selectedUserId}/role`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ role: newRole })
+                });
+                if (!res.ok) throw new Error('Update failed');
+                
+                changeRoleModal.hide();
+                alert('Role updated successfully!');
+                loadUsers();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function openDeleteModal(userId) {
+            const user = allUsers.find(u => u.id === userId);
+            selectedUserId = userId;
+            document.getElementById('deleteUserName').textContent = user.userName + ' (' + user.email + ')';
+            deleteUserModal.show();
+        }
+
+        async function confirmDelete() {
+            try {
+                const res = await authenticatedFetch(`${BACKEND_URL}/api/users/${selectedUserId}`, {
+                    method: 'DELETE'
+                });
+                if (!res.ok) throw new Error('Delete failed');
+                
+                deleteUserModal.hide();
+                alert('User deleted successfully!');
+                loadUsers();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function loadLogs() {
+            const mockLogs = [
+                { id: 1, level: 'INFO', message: 'User logged in: test@revealplant.com', timestamp: new Date().toISOString() },
+                { id: 2, level: 'INFO', message: 'New user registered: user@example.com', timestamp: new Date(Date.now() - 3600000).toISOString() },
+                { id: 3, level: 'WARNING', message: 'Failed login attempt', timestamp: new Date(Date.now() - 7200000).toISOString() },
+                { id: 4, level: 'ERROR', message: 'Database connection error (temporary)', timestamp: new Date(Date.now() - 10800000).toISOString() },
+                { id: 5, level: 'INFO', message: 'Backend started successfully', timestamp: new Date(Date.now() - 14400000).toISOString() },
+            ];
+
+            const logHTML = mockLogs.map(log => {
+                const bgClass = log.level === 'ERROR' ? 'danger' : log.level === 'WARNING' ? 'warning' : 'info';
+                const icon = log.level === 'ERROR' ? 'exclamation-circle' : log.level === 'WARNING' ? 'exclamation-triangle' : 'info-circle';
+                return `
+                    <div class="alert alert-${bgClass} mb-2" data-level="${log.level}">
+                        <div class="d-flex justify-content-between">
+                            <div><i class="fas fa-${icon} me-2"></i><strong>[${log.level}]</strong> ${log.message}</div>
+                            <small>${new Date(log.timestamp).toLocaleString('en-US')}</small>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('logsContainer').innerHTML = logHTML;
+        }
+
+        function filterLogs() {
+            const level = document.getElementById('logLevelFilter').value;
+            document.querySelectorAll('#logsContainer .alert').forEach(log => {
+                log.style.display = (level === 'all' || log.getAttribute('data-level') === level) ? 'block' : 'none';
+            });
+        }
+
+        async function loadFeedback() {
+            try {
+                // Load real feedback from backend
+                const [feedbackRes, statsRes] = await Promise.all([
+                    authenticatedFetch(`${BACKEND_URL}/api/predictions/feedback/all`),
+                    authenticatedFetch(`${BACKEND_URL}/api/predictions/feedback/stats`)
+                ]);
+                
+                if (!feedbackRes.ok || !statsRes.ok) {
+                    throw new Error('Failed to load feedback');
+                }
+                
+                const feedbackData = await feedbackRes.json();
+                const stats = await statsRes.json();
+                
+                // Update statistics
+                document.getElementById('feedbackTotal').textContent = stats.total || 0;
+                document.getElementById('feedbackCorrect').textContent = stats.correct || 0;
+                document.getElementById('feedbackIncorrect').textContent = stats.incorrect || 0;
+                document.getElementById('feedbackAccuracy').textContent = (stats.accuracy || 0) + '%';
+
+                // Pie Chart
+                const ctx = document.getElementById('feedbackChart');
+                if (feedbackChart) feedbackChart.destroy();
+                
+                const correct = stats.correct || 0;
+                const incorrect = stats.incorrect || 0;
+                
+                feedbackChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Correct', 'Incorrect'],
+                        datasets: [{
+                            data: [correct, incorrect],
+                            backgroundColor: ['#4caf50', '#f44336'],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                        return `${label}: ${value} (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Feedback List
+                if (feedbackData.length === 0) {
+                    document.getElementById('feedbackContainer').innerHTML = 
+                        '<div class="alert alert-info">No feedback submitted yet.</div>';
+                    return;
+                }
+                
+                const feedbackHTML = feedbackData.map(fb => `
+                    <div class="feedback-item ${fb.isCorrect ? 'correct' : 'incorrect'}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">
+                                    <i class="fas fa-thumbs-${fb.isCorrect ? 'up text-success' : 'down text-danger'} me-2"></i>
+                                    ${fb.user?.userName || 'User'}
+                                </h6>
+                                <small class="text-muted">${fb.user?.email || 'N/A'} • Prediction #${fb.predictionId} • ${fb.predictionType}</small>
+                                <div class="mt-1"><strong>${fb.predictedName}</strong></div>
+                            </div>
+                            <small class="text-muted">${new Date(fb.createdAt).toLocaleDateString('en-US')}</small>
+                        </div>
+                        ${fb.comment ? `<p class="mt-2 mb-0">"${fb.comment}"</p>` : ''}
+                        ${fb.imageAddedToDb ? '<span class="badge bg-success mt-2"><i class="fas fa-check"></i> Image Added to Database</span>' : ''}
+                    </div>
+                `).join('');
+                document.getElementById('feedbackContainer').innerHTML = feedbackHTML;
+                
+            } catch (error) {
+                console.error('Error loading feedback:', error);
+                document.getElementById('feedbackContainer').innerHTML = 
+                    '<div class="alert alert-danger">Error loading feedback: ' + error.message + '</div>';
+            }
+        }
     </script>
 </body>
 </html>

@@ -18,4 +18,12 @@ public interface DiseaseRepository extends JpaRepository<Disease, Integer> {
     // 3. Büyük/Küçük harf duyarsız isimle arama (GÜNCELLENDİ: DiseaseName -> Name)
     // Service katmanında çağırdığımız metot bu!
     Optional<Disease> findByNameIgnoreCase(String name);
+    
+    // 4. For feedback system - find disease by exact name match
+    Optional<Disease> findByName(String diseaseName);
+    
+    // Alias method for consistency with Plant table naming
+    default Optional<Disease> findByDiseaseName(String diseaseName) {
+        return findByName(diseaseName);
+    }
 }

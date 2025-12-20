@@ -2,6 +2,7 @@ package plant_village.service;
 
 import plant_village.model.*;
 import lombok.extern.slf4j.Slf4j;
+import java.util.List;
 import java.util.Optional;
 
 public interface UserService {
@@ -17,4 +18,13 @@ public interface UserService {
     
     // check the user entity
     boolean checkUsernameExists(String userName);
+    
+    // get all users (admin)
+    List<User> findAll();
+    
+    // update user (admin)
+    User updateUser(User user);
+    
+    // delete user (admin)
+    void deleteUser(Integer userId);
 }

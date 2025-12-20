@@ -12,10 +12,12 @@ function getCookie(name) {
     if (parts.length === 2) {
         const cookieValue = parts.pop().split(';').shift();
         // URL decode cookie value (backend URL encode yapıyor)
+        // + karakterlerini boşluğa çevir (URL encoding)
         try {
-            return decodeURIComponent(cookieValue);
+            const decodedValue = decodeURIComponent(cookieValue.replace(/\+/g, ' '));
+            return decodedValue;
         } catch (e) {
-            return cookieValue;
+            return cookieValue.replace(/\+/g, ' ');
         }
     }
     return null;
