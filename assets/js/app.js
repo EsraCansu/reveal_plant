@@ -40,17 +40,47 @@ class DiagnosticsController {
     /**
      * Process image file
      */
-    processImage(file) {
+    async processImage(file) {
         const reader = new FileReader();
-        reader.onload = (event) => {
+        reader.onload = async (event) => {
             this.uploadedImage = event.target.result;
             const imagePreview = document.getElementById('imagePreview');
             if (imagePreview) {
-                imagePreview.innerHTML = `<img src="${this.uploadedImage}" class="preview-image" alt="Uploaded plant image">`;
+                imagePreview.innerHTML = `<img src="${this.uploadedImage}" class="preview-image" alt="Uploaded plant image"><div class="text-center mt-3"><div class="spinner-border text-success" role="status"><span class="visually-hidden">Analyzing...</span></div><p class="mt-2">Analyzing your plant...</p></div>`;
             }
-            setTimeout(() => this.showResults(), 500);
+            
+            // ✅ DÜZELTME: Backend'e gerçek istek gönder
+            await this.sendToBackend(file);
         };
         reader.readAsDataURL(file);
+    }
+
+    /**
+     * ✅ YENİ: Backend'e görüntü gönder ve gerçek sonuç al
+     */
+    async sendToBackend(file) {
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('mode', this.selectedMode === 'identify' ? 'identify-plant' : 'detect-disease');
+
+            const response = await fetch('/api/predict', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Prediction failed');
+            }
+
+            const result = await response.json();
+            this.predictionResult = result; // Sonucu sakla
+            setTimeout(() => this.showResults(), 500);
+        } catch (error) {
+            console.error('Backend error:', error);
+            alert('Analysis failed. Please try again.');
+            this.goBack('step-mode');
+        }
     }
 
     /**
@@ -116,17 +146,18 @@ class DiagnosticsController {
         
         if (!isLoggedIn) return; // Only save if user is logged in
 
+        // ✅ DÜZELTME: Backend'den gelen gerçek veriyi kullan
+        const result = this.predictionResult || {};
+        
         const diagnosis = {
             id: Date.now(),
             mode: this.selectedMode,
-            name: this.selectedMode === 'identify' ? 'Tomato Plant' : 'Early Blight',
-            result: this.selectedMode === 'identify' ? 'Tomato Plant (Solanum lycopersicum)' : 'Early Blight - Moderate',
-            confidence: this.selectedMode === 'identify' ? 94.5 : 87.2,
+            name: result.predicted_class || result.plantName || 'Unknown',
+            result: result.predicted_class || result.diseaseName || 'Unknown',
+            confidence: result.confidence ? (result.confidence * 100) : 0,
             image: this.uploadedImage,
             date: new Date().toISOString(),
-            details: this.selectedMode === 'identify' 
-                ? 'Identified as Tomato Plant with high confidence'
-                : 'Detected Early Blight disease. Recommend immediate treatment'
+            details: result.description || result.recommendedAction || 'No details available'
         };
 
         diagnoses.push(diagnosis);
@@ -134,53 +165,65 @@ class DiagnosticsController {
     }
 
     /**
-     * Get identification result template
+     * ✅ DÜZELTME: Backend'den gelen gerçek veriyle identification sonucu göster
      */
     getIdentificationResult() {
+        const result = this.predictionResult || {};
+        const predictedClass = result.predicted_class || 'Unknown Plant';
+        const confidence = result.confidence ? (result.confidence * 100).toFixed(1) : '0';
+        
         return `
             <div class="text-center">
                 <img src="${this.uploadedImage}" class="preview-image" alt="Analyzed plant">
                 <h3 class="mt-3">Plant Identification Result</h3>
-                <div class="alert alert-info mt-3">
-                    <h5>Identified Plant: <strong>Tomato Plant</strong></h5>
-                    <p class="mb-2"><small>Confidence: <strong>94.5%</strong></small></p>
+                <div class="alert alert-success mt-3">
+                    <h5>Identified Plant: <strong>${predictedClass}</strong></h5>
+                    <p class="mb-2"><small>Confidence: <strong>${confidence}%</strong></small></p>
                     <hr>
-                    <p><strong>Scientific Name:</strong> Solanum lycopersicum</p>
-                    <p><strong>Family:</strong> Solanaceae</p>
-                    <p><strong>Care Tips:</strong></p>
-                    <ul class="text-start">
-                        <li>Water regularly but keep soil well-drained</li>
-                        <li>Requires 6-8 hours of direct sunlight daily</li>
-                        <li>Best grown in warm conditions (20-25°C)</li>
-                        <li>Support with stakes as plant grows</li>
-                    </ul>
+                    ${result.description ? `<p>${result.description}</p>` : ''}
+                    ${result.top_predictions ? `
+                        <p><strong>Other Possibilities:</strong></p>
+                        <ul class="text-start">
+                            ${result.top_predictions.slice(1, 4).map(p => 
+                                `<li>${p.class_name}: ${(p.probability * 100).toFixed(1)}%</li>`
+                            ).join('')}
+                        </ul>
+                    ` : ''}
                 </div>
             </div>
         `;
     }
 
     /**
-     * Get disease detection result template
+     * ✅ DÜZELTME: Backend'den gelen gerçek veriyle disease sonucu göster
      */
     getDiseaseResult() {
+        const result = this.predictionResult || {};
+        const predictedClass = result.predicted_class || 'Unknown Disease';
+        const confidence = result.confidence ? (result.confidence * 100).toFixed(1) : '0';
+        const isHealthy = predictedClass.toLowerCase().includes('healthy');
+        
         return `
             <div class="text-center">
                 <img src="${this.uploadedImage}" class="preview-image" alt="Analyzed plant">
                 <h3 class="mt-3">Disease Detection Result</h3>
-                <div class="alert alert-warning mt-3">
-                    <h5><i class="fas fa-exclamation-triangle"></i> Potential Disease Detected</h5>
-                    <p class="mb-2"><small>Confidence: <strong>87.2%</strong></small></p>
+                <div class="alert ${isHealthy ? 'alert-success' : 'alert-warning'} mt-3">
+                    <h5>
+                        <i class="fas ${isHealthy ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i> 
+                        ${isHealthy ? 'Plant is Healthy!' : 'Disease Detected'}
+                    </h5>
+                    <p class="mb-2"><small>Confidence: <strong>${confidence}%</strong></small></p>
                     <hr>
-                    <p><strong>Disease:</strong> Early Blight</p>
-                    <p><strong>Severity:</strong> Moderate</p>
-                    <p><strong>Recommendations:</strong></p>
-                    <ul class="text-start">
-                        <li>Remove infected leaves immediately</li>
-                        <li>Improve air circulation around the plant</li>
-                        <li>Apply fungicide treatment weekly</li>
-                        <li>Avoid watering leaves - water at soil level</li>
-                        <li>Monitor for disease spread</li>
-                    </ul>
+                    <p><strong>Result:</strong> ${predictedClass}</p>
+                    ${result.description ? `<p>${result.description}</p>` : ''}
+                    ${result.top_predictions && !isHealthy ? `
+                        <p><strong>Other Possibilities:</strong></p>
+                        <ul class="text-start">
+                            ${result.top_predictions.slice(1, 4).map(p => 
+                                `<li>${p.class_name}: ${(p.probability * 100).toFixed(1)}%</li>`
+                            ).join('')}
+                        </ul>
+                    ` : ''}
                 </div>
             </div>
         `;
