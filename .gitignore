@@ -105,3 +105,4 @@ plant_village/target/classes/application-local.properties
 >>>>>>> 1c12eb730f6b2c81064260ff51faab5363c8cbaa
 
 plant_village/database/main_database.sql
+DATABASE_MODEL_UPDATES.md

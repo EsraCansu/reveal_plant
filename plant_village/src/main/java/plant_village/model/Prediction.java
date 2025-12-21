@@ -63,5 +63,8 @@ public class Prediction {
     // One-to-Many connection: Keeping track of system logs for this prediction
     @OneToMany(mappedBy = "prediction", cascade = CascadeType.ALL)
     private List<PredictionLog> logDetails;
+    
+    // One-to-Many connection: User feedback on this prediction
+    @OneToMany(mappedBy = "prediction", cascade = CascadeType.ALL)
+    private List<PredictionFeedback> feedbackDetails;
 }
-

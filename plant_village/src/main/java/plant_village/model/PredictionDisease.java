@@ -27,9 +27,6 @@ public class PredictionDisease {
     @JoinColumn(name = "disease_id", nullable = false)
     private Disease disease;  // for Disease information in detail
     
-    @Column(name = "is_healthy")
-    private Boolean isHealthy; // to indicate if the plant is healthy or not
-    
-    @Column(name = "confidence")
-    private Double confidence; // Prediction confidence score (0-1)
+    @Column(name = "is_healthy", nullable = false)
+    private Boolean isHealthy = false; // to indicate if the plant is healthy or not
 }

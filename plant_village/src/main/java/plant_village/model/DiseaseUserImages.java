@@ -21,8 +21,9 @@ public class DiseaseUserImages {
     @Column(name = "id")
     private Integer id;
     
-    @Column(name = "disease_id", nullable = false)
-    private Integer diseaseId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "disease_id", nullable = false)
+    private Disease disease;
     
     @Column(name = "disease_name", length = 50, nullable = false)
     private String diseaseName;

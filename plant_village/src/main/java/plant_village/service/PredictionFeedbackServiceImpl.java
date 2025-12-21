@@ -83,7 +83,7 @@ public class PredictionFeedbackServiceImpl implements PredictionFeedbackService 
                     plant.getPlantId(), feedback.getImageUrl())) {
                 
                 PlantUserImages userImage = PlantUserImages.builder()
-                    .plantId(plant.getPlantId())
+                    .plant(plant)
                     .plantName(plant.getPlantName())
                     .imageUrl(feedback.getImageUrl())
                     .submittedByUser(feedback.getUser())
@@ -117,7 +117,7 @@ public class PredictionFeedbackServiceImpl implements PredictionFeedbackService 
                     disease.getDiseaseId(), feedback.getImageUrl())) {
                 
                 DiseaseUserImages userImage = DiseaseUserImages.builder()
-                    .diseaseId(disease.getDiseaseId())
+                    .disease(disease)
                     .diseaseName(disease.getDiseaseName())
                     .imageUrl(feedback.getImageUrl())
                     .submittedByUser(feedback.getUser())

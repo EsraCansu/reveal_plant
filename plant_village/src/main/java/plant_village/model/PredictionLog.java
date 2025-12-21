@@ -31,12 +31,19 @@ public class PredictionLog {
     @Column(name = "action_type", length = 50)
     private String actionType;
     
-    @Column(name = "timestamp")
+    @Column(name = "timestamp", nullable = false)
     private LocalDateTime timestamp;
     
-    @Column(name = "old_value")
+    @Column(name = "old_value", columnDefinition = "VARCHAR(MAX)")
     private String oldValue;
     
-    @Column(name = "new_value")
+    @Column(name = "new_value", columnDefinition = "VARCHAR(MAX)")
     private String newValue;
+    
+    @PrePersist
+    protected void onCreate() {
+        if (timestamp == null) {
+            timestamp = LocalDateTime.now();
+        }
+    }
 }

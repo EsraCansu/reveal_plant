@@ -21,8 +21,9 @@ public class PredictionFeedback {
     @Column(name = "feedback_id")
     private Integer feedbackId;
     
-    @Column(name = "prediction_id", nullable = false)
-    private Integer predictionId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "prediction_id", nullable = false)
+    private Prediction prediction;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -48,6 +49,12 @@ public class PredictionFeedback {
     
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+    
+    @OneToMany(mappedBy = "feedback", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private java.util.List<PlantUserImages> plantUserImages;
+    
+    @OneToMany(mappedBy = "feedback", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private java.util.List<DiseaseUserImages> diseaseUserImages;
     
     @PrePersist
     protected void onCreate() {

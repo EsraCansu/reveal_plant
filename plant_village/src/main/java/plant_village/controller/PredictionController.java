@@ -1,5 +1,12 @@
 package plant_village.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import plant_village.model.Prediction;
 import plant_village.model.PredictionFeedback;
 import plant_village.model.User;
@@ -18,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RestController
 @RequestMapping("/api/predictions")
+@Tag(name = "Prediction Management", description = "API for plant disease prediction analysis and management")
 public class PredictionController {
 
     private final PredictionService predictionService;
@@ -115,9 +123,13 @@ public class PredictionController {
             User user = userService.findById(userId)
                 .orElseThrow(() -> new plant_village.exception.ResourceNotFoundException("User not found"));
             
+            // Get prediction
+            Prediction prediction = predictionService.findById(predictionId)
+                .orElseThrow(() -> new plant_village.exception.ResourceNotFoundException("Prediction not found"));
+            
             // Create feedback entity
             PredictionFeedback feedback = PredictionFeedback.builder()
-                .predictionId(predictionId)
+                .prediction(prediction)
                 .user(user)
                 .predictionType(predictionType)
                 .imageUrl(imageUrl)
@@ -200,8 +212,42 @@ public class PredictionController {
      * @param request Map containing imageBase64, predictionType, userId, description
      * @return Frontend-compatible response with predicted_class, confidence, top_predictions
      */
+    @Operation(
+        summary = "Analyze plant disease from image",
+        description = "Main endpoint for analyzing plant images using ResNet-101 model. " +
+                      "Returns disease prediction with confidence score and top 3 possibilities. " +
+                      "Implements 7-step workflow: FastAPI ML analysis → %50 confidence threshold → " +
+                      "Tree structure (hierarchical storage) → Stack (LIFO processing) → Hash Map (O(1) lookups)"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Analysis successful - Returns predicted disease and confidence score",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map.class))
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid request - Missing required fields (imageBase64)",
+            content = @Content(mediaType = "application/json")
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Internal server error - ML model or database failure",
+            content = @Content(mediaType = "application/json")
+        )
+    })
     @PostMapping("/analyze")
-    public ResponseEntity<?> analyzePlantImage(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<?> analyzePlantImage(
+            @Parameter(
+                description = "Request payload containing base64 encoded image and metadata",
+                required = true,
+                schema = @Schema(
+                    example = "{\"imageBase64\": \"data:image/jpeg;base64,/9j/4AAQSkZJRg...\", " +
+                              "\"userId\": 1, \"predictionType\": \"detect-disease\", " +
+                              "\"description\": \"Uploaded plant image\"}"
+                )
+            )
+            @RequestBody Map<String, Object> request) {
         
         try {
             String imageBase64 = (String) request.get("imageBase64");

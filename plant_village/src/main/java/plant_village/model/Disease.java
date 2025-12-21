@@ -29,7 +29,7 @@ public class Disease {
         this.id = diseaseId;
     }
     
-    @Column(name = "disease_name", length = 50)
+    @Column(name = "disease_name", length = 50, nullable = false)
     private String name;
     
     // Getter alias for consistency with database column name
@@ -42,22 +42,28 @@ public class Disease {
         this.name = diseaseName;
     }
     
-    @Column(name = "symptom_description")
+    @Column(name = "symptom_description", columnDefinition = "VARCHAR(MAX)")
     private String symptomDescription;
     
-    @Column(name = "cause")
+    @Column(name = "cause", columnDefinition = "VARCHAR(MAX)")
     private String cause;
     
     @Column(name = "confidence")
     private Integer confidence;
     
-    @Column(name = "example_image_url")
+    @Column(name = "example_image_url", columnDefinition = "VARCHAR(MAX)")
     private String exampleImageUrl;
     
-    @Column(name = "treatment")
+    @Column(name = "treatment", columnDefinition = "VARCHAR(MAX)")
     private String treatment;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "plant_id", nullable = false)
     private Plant plant;
+    
+    @OneToMany(mappedBy = "disease", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private java.util.List<PredictionDisease> predictions;
+    
+    @OneToMany(mappedBy = "disease", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private java.util.List<DiseaseUserImages> userSubmittedImages;
 }

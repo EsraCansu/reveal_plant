@@ -256,7 +256,6 @@ public class PredictionServiceImpl implements PredictionService {
                         .prediction(savedPrediction)
                         .disease(disease)
                         .isHealthy(false)  // Smart indicator
-                        .confidence(confidence)
                         .build();
                     predictionDiseaseRepository.save(pd);
                     log.info("         ✅ Saved to PredictionDisease (Disease branch)");

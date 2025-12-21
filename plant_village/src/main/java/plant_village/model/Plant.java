@@ -29,18 +29,27 @@ public class Plant {
         this.id = plantId;
     }
     
-    @Column(name = "plant_name", length = 50)
+    @Column(name = "plant_name", length = 50, nullable = false)
     private String plantName;
     
     @Column(name = "scientific_name", length = 50)
     private String scientificName;
     
-    @Column(name = "image_url")
+    @Column(name = "image_url", columnDefinition = "VARCHAR(MAX)")
     private String imageUrl;
     
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "VARCHAR(MAX)")
     private String description;
     
     @Column(name = "valid_classification", nullable = false)
     private Boolean validClassification;
+    
+    @OneToMany(mappedBy = "plant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private java.util.List<Disease> diseases;
+    
+    @OneToMany(mappedBy = "plant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private java.util.List<PredictionPlant> predictions;
+    
+    @OneToMany(mappedBy = "plant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private java.util.List<PlantUserImages> userSubmittedImages;
 }

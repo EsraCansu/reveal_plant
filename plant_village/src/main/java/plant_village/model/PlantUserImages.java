@@ -21,8 +21,9 @@ public class PlantUserImages {
     @Column(name = "id")
     private Integer id;
     
-    @Column(name = "plant_id", nullable = false)
-    private Integer plantId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "plant_id", nullable = false)
+    private Plant plant;
     
     @Column(name = "plant_name", length = 50, nullable = false)
     private String plantName;
