@@ -4,8 +4,8 @@
  * To be used with Express.js or similar backend framework
  */
 
-// Base API URL
-const API_BASE_URL = process.env.API_URL || 'http://localhost:3000/api';
+// Base API URL - Browser compatible
+const API_BASE_URL = (typeof window !== 'undefined' && window.BACKEND_URL) || 'http://localhost:8080';
 
 /**
  * Authentication Routes

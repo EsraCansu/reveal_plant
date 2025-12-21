@@ -3,6 +3,9 @@
  * Manages page navigation and URL routing
  */
 
+// Backend API URL Configuration
+window.BACKEND_URL = window.BACKEND_URL || 'http://localhost:8080';
+
 class Router {
     constructor() {
         this.routes = {};

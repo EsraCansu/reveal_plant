@@ -154,15 +154,18 @@
         
         document.addEventListener('DOMContentLoaded', () => {
             // Load components
-            loadComponent('header', 'assets/components/index-header.html');
-            loadComponent('footer', 'assets/components/index-footer.html');
-            
-            checkUserLogin();
-            
-            // Initialize Bootstrap dropdowns
-            document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(el => {
-                new bootstrap.Dropdown(el);
+            loadComponent('header', 'assets/components/index-header.html').then(() => {
+                // Check login status after header is loaded
+                checkUserLogin();
+                
+                // Initialize Bootstrap dropdowns
+                const dropdowns = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+                dropdowns.forEach(el => {
+                    new bootstrap.Dropdown(el);
+                });
             });
+            
+            loadComponent('footer', 'assets/components/index-footer.html');
         });
     </script>
 </body>

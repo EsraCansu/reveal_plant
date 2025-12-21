@@ -13,6 +13,7 @@ from typing import Optional
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+from tensorflow.keras.applications.resnet import preprocess_input
 
 from .schema import PredictionResponse, PredictionResult, HealthResponse, FastAPIResponseFormat
 
@@ -98,7 +99,7 @@ def preprocess_image(image_path: str, target_size: tuple = (224, 224)) -> Option
     Görseli modele uygun şekilde ön işle
     - Resize: 224x224
     - BGR -> RGB dönüşümü
-    - Normalizasyon: 0-1 aralığı (float32)
+    - ResNet ImageNet preprocessing (CRITICAL for ResNet models!)
     """
     try:
         # Görseli oku
@@ -109,16 +110,20 @@ def preprocess_image(image_path: str, target_size: tuple = (224, 224)) -> Option
         # Resize
         img = cv2.resize(img, target_size)
         
-        # BGR -> RGB
+        # BGR -> RGB (CRITICAL!)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         
-        # Normalizasyon (0-1 arası)
-        img = img.astype('float32') / 255.0
+        # Float32'ye çevir
+        img = img.astype('float32')
         
         # Batch dimension ekle
         img = np.expand_dims(img, axis=0)
         
-        logger.debug(f"Görsel ön işlendi: min={img.min():.2f}, max={img.max():.2f}")
+        # ResNet ImageNet preprocessing - CRITICAL!
+        # Bu, ImageNet üzerinde eğitilmiş ResNet modellerinin beklediği normalizasyon
+        img = preprocess_input(img)
+        
+        logger.debug(f"Görsel ön işlendi: shape={img.shape}, min={img.min():.2f}, max={img.max():.2f}")
         return img
     except Exception as e:
         logger.error(f"Ön işleme hatası: {e}")
@@ -273,11 +278,22 @@ async def predict_base64(image_data: dict):
         image_bytes = base64.b64decode(image_base64)
         image = PILImage.open(BytesIO(image_bytes))
         
+        # Convert RGBA to RGB if needed (for PNG transparency)
+        if image.mode in ('RGBA', 'LA', 'P'):
+            # Create white background
+            background = PILImage.new('RGB', image.size, (255, 255, 255))
+            if image.mode == 'P':
+                image = image.convert('RGBA')
+            background.paste(image, mask=image.split()[-1] if image.mode == 'RGBA' else None)
+            image = background
+        elif image.mode != 'RGB':
+            image = image.convert('RGB')
+        
         # Temp klasöre kaydet
         temp_dir = Path("/tmp") if os.name != 'nt' else Path(os.environ.get('TEMP', '.'))
         temp_dir.mkdir(exist_ok=True)
         temp_path = temp_dir / "temp_predict.jpg"
-        image.save(temp_path)
+        image.save(temp_path, 'JPEG')
         
         # Görseli ön işle
         processed_img = preprocess_image(str(temp_path))

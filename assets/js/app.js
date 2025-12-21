@@ -2,6 +2,10 @@
  * DiagnosticsController
  * Handles all user interactions and workflow logic
  */
+
+// Backend API URL Configuration
+const BACKEND_URL = window.BACKEND_URL || 'http://localhost:8080';
+
 class DiagnosticsController {
     constructor() {
         this.uploadedImage = null;
@@ -60,27 +64,73 @@ class DiagnosticsController {
      */
     async sendToBackend(file) {
         try {
-            const formData = new FormData();
-            formData.append('image', file);
-            formData.append('mode', this.selectedMode === 'identify' ? 'identify-plant' : 'detect-disease');
+            // Convert file to base64
+            const base64Image = await this.fileToBase64(file);
+            
+            // Get current user info - use guest ID if not logged in
+            let userId = null;
+            try {
+                if (typeof getCurrentUser === 'function') {
+                    const user = getCurrentUser();
+                    userId = user?.id || null;
+                }
+            } catch (e) {
+                console.log('[API] User not logged in, using guest mode');
+            }
+            
+            // If no user, use guest ID (1 for now - should be a real guest user in DB)
+            if (!userId) {
+                userId = 1; // Default guest user ID
+            }
+            
+            const requestBody = {
+                imageBase64: base64Image,
+                predictionType: this.selectedMode === 'identify' ? 'identify-plant' : 'detect-disease',
+                userId: userId,
+                description: `Uploaded ${this.selectedMode} image`
+            };
 
-            const response = await fetch('/api/predict', {
+            console.log('[API] Sending request to:', `${BACKEND_URL}/api/predictions/analyze`);
+            console.log('[API] User ID:', userId);
+            console.log('[API] Prediction Type:', requestBody.predictionType);
+            
+            const response = await fetch(`${BACKEND_URL}/api/predictions/analyze`, {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
             });
 
+            console.log('[API] Response status:', response.status);
+            
             if (!response.ok) {
-                throw new Error('Prediction failed');
+                const errorText = await response.text();
+                console.error('[API] Error response:', errorText);
+                throw new Error(`Prediction failed: ${response.status} - ${errorText}`);
             }
 
             const result = await response.json();
-            this.predictionResult = result; // Sonucu sakla
+            console.log('[API] Success:', result);
+            this.predictionResult = result;
             setTimeout(() => this.showResults(), 500);
         } catch (error) {
-            console.error('Backend error:', error);
-            alert('Analysis failed. Please try again.');
+            console.error('[API] Backend error:', error);
+            alert(`Analysis failed: ${error.message}`);
             this.goBack('step-mode');
         }
+    }
+
+    /**
+     * Convert file to base64
+     */
+    fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
     }
 
     /**
@@ -293,7 +343,7 @@ class PredictionWebSocketClient {
      */
     connect() {
         // Using SockJS for WebSocket with fallback to HTTP polling
-        const socket = new SockJS('http://localhost:8080/ws/predictions');
+        const socket = new SockJS(`${BACKEND_URL}/ws/predictions`);
         this.client = Stomp.over(socket);
 
         // Enable logging for debugging
