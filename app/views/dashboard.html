@@ -10,6 +10,17 @@
     <!-- ✅ Auth kontrolü ekle -->
     <script src="../../assets/js/auth.js"></script>
     <script>
+        // Apply theme IMMEDIATELY (before page render)
+        (function() {
+            const settings = JSON.parse(localStorage.getItem('settings') || '{}');
+            let theme = settings.theme || 'light';
+            if (theme === 'auto') {
+                const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                theme = isDark ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+        
         // ✅ Sayfa yüklenmeden önce auth kontrolü
         if (!requireAuth()) {
             // requireAuth zaten yönlendiriyor

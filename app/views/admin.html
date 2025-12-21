@@ -10,6 +10,18 @@
     <script src="../../assets/js/auth.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
+        // Apply theme IMMEDIATELY
+        (function() {
+            const settings = JSON.parse(localStorage.getItem('settings') || '{}');
+            let theme = settings.theme || 'light';
+            if (theme === 'auto') {
+                const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                theme = isDark ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    <script>
         if (!requireAdmin()) {
             window.location.href = 'login.html';
         }

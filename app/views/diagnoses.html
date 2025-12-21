@@ -11,6 +11,18 @@
     <!-- WebSocket Libraries for Real-time Predictions -->
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <script>
+        // Apply theme IMMEDIATELY
+        (function() {
+            const settings = JSON.parse(localStorage.getItem('settings') || '{}');
+            let theme = settings.theme || 'light';
+            if (theme === 'auto') {
+                const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                theme = isDark ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
     <style>
         .sidebar {
             background: #f8f9fa;
@@ -256,7 +268,7 @@
                             <p class="mb-0 small">${d.result || 'No result'}</p>
                         </div>
                         <div class="col-md-3 text-end">
-                            <span class="badge bg-${d.mode === 'disease' ? 'warning' : 'info'} mb-2">
+                            <span class="badge bg-${d.mode === 'disease' ? 'warning' : 'success'} mb-2">
                                 ${d.mode === 'disease' ? 'Disease Detection' : 'Plant ID'}
                             </span>
                             <div class="text-muted small">
@@ -344,6 +356,7 @@ Details: ${diagnosis.details || 'N/A'}
             a.click();
         }
 
+        // Apply theme on page load
         document.addEventListener('DOMContentLoaded', () => {
             loadAllComponents();
             

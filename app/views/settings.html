@@ -8,6 +8,18 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../../assets/css/style.css">
     <script src="../../assets/js/auth.js"></script>
+    <script>
+        // Apply theme IMMEDIATELY
+        (function() {
+            const settings = JSON.parse(localStorage.getItem('settings') || '{}');
+            let theme = settings.theme || 'light';
+            if (theme === 'auto') {
+                const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                theme = isDark ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
     <style>
         .sidebar {
             background: #f8f9fa;
@@ -241,7 +253,7 @@
                                 <h6 class="mb-1">Theme</h6>
                                 <small class="text-muted">Choose your preferred theme</small>
                             </div>
-                            <select class="form-select form-select-sm w-auto" id="theme">
+                            <select class="form-select form-select-sm w-auto" id="theme" onchange="applyTheme(this.value)">
                                 <option value="light" selected>Light</option>
                                 <option value="dark">Dark</option>
                                 <option value="auto">Auto</option>
@@ -332,6 +344,17 @@
             document.getElementById('shareData').checked = settings.shareData || false;
             document.getElementById('language').value = settings.language || 'en';
             document.getElementById('theme').value = settings.theme || 'light';
+            
+            // Apply theme immediately
+            applyTheme(settings.theme || 'light');
+        }
+        
+        function applyTheme(theme) {
+            if (theme === 'auto') {
+                const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                theme = isDark ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-theme', theme);
         }
 
         function saveSettings() {
@@ -347,6 +370,7 @@
             };
             
             localStorage.setItem('settings', JSON.stringify(settings));
+            applyTheme(settings.theme);
             alert('Settings saved successfully!');
         }
 
