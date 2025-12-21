@@ -7,9 +7,9 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.applications.resnet import preprocess_input  # ÖNEMLİ!
 
 # Dosya yolları
-MODEL_PATH = r'C:\Users\esracansu\OneDrive\Belgeler\GitHub\reveal_plant\ml-api\model\PlantVillage_Resnet101_FineTuning.keras'
-IMAGE_PATH = r'C:\Users\esracansu\OneDrive\Masaüstü\transfer_function\uzum.jpg'
-
+MODEL_PATH = r'C:\Users\myy\Documents\GitHub\reveal_plant\ml-api\model\PlantVillage_Resnet101_FineTuning.keras'
+IMAGE_PATH = r'C:\Users\myy\Downloads\Sultaniye_Uzum_Asma_Yapragi.jpg'
+                    
 def load_model_checked(model_path):
     model_abspath = os.path.abspath(model_path)
     print(f"[DEBUG] Model yolu: {model_abspath}")
