@@ -16,8 +16,8 @@
     </script>
     <style>
         :root {
-            --admin-primary: #461b58;
-            --admin-secondary: #4caf50;
+            --admin-primary:    #4caf50 ;
+            --admin-secondary: #461b58;
         }
         body { background: #f5f7fa; }
         .admin-header {
@@ -434,13 +434,18 @@
                 const res = await authenticatedFetch(`${BACKEND_URL}/api/users/${selectedUserId}`, {
                     method: 'DELETE'
                 });
-                if (!res.ok) throw new Error('Delete failed');
+                
+                if (!res.ok) {
+                    const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+                    throw new Error(errorData.error || `HTTP ${res.status}: ${res.statusText}`);
+                }
                 
                 deleteUserModal.hide();
                 alert('User deleted successfully!');
                 loadUsers();
             } catch (error) {
-                alert('Error: ' + error.message);
+                console.error('Delete error details:', error);
+                alert('Error deleting user: ' + error.message);
             }
         }
 

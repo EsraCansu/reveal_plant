@@ -18,13 +18,21 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .cors().configurationSource(corsConfigurationSource) // CORS'u aktif et
-            .and()
-            .csrf().disable() // CSRF'yi devre dışı bırak (development için)
-            .authorizeRequests()
-                .anyRequest().permitAll() // Tüm isteklere izin ver
-            .and()
-            .httpBasic().disable(); // HTTP Basic Auth'u devre dışı bırak
+            .cors(cors -> cors.configurationSource(corsConfigurationSource))
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
+                // ✅ Public endpoints - Authentication gerektirmez
+                .requestMatchers(
+                    "/api/users/auth/**",      // Login, register, logout endpoints
+                    "/ws/**",                   // WebSocket endpoints
+                    "/api/predictions/predict"  // Geçici olarak açık
+                ).permitAll()
+                
+                // ✅ Tüm diğer endpoint'ler şimdilik permitAll
+                // Güvenlik sonra sıkılaştırılacak
+                .anyRequest().permitAll()
+            )
+            .httpBasic(basic -> basic.disable());
         
         return http.build();
     }

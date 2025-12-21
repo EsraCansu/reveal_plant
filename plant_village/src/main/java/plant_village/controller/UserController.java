@@ -118,6 +118,64 @@ public class UserController {
     }
 
     /**
+     * ✅ YENİ: Get current user from JWT token
+     * GET /api/auth/me
+     */
+    @GetMapping("/auth/me")
+    public ResponseEntity<?> getCurrentUser(
+            @CookieValue(value = "jwt_token", required = false) String jwtToken) {
+        
+        try {
+            // Token kontrolü
+            if (jwtToken == null || jwtToken.isEmpty()) {
+                java.util.Map<String, String> error = new java.util.HashMap<>();
+                error.put("error", "Token bulunamadı");
+                return ResponseEntity.status(401).body(error);
+            }
+            
+            // Token'dan email çıkar
+            String email = jwtUtil.extractEmail(jwtToken);
+            
+            if (email == null || email.isEmpty()) {
+                java.util.Map<String, String> error = new java.util.HashMap<>();
+                error.put("error", "Geçersiz token");
+                return ResponseEntity.status(401).body(error);
+            }
+            
+            // Kullanıcıyı bul
+            Optional<User> userOpt = userService.findByEmail(email);
+            
+            if (!userOpt.isPresent()) {
+                java.util.Map<String, String> error = new java.util.HashMap<>();
+                error.put("error", "Kullanıcı bulunamadı");
+                return ResponseEntity.status(404).body(error);
+            }
+            
+            User user = userOpt.get();
+            
+            // User DTO oluştur (password hash'i gönderme!)
+            java.util.Map<String, Object> userData = new java.util.HashMap<>();
+            userData.put("id", user.getId());
+            userData.put("name", user.getUserName());
+            userData.put("email", user.getEmail());
+            userData.put("role", user.getRole());
+            userData.put("phone", user.getPhone());
+            userData.put("location", user.getLocation());
+            userData.put("bio", user.getBio());
+            userData.put("avatarUrl", user.getAvatarUrl());
+            userData.put("createdAt", user.getCreatedAt());
+            userData.put("lastLogin", user.getLastLogin());
+            
+            return ResponseEntity.ok(userData);
+            
+        } catch (Exception e) {
+            java.util.Map<String, String> error = new java.util.HashMap<>();
+            error.put("error", "Token doğrulanamadı: " + e.getMessage());
+            return ResponseEntity.status(401).body(error);
+        }
+    }
+
+    /**
      * ✅ YENİ: Logout endpoint - Cookie'leri temizle
      */
     @PostMapping("/auth/logout")

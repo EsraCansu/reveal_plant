@@ -48,7 +48,7 @@ public class Prediction {
     @Column(name = "is_healthy")
     private Boolean isHealthy; // Smart indicator: contains "healthy"?
     
-    @Column(name = "description", columnDefinition = "TEXT")
+    @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
     private String description; // Optional description or analysis notes
 
     // --- Relationship Mapping ---
