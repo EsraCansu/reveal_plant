@@ -29,4 +29,7 @@ public class PredictionDisease {
     
     @Column(name = "is_healthy")
     private Boolean isHealthy; // to indicate if the plant is healthy or not
+    
+    @Column(name = "confidence")
+    private Double confidence; // Prediction confidence score (0-1)
 }

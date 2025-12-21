@@ -27,5 +27,7 @@ public class PredictionPlant {
     @JoinColumn(name = "plant_id", nullable = false)
     private Plant plant; // connection with Plant Table
 
+    @Column(name = "confidence")
+    private Double confidence; // Prediction confidence score (0-1)
 
 }

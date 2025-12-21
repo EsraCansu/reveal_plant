@@ -42,6 +42,15 @@ public class Prediction {
     @Column(name = "is_valid")
     private Boolean isValid; // Flag to verify the success of the AI analysis
 
+    @Column(name = "top_prediction", length = 200)
+    private String topPrediction; // Top prediction class name from ML model
+    
+    @Column(name = "is_healthy")
+    private Boolean isHealthy; // Smart indicator: contains "healthy"?
+    
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description; // Optional description or analysis notes
+
     // --- Relationship Mapping ---
     // One-to-Many connection: One prediction can yield multiple plant details
     @OneToMany(mappedBy = "prediction", cascade = CascadeType.ALL)

@@ -14,7 +14,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from .schema import PredictionResponse, PredictionResult, HealthResponse
+from .schema import PredictionResponse, PredictionResult, HealthResponse, FastAPIResponseFormat
 
 # Logging
 logging.basicConfig(level=logging.INFO)
@@ -193,8 +193,8 @@ async def predict(file: UploadFile = File(...)):
         
         predictions_list = [
             PredictionResult(
-                class_name=CLASS_NAMES[idx],
-                confidence=float(predictions[0][idx]),
+                disease=CLASS_NAMES[idx],
+                confidence_score=float(predictions[0][idx]),
                 confidence_percent=float(predictions[0][idx] * 100)
             )
             for idx in top_5_idx
@@ -202,7 +202,7 @@ async def predict(file: UploadFile = File(...)):
         
         processing_time = time.time() - start_time
         
-        logger.info(f"Tahmin tamamlandı - Top: {predictions_list[0].class_name} ({predictions_list[0].confidence_percent:.2f}%)")
+        logger.info(f"Tahmin tamamlandı - Top: {predictions_list[0].disease} ({predictions_list[0].confidence_percent:.2f}%)")
         
         return {
             "success": True,
@@ -238,6 +238,100 @@ async def get_classes():
         "total_classes": len(CLASS_NAMES),
         "classes": CLASS_NAMES
     }
+
+
+@app.post("/predict/base64", response_model=FastAPIResponseFormat)
+async def predict_base64(image_data: dict):
+    """
+    Base64 encoded image ile tahmin yap (Java Backend'den gelen isteği karşılayan endpoint)
+    
+    **Request Body:**
+    - imageBase64: Base64 encoded image string
+    - mode: Prediction mode (optional)
+    - description: Image description (optional)
+    
+    **Yanıt:** Java Backend'in beklediği FastAPIResponseFormat
+    """
+    start_time = time.time()
+    
+    # Model kontrol
+    if not MODEL_LOADED:
+        raise HTTPException(status_code=503, detail="Model yüklenmedi. API başlatma sırasında hata oluştu.")
+    
+    try:
+        import base64
+        from io import BytesIO
+        from PIL import Image as PILImage
+        
+        # Base64 string'i decode et
+        if "imageBase64" not in image_data:
+            raise ValueError("imageBase64 parametresi gerekli")
+        
+        image_base64 = image_data.get("imageBase64", "")
+        
+        # Base64 decode
+        image_bytes = base64.b64decode(image_base64)
+        image = PILImage.open(BytesIO(image_bytes))
+        
+        # Temp klasöre kaydet
+        temp_dir = Path("/tmp") if os.name != 'nt' else Path(os.environ.get('TEMP', '.'))
+        temp_dir.mkdir(exist_ok=True)
+        temp_path = temp_dir / "temp_predict.jpg"
+        image.save(temp_path)
+        
+        # Görseli ön işle
+        processed_img = preprocess_image(str(temp_path))
+        if processed_img is None:
+            raise ValueError("Görsel ön işleme başarısız")
+        
+        logger.info("Base64 görsel tahmin yapılıyor")
+        
+        # Tahmin yap
+        predictions = MODEL.predict(processed_img, verbose=0)
+        
+        # Top 5 tahmini al
+        top_5_idx = np.argsort(predictions[0])[::-1][:5]
+        
+        predictions_list = [
+            PredictionResult(
+                disease=CLASS_NAMES[idx],
+                confidence_score=float(predictions[0][idx]),
+                confidence_percent=float(predictions[0][idx] * 100)
+            )
+            for idx in top_5_idx
+        ]
+        
+        top_pred = predictions_list[0]
+        processing_time = time.time() - start_time
+        
+        # Java Backend'in beklediği format
+        return {
+            "status": "success",
+            "message": "Prediction completed successfully",
+            "top_prediction": top_pred.disease,
+            "top_confidence": top_pred.confidence_score,
+            "recommended_action": f"Analysis suggests {top_pred.disease.replace('_', ' ')} with {top_pred.confidence_percent:.1f}% confidence",
+            "predictions": predictions_list
+        }
+    
+    except Exception as e:
+        logger.error(f"Base64 tahmin hatası: {e}")
+        return {
+            "status": "error",
+            "message": str(e),
+            "top_prediction": "Unknown",
+            "top_confidence": 0.0,
+            "recommended_action": None,
+            "predictions": []
+        }
+    
+    finally:
+        # Temp dosyasını sil
+        try:
+            if temp_path.exists():
+                temp_path.unlink()
+        except:
+            pass
 
 
 if __name__ == "__main__":

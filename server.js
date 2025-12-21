@@ -68,7 +68,7 @@ app.get('/api/health', (req, res) => {
     res.status(error.response?.status || 500).json(error.response?.data || { error: 'Registration failed' });
   }
 });*/
-// Python FastAPI proxy'si - Model tahminleri
+// Java API - Tahmin (Image Analysis)
 // upload.single('image') middleware'i, yüklenen dosyayı req.file objesine yerleştirir.
 app.post('/api/predict', upload.single('image'), async (req, res) => {
   
@@ -80,23 +80,34 @@ app.post('/api/predict', upload.single('image'), async (req, res) => {
     // 1. Yüklenen resmin Buffer'ını (bellekteki ikili verisini) Base64 string'e dönüştür
     const base64Image = req.file.buffer.toString('base64');
     
-    // 2. FastAPI'nin beklediği payload yapısını oluşturun
-    // req.body içindeki diğer form verileri (örneğin 'mode') burada hala mevcuttur.
-    const fastApiPayload = {
-      image_base64: base64Image,
-      mode: req.body.mode || 'detect-disease' // İstemciden gelen modu al
+    // 2. Java Backend'in beklediği payload yapısını oluştur
+    const javaApiPayload = {
+      imageBase64: base64Image,
+      predictionType: req.body.mode || 'detect-disease',
+      userId: req.body.userId || 1,
+      description: req.body.description || 'Uploaded plant image'
     };
 
-    // 3. FastAPI servisine isteği gönder
-    const response = await axios.post(`${FASTAPI_URL}/predict`, fastApiPayload);
+    console.log(`📤 Sending to Java Backend: ${JAVA_API_URL}/api/predictions/analyze`);
+
+    // 3. Java Backend'e isteği gönder
+    const response = await axios.post(
+      `${JAVA_API_URL}/api/predictions/analyze`, 
+      javaApiPayload,
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+    
+    console.log('📥 Received from Java:', response.data);
     
     // 4. Yanıtı istemciye döndür
     res.json(response.data);
 
   } catch (error) {
-    console.error('Prediction error:', error.message);
-    // Hata detaylarını kontrol et
-    const errorMessage = error.response?.data?.detail || 'Tahmin işlemi başarısız oldu';
+    console.error('❌ Prediction error:', error.message);
+    if (error.response) {
+      console.error('Error response:', error.response.data);
+    }
+    const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Tahmin işlemi başarısız oldu';
     res.status(error.response?.status || 500).json({ error: errorMessage });
   }
 });
@@ -159,17 +170,6 @@ app.get('/api/predictions/:id', async (req, res) => {
   } catch (error) {
     console.error('Prediction fetch error:', error.message);
     res.status(error.response?.status || 500).json(error.response?.data || { error: 'Failed to fetch prediction' });
-  }
-});
-
-// Python FastAPI proxy'si - Model tahminleri
-app.post('/api/predict', async (req, res) => {
-  try {
-    const response = await axios.post(`${FASTAPI_URL}/predict`, req.body);
-    res.json(response.data);
-  } catch (error) {
-    console.error('Prediction error:', error.message);
-    res.status(error.response?.status || 500).json(error.response?.data || { error: 'Prediction failed' });
   }
 });
 

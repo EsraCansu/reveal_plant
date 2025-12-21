@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/predictions")
 public class PredictionController {
@@ -188,5 +190,89 @@ public class PredictionController {
     public ResponseEntity<List<PredictionFeedback>> getFeedbackByUser(@PathVariable Integer userId) {
         List<PredictionFeedback> feedback = feedbackService.getFeedbackByUserId(userId);
         return new ResponseEntity<>(feedback, HttpStatus.OK);
+    }
+
+    /**
+     * Analyze plant image using ML model (Frontend endpoint)
+     * POST /api/predictions/analyze
+     * Workflow: Image → FastAPI → %50 Rule → Tree + Stack + Hash Map → Response
+     * 
+     * @param request Map containing imageBase64, predictionType, userId, description
+     * @return Frontend-compatible response with predicted_class, confidence, top_predictions
+     */
+    @PostMapping("/analyze")
+    public ResponseEntity<?> analyzePlantImage(@RequestBody Map<String, Object> request) {
+        
+        try {
+            String imageBase64 = (String) request.get("imageBase64");
+            String predictionType = (String) request.getOrDefault("predictionType", "detect-disease");
+            Integer userId = (Integer) request.getOrDefault("userId", 1);
+            String description = (String) request.getOrDefault("description", "Uploaded plant image");
+            
+            log.info("📸 Analyzing plant image for user: {}, type: {}", userId, predictionType);
+            
+            // Call the main prediction workflow (Tree + Stack + Hash Map logic inside)
+            Prediction prediction = predictionService.predictPlantDisease(
+                userId,
+                null,
+                imageBase64,
+                description
+            );
+            
+            // Build response matching frontend expectations
+            Map<String, Object> response = new HashMap<>();
+            
+            // Use topPrediction field which contains the actual ML result (e.g., "Tomato___Leaf_Mold")
+            String predictedClass = prediction.getTopPrediction() != null ? prediction.getTopPrediction() : "Unknown";
+            response.put("predicted_class", predictedClass);
+            response.put("confidence", prediction.getConfidence() != null ? prediction.getConfidence() : 0.0);
+            response.put("is_valid", prediction.getIsValid());
+            
+            // Determine isHealthy from predicted class name
+            boolean isHealthy = predictedClass.toLowerCase().contains("healthy");
+            response.put("is_healthy", isHealthy);
+            response.put("description", "Analysis completed");
+            response.put("prediction_id", prediction.getId());
+            
+            // Top 3 predictions from description field (stored as JSON)
+            List<Map<String, Object>> topPredictions = new java.util.ArrayList<>();
+            String top3Json = prediction.getDescription();
+            if (top3Json != null && top3Json.startsWith("[")) {
+                try {
+                    // Parse simple JSON manually
+                    String cleaned = top3Json.replace("[", "").replace("]", "");
+                    String[] preds = cleaned.split("\\},\\{");
+                    for (String pred : preds) {
+                        pred = pred.replace("{", "").replace("}", "");
+                        String[] parts = pred.split(",");
+                        if (parts.length >= 2) {
+                            String disease = parts[0].split(":")[1].replace("\"", "").trim();
+                            String conf = parts[1].split(":")[1].trim();
+                            Map<String, Object> p = new HashMap<>();
+                            p.put("class_name", disease);
+                            p.put("probability", Double.parseDouble(conf));
+                            topPredictions.add(p);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to parse top predictions: {}", e.getMessage());
+                }
+            }
+            response.put("top_predictions", topPredictions);
+            
+            log.info("✅ Prediction successful: ID={}, isValid={}, isHealthy={}, confidence={}", 
+                prediction.getId(), prediction.getIsValid(), isHealthy, prediction.getConfidence());
+            
+            return new ResponseEntity<>(response, HttpStatus.OK);
+            
+        } catch (Exception e) {
+            log.error("❌ Prediction error: {}", e.getMessage(), e);
+            
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            error.put("message", "Failed to analyze plant image");
+            
+            return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

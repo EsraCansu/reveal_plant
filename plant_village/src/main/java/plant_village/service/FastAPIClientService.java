@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import plant_village.model.dto.FastAPIResponse;
 import plant_village.model.dto.FastAPIPredictionRequest;
+import java.util.Map;
 
 /**
  * FastAPI Client Service
@@ -36,15 +37,14 @@ public class FastAPIClientService {
         try {
             log.info("Sending prediction request to FastAPI for plant: {}", plantId);
 
-            String fastApiUrl = fastApiServerUrl + "/predict";
+            // Use Base64 endpoint for image analysis
+            String fastApiUrl = fastApiServerUrl + "/predict/base64";
 
-            // Prepare request
-            FastAPIPredictionRequest request = FastAPIPredictionRequest.builder()
-                    .imageBase64(imageBase64)
-                    .imageType(extractImageType(imageBase64))
-                    .plantId(plantId)
-                    .description(description)
-                    .build();
+            // Prepare request body as Map for JSON serialization
+            Map<String, Object> request = new java.util.HashMap<>();
+            request.put("imageBase64", imageBase64);
+            request.put("plantId", plantId);
+            request.put("description", description);
 
             // Send to FastAPI
             FastAPIResponse response = restTemplate.postForObject(

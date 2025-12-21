@@ -9,8 +9,8 @@ import base64
 
 class PredictionResult(BaseModel):
     """Tahmin sonucu"""
-    class_name: str = Field(..., description="Sınıf adı")
-    confidence: float = Field(..., description="Güven skoru (0-1)")
+    disease: str = Field(..., description="Sınıf adı (Java backend: disease field)")
+    confidence_score: float = Field(..., description="Güven skoru (0-1)")
     confidence_percent: float = Field(..., description="Güven yüzdesi")
 
 
@@ -29,3 +29,13 @@ class HealthResponse(BaseModel):
     status: str = Field(..., description="Servis durumu")
     model_loaded: bool = Field(..., description="Model yüklendi mi")
     version: str = Field(..., description="API sürümü")
+
+
+class FastAPIResponseFormat(BaseModel):
+    """Java Backend'in beklediği FastAPI response format"""
+    status: str = Field(..., description="Status (success/error)")
+    message: str = Field(..., description="Durum mesajı")
+    top_prediction: str = Field(..., description="En yüksek tahmin sınıfı")
+    top_confidence: float = Field(..., description="Güven skoru (0-1)")
+    recommended_action: Optional[str] = Field(None, description="Tavsiye edilen işlem")
+    predictions: List[PredictionResult] = Field(..., description="Tüm tahminler")
