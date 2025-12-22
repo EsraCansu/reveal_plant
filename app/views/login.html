@@ -167,6 +167,13 @@
                     
                     // ✅ Cookie'ler backend tarafından otomatik set edildi (jwt_token, userEmail, userName, userRole)
                     
+                    // ✅ Save userId to sessionStorage for feedback system (backend returns 'id' field)
+                    if (data.id) {
+                        sessionStorage.setItem('userId', data.id);
+                        localStorage.setItem('user_id', data.id); // Backup
+                        console.log('[LOGIN] Saved userId:', data.id);
+                    }
+                    
                     // Remember me için ek cookie
                     if (remember) {
                         setCookie('remember_me', 'true', 30); // 30 gün

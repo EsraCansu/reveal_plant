@@ -221,6 +221,12 @@ class DiagnosticsController {
         const result = this.predictionResult || {};
         const predictedClass = result.predicted_class || 'Unknown Plant';
         const confidence = result.confidence ? (result.confidence * 100).toFixed(1) : '0';
+        const predictionId = result.prediction_id || 0;
+        const isLoggedIn = getCookie('userEmail') !== null; // Check cookie instead of localStorage
+        const userId = parseInt(getCookie('userEmail') ? sessionStorage.getItem('userId') || localStorage.getItem('user_id') : null) || 1;
+        
+        console.log('[FEEDBACK] PredictionResult:', result);
+        console.log('[FEEDBACK] PredictionId:', predictionId, 'UserId:', userId, 'IsLoggedIn:', isLoggedIn);
         
         return `
             <div class="text-center">
@@ -240,6 +246,20 @@ class DiagnosticsController {
                         </ul>
                     ` : ''}
                 </div>
+                ${isLoggedIn && predictionId ? `
+                    <div class="feedback-section mt-3" id="feedback-section-${predictionId}">
+                        <p class="text-muted mb-2">Was this prediction correct?</p>
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-outline-success" onclick="app.submitFeedback(${predictionId}, true, '${predictedClass}', ${userId})">
+                                <i class="fas fa-thumbs-up"></i> Correct
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="app.submitFeedback(${predictionId}, false, '${predictedClass}', ${userId})">
+                                <i class="fas fa-thumbs-down"></i> Incorrect
+                            </button>
+                        </div>
+                        <div id="feedback-message-${predictionId}" class="mt-2"></div>
+                    </div>
+                ` : ''}
             </div>
         `;
     }
@@ -252,6 +272,12 @@ class DiagnosticsController {
         const predictedClass = result.predicted_class || 'Unknown Disease';
         const confidence = result.confidence ? (result.confidence * 100).toFixed(1) : '0';
         const isHealthy = predictedClass.toLowerCase().includes('healthy');
+        const predictionId = result.prediction_id || 0;
+        const isLoggedIn = getCookie('userEmail') !== null; // Check cookie instead of localStorage
+        const userId = parseInt(getCookie('userEmail') ? sessionStorage.getItem('userId') || localStorage.getItem('user_id') : null) || 1;
+        
+        console.log('[FEEDBACK] PredictionResult:', result);
+        console.log('[FEEDBACK] PredictionId:', predictionId, 'UserId:', userId, 'IsLoggedIn:', isLoggedIn);
         
         return `
             <div class="text-center">
@@ -275,6 +301,20 @@ class DiagnosticsController {
                         </ul>
                     ` : ''}
                 </div>
+                ${isLoggedIn && predictionId ? `
+                    <div class="feedback-section mt-3" id="feedback-section-${predictionId}">
+                        <p class="text-muted mb-2">Was this prediction correct?</p>
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-outline-success" onclick="app.submitFeedback(${predictionId}, true, '${predictedClass}', ${userId})">
+                                <i class="fas fa-thumbs-up"></i> Correct
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="app.submitFeedback(${predictionId}, false, '${predictedClass}', ${userId})">
+                                <i class="fas fa-thumbs-down"></i> Incorrect
+                            </button>
+                        </div>
+                        <div id="feedback-message-${predictionId}" class="mt-2"></div>
+                    </div>
+                ` : ''}
             </div>
         `;
     }
@@ -291,6 +331,117 @@ class DiagnosticsController {
             targetStep.classList.add('active');
         }
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /**
+     * Submit feedback for a prediction
+     */
+    async submitFeedback(predictionId, isCorrect, predictedClass, userId = null) {
+        console.log('[FEEDBACK-DEBUG] submitFeedback called!');
+        console.log('[FEEDBACK-DEBUG] predictionId:', predictionId);
+        console.log('[FEEDBACK-DEBUG] isCorrect:', isCorrect);
+        console.log('[FEEDBACK-DEBUG] predictedClass:', predictedClass);
+        console.log('[FEEDBACK-DEBUG] userId:', userId);
+        
+        try {
+            console.log(`[Feedback] Submitting: predictionId=${predictionId}, isCorrect=${isCorrect}`);
+            
+            // HEMEN butonları gizle ve loading mesajı göster
+            const feedbackSection = document.getElementById(`feedback-section-${predictionId}`);
+            const messageDiv = document.getElementById(`feedback-message-${predictionId}`);
+            
+            console.log('[FEEDBACK-DEBUG] feedbackSection:', feedbackSection);
+            console.log('[FEEDBACK-DEBUG] messageDiv:', messageDiv);
+            
+            const buttons = feedbackSection?.querySelectorAll('button');
+            
+            if (buttons) {
+                console.log('[FEEDBACK-DEBUG] Found buttons:', buttons.length);
+                buttons.forEach(btn => {
+                    btn.style.display = 'none'; // Butonları hemen gizle
+                });
+            } else {
+                console.error('[FEEDBACK-DEBUG] No buttons found!');
+            }
+            
+            if (messageDiv) {
+                messageDiv.innerHTML = `<small class="text-info"><i class="fas fa-spinner fa-spin"></i> Sending feedback...</small>`;
+            } else {
+                console.error('[FEEDBACK-DEBUG] messageDiv not found!');
+            }
+            
+            // Get userId from cookie or fall back to parameter
+            if (!userId) {
+                // Try to get from cookie system first
+                const userEmail = getCookie('userEmail');
+                if (userEmail) {
+                    // User is logged in, get userId from sessionStorage or backend
+                    userId = parseInt(sessionStorage.getItem('userId')) || parseInt(localStorage.getItem('user_id'));
+                    console.log('[FEEDBACK-DEBUG] Got userId from session/local:', userId);
+                }
+                // If still no userId, default to guest (1)
+                if (!userId) {
+                    userId = 1;
+                    console.log('[FEEDBACK-DEBUG] Using guest userId:', userId);
+                }
+            }
+            
+            console.log('[FEEDBACK-DEBUG] Final userId:', userId);
+            
+            const feedback = {
+                predictionId: predictionId,
+                userId: userId,
+                isCorrect: isCorrect,
+                predictedClass: predictedClass,
+                feedbackText: isCorrect ? 'Prediction is correct' : 'Prediction is incorrect'
+            };
+
+            const response = await fetch(`${BACKEND_URL}/api/predictions/feedback`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(feedback)
+            });
+
+            const result = await response.json();
+            
+            if (response.ok) {
+                messageDiv.innerHTML = `<small class="text-success"><i class="fas fa-check-circle"></i> Thank you for your feedback!</small>`;
+                
+                // Tüm feedback section'ı 2 saniye sonra kaldır
+                setTimeout(() => {
+                    if (feedbackSection) {
+                        feedbackSection.style.transition = 'opacity 0.5s';
+                        feedbackSection.style.opacity = '0';
+                        setTimeout(() => feedbackSection.remove(), 500);
+                    }
+                }, 2000);
+                
+                console.log('[Feedback] Submitted successfully:', result);
+            } else {
+                messageDiv.innerHTML = `<small class="text-danger"><i class="fas fa-exclamation-circle"></i> Failed to submit feedback</small>`;
+                // Hata durumunda butonları tekrar göster
+                if (buttons) {
+                    buttons.forEach(btn => btn.style.display = 'inline-block');
+                }
+                console.error('[Feedback] Error:', result);
+            }
+        } catch (error) {
+            console.error('[Feedback] Network error:', error);
+            const messageDiv = document.getElementById(`feedback-message-${predictionId}`);
+            const feedbackSection = document.getElementById(`feedback-section-${predictionId}`);
+            const buttons = feedbackSection?.querySelectorAll('button');
+            
+            if (messageDiv) {
+                messageDiv.innerHTML = `<small class="text-danger"><i class="fas fa-exclamation-circle"></i> Network error. Please try again.</small>`;
+            }
+            
+            // Hata durumunda butonları tekrar göster
+            if (buttons) {
+                buttons.forEach(btn => btn.style.display = 'inline-block');
+            }
+        }
     }
 
     /**
@@ -541,6 +692,7 @@ class PredictionWebSocketClient {
 document.addEventListener('DOMContentLoaded', () => {
     window.diagnosticsController = new DiagnosticsController();
     window.controller = window.diagnosticsController; // ✅ DÜZELTME: index.html'deki onclick için alias
+    window.app = window.diagnosticsController; // ✅ DÜZELTME: feedback onclick için alias
     window.webSocketClient = new PredictionWebSocketClient();
 
     // Send heartbeat every 30 seconds

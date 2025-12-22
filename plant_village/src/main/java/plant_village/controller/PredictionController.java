@@ -164,9 +164,36 @@ public class PredictionController {
      * @return List of all feedback
      */
     @GetMapping("/feedback/all")
-    public ResponseEntity<List<PredictionFeedback>> getAllFeedback() {
-        List<PredictionFeedback> feedback = feedbackService.getAllFeedback();
-        return new ResponseEntity<>(feedback, HttpStatus.OK);
+    public ResponseEntity<?> getAllFeedback() {
+        try {
+            List<PredictionFeedback> feedbacks = feedbackService.getAllFeedback();
+            
+            // Convert to simple DTOs to avoid JSON serialization issues
+            List<Map<String, Object>> feedbackDTOs = feedbacks.stream().map(fb -> {
+                Map<String, Object> dto = new HashMap<>();
+                dto.put("feedbackId", fb.getFeedbackId());
+                dto.put("predictionId", fb.getPrediction() != null ? fb.getPrediction().getId() : null);
+                dto.put("userId", fb.getUser() != null ? fb.getUser().getId() : null);
+                dto.put("userName", fb.getUser() != null ? fb.getUser().getUserName() : "Unknown");
+                dto.put("userEmail", fb.getUser() != null ? fb.getUser().getEmail() : "unknown@email.com");
+                dto.put("isCorrect", fb.getIsCorrect());
+                dto.put("comment", fb.getComment());
+                dto.put("predictionType", fb.getPredictionType());
+                dto.put("predictedName", fb.getPredictedName());
+                dto.put("imageUrl", fb.getImageUrl());
+                dto.put("imageAddedToDb", fb.getImageAddedToDb());
+                dto.put("createdAt", fb.getCreatedAt() != null ? fb.getCreatedAt().toString() : null);
+                return dto;
+            }).collect(java.util.stream.Collectors.toList());
+            
+            log.info("📋 Retrieved {} feedbacks", feedbackDTOs.size());
+            return new ResponseEntity<>(feedbackDTOs, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("❌ Error getting feedbacks: {}", e.getMessage(), e);
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
@@ -318,6 +345,83 @@ public class PredictionController {
             error.put("error", e.getMessage());
             error.put("message", "Failed to analyze plant image");
             
+            return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Submit feedback for a prediction
+     * POST /api/predictions/feedback
+     * @param feedbackRequest Map containing predictionId, userId, isCorrect, predictedClass, feedbackText
+     * @return Feedback response with success/failure status
+     */
+    @Operation(
+        summary = "Submit feedback for a prediction",
+        description = "Allows logged-in users to mark a prediction as correct or incorrect. " +
+                      "If marked as correct, the plant will be added to the plant catalog."
+    )
+    @PostMapping("/feedback")
+    public ResponseEntity<?> submitFeedback(@RequestBody Map<String, Object> feedbackRequest) {
+        try {
+            Integer predictionId = (Integer) feedbackRequest.get("predictionId");
+            Integer userId = (Integer) feedbackRequest.get("userId");
+            Boolean isCorrect = (Boolean) feedbackRequest.get("isCorrect");
+            String predictedClass = (String) feedbackRequest.get("predictedClass");
+            String feedbackText = (String) feedbackRequest.get("feedbackText");
+
+            log.info("📝 Feedback received: predictionId={}, userId={}, isCorrect={}", 
+                predictionId, userId, isCorrect);
+
+            // Validate required fields
+            if (predictionId == null || userId == null || isCorrect == null) {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "Missing required fields");
+                return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+            }
+
+            // Get prediction
+            Prediction prediction = predictionService.findById(predictionId)
+                .orElseThrow(() -> new RuntimeException("Prediction not found"));
+
+            // Get user
+            User user = userService.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Determine prediction type
+            String predictionType = predictedClass != null && 
+                (predictedClass.contains("disease") || predictedClass.contains("healthy")) 
+                ? "DISEASE" : "PLANT";
+
+            // Create feedback
+            PredictionFeedback feedback = PredictionFeedback.builder()
+                .prediction(prediction)
+                .user(user)
+                .isCorrect(isCorrect)
+                .comment(feedbackText != null ? feedbackText : "")
+                .predictionType(predictionType)
+                .predictedName(predictedClass)
+                .imageUrl(prediction.getUploadedImageUrl())
+                .imageAddedToDb(false)
+                .createdAt(java.time.LocalDateTime.now())
+                .build();
+
+            // Save feedback (automatically adds to catalog if correct)
+            feedback = feedbackService.submitFeedback(feedback);
+
+            log.info("✅ Feedback saved: ID={}, isCorrect={}, addedToDb={}", 
+                feedback.getFeedbackId(), isCorrect, feedback.getImageAddedToDb());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Feedback submitted successfully");
+            response.put("feedbackId", feedback.getFeedbackId());
+
+            return new ResponseEntity<>(response, HttpStatus.OK);
+
+        } catch (Exception e) {
+            log.error("❌ Feedback error: {}", e.getMessage(), e);
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
             return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
