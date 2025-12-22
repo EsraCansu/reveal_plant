@@ -9,7 +9,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import plant_village.model.Prediction;
 import plant_village.model.PredictionFeedback;
+import plant_village.model.PredictionLog;
 import plant_village.model.User;
+import plant_village.repository.PredictionLogRepository;
 import plant_village.service.PredictionService;
 import plant_village.service.PredictionFeedbackService;
 import plant_village.service.UserService;
@@ -31,12 +33,15 @@ public class PredictionController {
     private final PredictionService predictionService;
     private final UserService userService;
     private final PredictionFeedbackService feedbackService;
+    private final PredictionLogRepository logRepository;
 
     @Autowired
-    public PredictionController(PredictionService predictionService, UserService userService, PredictionFeedbackService feedbackService) {
+    public PredictionController(PredictionService predictionService, UserService userService, 
+                                PredictionFeedbackService feedbackService, PredictionLogRepository logRepository) {
         this.predictionService = predictionService;
         this.userService = userService;
         this.feedbackService = feedbackService;
+        this.logRepository = logRepository;
     }
 
     /**
@@ -420,6 +425,59 @@ public class PredictionController {
 
         } catch (Exception e) {
             log.error("❌ Feedback error: {}", e.getMessage(), e);
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Get all prediction logs (admin only)
+     * GET /api/predictions/logs/all
+     * @return List of all prediction logs
+     */
+    @GetMapping("/logs/all")
+    public ResponseEntity<?> getAllLogs() {
+        try {
+            List<PredictionLog> logs = logRepository.findAll();
+            
+            // Convert to DTOs to avoid JSON serialization issues
+            List<Map<String, Object>> logDTOs = logs.stream().map(log -> {
+                Map<String, Object> dto = new HashMap<>();
+                dto.put("id", log.getId());
+                dto.put("predictionId", log.getPrediction() != null ? log.getPrediction().getId() : null);
+                dto.put("adminUserId", log.getAdminUser() != null ? log.getAdminUser().getId() : null);
+                dto.put("adminUserName", log.getAdminUser() != null ? log.getAdminUser().getUserName() : "System");
+                dto.put("actionType", log.getActionType());
+                dto.put("timestamp", log.getTimestamp() != null ? log.getTimestamp().toString() : null);
+                dto.put("oldValue", log.getOldValue());
+                dto.put("newValue", log.getNewValue());
+                
+                // Determine log level based on action type
+                String level = "INFO";
+                if (log.getActionType() != null) {
+                    if (log.getActionType().contains("ERROR") || log.getActionType().contains("FAIL")) {
+                        level = "ERROR";
+                    } else if (log.getActionType().contains("WARNING") || log.getActionType().contains("INVALID")) {
+                        level = "WARNING";
+                    }
+                }
+                dto.put("level", level);
+                
+                // Create message from action and values
+                String message = log.getActionType() != null ? log.getActionType() : "Unknown action";
+                if (log.getOldValue() != null && log.getNewValue() != null) {
+                    message += ": " + log.getOldValue() + " → " + log.getNewValue();
+                }
+                dto.put("message", message);
+                
+                return dto;
+            }).collect(java.util.stream.Collectors.toList());
+            
+            log.info("📋 Retrieved {} prediction logs", logDTOs.size());
+            return new ResponseEntity<>(logDTOs, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("❌ Error getting logs: {}", e.getMessage(), e);
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);

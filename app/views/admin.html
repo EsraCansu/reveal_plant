@@ -461,28 +461,51 @@
             }
         }
 
-        function loadLogs() {
-            const mockLogs = [
-                { id: 1, level: 'INFO', message: 'User logged in: test@revealplant.com', timestamp: new Date().toISOString() },
-                { id: 2, level: 'INFO', message: 'New user registered: user@example.com', timestamp: new Date(Date.now() - 3600000).toISOString() },
-                { id: 3, level: 'WARNING', message: 'Failed login attempt', timestamp: new Date(Date.now() - 7200000).toISOString() },
-                { id: 4, level: 'ERROR', message: 'Database connection error (temporary)', timestamp: new Date(Date.now() - 10800000).toISOString() },
-                { id: 5, level: 'INFO', message: 'Backend started successfully', timestamp: new Date(Date.now() - 14400000).toISOString() },
-            ];
-
-            const logHTML = mockLogs.map(log => {
-                const bgClass = log.level === 'ERROR' ? 'danger' : log.level === 'WARNING' ? 'warning' : 'info';
-                const icon = log.level === 'ERROR' ? 'exclamation-circle' : log.level === 'WARNING' ? 'exclamation-triangle' : 'info-circle';
-                return `
-                    <div class="alert alert-${bgClass} mb-2" data-level="${log.level}">
-                        <div class="d-flex justify-content-between">
-                            <div><i class="fas fa-${icon} me-2"></i><strong>[${log.level}]</strong> ${log.message}</div>
-                            <small>${new Date(log.timestamp).toLocaleString('en-US')}</small>
+        async function loadLogs() {
+            try {
+                const response = await authenticatedFetch(`${BACKEND_URL}/api/predictions/logs/all`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load logs');
+                }
+                
+                const logs = await response.json();
+                
+                if (logs.length === 0) {
+                    document.getElementById('logsContainer').innerHTML = 
+                        '<div class="alert alert-info">No logs available yet.</div>';
+                    return;
+                }
+                
+                // Sort by timestamp descending (newest first)
+                logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                
+                const logHTML = logs.map(log => {
+                    const bgClass = log.level === 'ERROR' ? 'danger' : log.level === 'WARNING' ? 'warning' : 'info';
+                    const icon = log.level === 'ERROR' ? 'exclamation-circle' : log.level === 'WARNING' ? 'exclamation-triangle' : 'info-circle';
+                    const timestamp = log.timestamp ? new Date(log.timestamp).toLocaleString('en-US') : 'N/A';
+                    
+                    return `
+                        <div class="alert alert-${bgClass} mb-2" data-level="${log.level}">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <i class="fas fa-${icon} me-2"></i>
+                                    <strong>[${log.level}]</strong> ${log.message}
+                                    ${log.adminUserName && log.adminUserName !== 'System' ? `<small class="text-muted ms-2">(by ${log.adminUserName})</small>` : ''}
+                                </div>
+                                <small>${timestamp}</small>
+                            </div>
                         </div>
-                    </div>
-                `;
-            }).join('');
-            document.getElementById('logsContainer').innerHTML = logHTML;
+                    `;
+                }).join('');
+                
+                document.getElementById('logsContainer').innerHTML = logHTML;
+                
+            } catch (error) {
+                console.error('Error loading logs:', error);
+                document.getElementById('logsContainer').innerHTML = 
+                    '<div class="alert alert-danger">Error loading logs: ' + error.message + '</div>';
+            }
         }
 
         function filterLogs() {
