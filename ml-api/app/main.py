@@ -113,15 +113,15 @@ def preprocess_image(image_path: str, target_size: tuple = (224, 224)) -> Option
         # BGR -> RGB (CRITICAL!)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         
-        # Float32'ye çevir
+        # -1 to 1 Normalization - CRITICAL! Model bu şekilde eğitilmiş!
+        # Notebook: (image / 127.5) - 1.0
         img = img.astype('float32')
+        img = (img / 127.5) - 1.0
         
         # Batch dimension ekle
         img = np.expand_dims(img, axis=0)
         
-        # ResNet ImageNet preprocessing - CRITICAL!
-        # Bu, ImageNet üzerinde eğitilmiş ResNet modellerinin beklediği normalizasyon
-        img = preprocess_input(img)
+        logger.debug(f"Görsel ön işlendi: shape={img.shape}, min={img.min():.2f}, max={img.max():.2f}")
         
         logger.debug(f"Görsel ön işlendi: shape={img.shape}, min={img.min():.2f}, max={img.max():.2f}")
         return img
@@ -273,6 +273,11 @@ async def predict_base64(image_data: dict):
             raise ValueError("imageBase64 parametresi gerekli")
         
         image_base64 = image_data.get("imageBase64", "")
+        
+        # Remove data URL prefix if present (e.g., "data:image/jpeg;base64,")
+        if "," in image_base64 and image_base64.startswith("data:"):
+            image_base64 = image_base64.split(",", 1)[1]
+            logger.info(f"🔧 Stripped data URL prefix from base64 string")
         
         # Base64 decode
         image_bytes = base64.b64decode(image_base64)
