@@ -215,14 +215,27 @@ class DiagnosticsController {
     }
 
     /**
+     * Parse plant name from ML model class (e.g., "Strawberry___healthy" → "Strawberry")
+     * Also handles special cases like "Cherry_(including_sour)" → "Cherry"
+     */
+    parsePlantName(mlClass) {
+        // Extract plant name (before "___" or "_(")
+        let plantName = mlClass.split('___')[0]; // "Strawberry___healthy" → "Strawberry"
+        plantName = plantName.split('_(')[0];     // "Cherry_(including_sour)" → "Cherry"
+        return plantName;
+    }
+
+    /**
      * ✅ DÜZELTME: Backend'den gelen gerçek veriyle identification sonucu göster
+     * 🌱 Sadece bitki adını göster (hastalık adını değil)
      */
     getIdentificationResult() {
         const result = this.predictionResult || {};
-        const predictedClass = result.predicted_class || 'Unknown Plant';
+        const rawClass = result.predicted_class || 'Unknown Plant';
+        const predictedClass = this.parsePlantName(rawClass); // "Strawberry___healthy" → "Strawberry"
         const confidence = result.confidence ? (result.confidence * 100).toFixed(1) : '0';
         const predictionId = result.prediction_id || 0;
-        const isLoggedIn = getCookie('userEmail') !== null; // Check cookie instead of localStorage
+        const isLoggedIn = getCookie('userEmail') !== null;
         const userId = parseInt(getCookie('userEmail') ? sessionStorage.getItem('userId') || localStorage.getItem('user_id') : null) || 1;
         
         console.log('[FEEDBACK] PredictionResult:', result);
@@ -241,7 +254,7 @@ class DiagnosticsController {
                         <p><strong>Other Possibilities:</strong></p>
                         <ul class="text-start">
                             ${result.top_predictions.slice(1, 4).map(p => 
-                                `<li>${p.class_name}: ${(p.probability * 100).toFixed(1)}%</li>`
+                                `<li>${this.parsePlantName(p.class_name)}: ${(p.probability * 100).toFixed(1)}%</li>`
                             ).join('')}
                         </ul>
                     ` : ''}
@@ -250,10 +263,10 @@ class DiagnosticsController {
                     <div class="feedback-section mt-3" id="feedback-section-${predictionId}">
                         <p class="text-muted mb-2">Was this prediction correct?</p>
                         <div class="btn-group" role="group">
-                            <button class="btn btn-outline-success" onclick="app.submitFeedback(${predictionId}, true, '${predictedClass}', ${userId})">
+                            <button class="btn btn-outline-success" onclick="app.submitFeedback(${predictionId}, true, '${rawClass}', ${userId})">
                                 <i class="fas fa-thumbs-up"></i> Correct
                             </button>
-                            <button class="btn btn-outline-danger" onclick="app.submitFeedback(${predictionId}, false, '${predictedClass}', ${userId})">
+                            <button class="btn btn-outline-danger" onclick="app.submitFeedback(${predictionId}, false, '${rawClass}', ${userId})">
                                 <i class="fas fa-thumbs-down"></i> Incorrect
                             </button>
                         </div>

@@ -1,16 +1,3 @@
-<<<<<<< HEAD
-__pycache__/
-*.pyc
-venv/
-.vscode/
-.idea/
-models/*.keras
-models/*.h5
-.kaggle/
-.DS_Store
-Thumbs.db
-*.log
-=======
 # IDE Settings
 .vscode
 .idea
@@ -51,7 +38,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-
+.kaggle/
 
 # FastAPI
 .env
@@ -83,7 +70,6 @@ bin/
 # OS
 .DS_Store
 Thumbs.db
-.env.local
 
 # Logs
 logs/
@@ -94,16 +80,29 @@ tmp/
 temp/
 *.tmp
 
+# Documentation (excluded from repo)
 DEPLOYMENT.md
 V1__Initial_Schema.sql
 DATABASE_MIGRATION.md
 WEBSOCKET_IMPLEMENTATION.md
 FASTAPI_INTEGRATION.md
-ml-api/model/PlantVillage_Resnet101_FineTuning.keras
-plant_village/src/main/resources/application.properties
-plant_village/target/classes/application-local.properties
->>>>>>> 1c12eb730f6b2c81064260ff51faab5363c8cbaa
-
 plant_village/database/main_database.sql
 DATABASE_MODEL_UPDATES.md
+
+# Sensitive configuration files
+plant_village/src/main/resources/application.properties
+plant_village/target/classes/application-local.properties
+
+# ML Models (too large for git)
+ml-api/model/PlantVillage_Resnet101_FineTuning.keras
+ml-api/model/*.keras
+ml-api/model/*.h5
+models/*.keras
+models/*.h5
+
+# Virtual environments
 ml-api\.venv
+ml-api/venv/
+.venv/
+DATABASE_RELATIONS_AND_USAGE.md
+PREDICTION_WORKFLOW_DETAILED.md
