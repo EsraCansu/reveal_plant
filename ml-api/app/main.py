@@ -11,6 +11,7 @@ import cv2
 from pathlib import Path
 from typing import Optional
 from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from tensorflow.keras.applications.resnet import preprocess_input
@@ -136,6 +137,184 @@ async def startup_event():
     logger.info("API başlatılıyor...")
     load_model()
     logger.info(f"Model durumu: {'Yüklendi ✓' if MODEL_LOADED else 'Yüklenemedi ✗'}")
+
+
+@app.get("/", tags=["Root"], response_class=HTMLResponse)
+async def root():
+    """Root endpoint - API hoş geldin sayfası"""
+    status_color = "green" if MODEL_LOADED else "red"
+    status_text = "✓ Yüklendi" if MODEL_LOADED else "✗ Yüklenemedi"
+    
+    return f"""
+    <!DOCTYPE html>
+    <html lang="tr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Reveal Plant API</title>
+        <style>
+            * {{
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }}
+            body {{
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 20px;
+            }}
+            .container {{
+                background: white;
+                border-radius: 10px;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+                max-width: 800px;
+                width: 100%;
+                padding: 40px;
+            }}
+            h1 {{
+                color: #333;
+                margin-bottom: 10px;
+                text-align: center;
+            }}
+            .status {{
+                text-align: center;
+                margin-bottom: 30px;
+                padding: 15px;
+                background: #f5f5f5;
+                border-radius: 5px;
+            }}
+            .status-indicator {{
+                display: inline-block;
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                margin-right: 8px;
+                background-color: {status_color};
+            }}
+            .endpoints {{
+                margin-top: 30px;
+            }}
+            .endpoint {{
+                margin-bottom: 15px;
+                padding: 12px;
+                background: #f9f9f9;
+                border-left: 4px solid #667eea;
+                border-radius: 3px;
+            }}
+            .endpoint-method {{
+                display: inline-block;
+                padding: 3px 8px;
+                background: #667eea;
+                color: white;
+                border-radius: 3px;
+                font-size: 12px;
+                font-weight: bold;
+                margin-right: 10px;
+            }}
+            .endpoint-url {{
+                color: #666;
+                font-family: monospace;
+                font-size: 14px;
+            }}
+            .buttons {{
+                display: flex;
+                gap: 10px;
+                margin-top: 30px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }}
+            .button {{
+                padding: 10px 20px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 14px;
+                text-decoration: none;
+                display: inline-block;
+                transition: all 0.3s ease;
+            }}
+            .button-primary {{
+                background: #667eea;
+                color: white;
+            }}
+            .button-primary:hover {{
+                background: #5568d3;
+                transform: translateY(-2px);
+            }}
+            .button-secondary {{
+                background: #f0f0f0;
+                color: #333;
+                border: 1px solid #ddd;
+            }}
+            .button-secondary:hover {{
+                background: #e0e0e0;
+            }}
+            .info {{
+                background: #e7f3ff;
+                border-left: 4px solid #2196F3;
+                padding: 12px;
+                border-radius: 3px;
+                margin-top: 20px;
+                color: #1565C0;
+                font-size: 13px;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🌿 Reveal Plant API</h1>
+            <p style="text-align: center; color: #666; margin-bottom: 20px;">Bitki Hastalığı Tespiti Sistemi</p>
+            
+            <div class="status">
+                <span class="status-indicator"></span>
+                <strong>Model Durumu:</strong> {status_text}
+            </div>
+            
+            <div class="endpoints">
+                <h3 style="color: #333; margin-bottom: 15px;">📡 API Endpoint'leri</h3>
+                
+                <div class="endpoint">
+                    <span class="endpoint-method">GET</span>
+                    <span class="endpoint-url">/health</span>
+                    <p style="color: #999; font-size: 12px; margin-top: 5px;">Servis sağlık kontrolü</p>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="endpoint-method">POST</span>
+                    <span class="endpoint-url">/predict</span>
+                    <p style="color: #999; font-size: 12px; margin-top: 5px;">Görsel dosyası ile tahmin yap</p>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="endpoint-method">POST</span>
+                    <span class="endpoint-url">/predict/base64</span>
+                    <p style="color: #999; font-size: 12px; margin-top: 5px;">Base64 kodlanmış görsel ile tahmin</p>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="endpoint-method">GET</span>
+                    <span class="endpoint-url">/classes</span>
+                    <p style="color: #999; font-size: 12px; margin-top: 5px;">Mevcut hastalık sınıflarını listele</p>
+                </div>
+            </div>
+            
+            <div class="buttons">
+                <a href="/docs" class="button button-primary">📚 API Dokümantasyonu</a>
+                <a href="/redoc" class="button button-secondary">📖 ReDoc Dokümantasyonu</a>
+                <a href="/health" class="button button-secondary">🏥 Health Check</a>
+            </div>
+            
+            <div class="info">
+                💡 <strong>İpucu:</strong> /docs sayfasında API endpoint'lerini test edebilir ve detaylı dokümantasyonu görebilirsiniz.
+            </div>
+        </div>
+    </body>
+    </html>
+    """
 
 
 @app.get("/health", response_model=HealthResponse)

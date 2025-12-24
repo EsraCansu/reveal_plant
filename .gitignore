@@ -106,3 +106,4 @@ plant_village/target/classes/application-local.properties
 
 plant_village/database/main_database.sql
 DATABASE_MODEL_UPDATES.md
+ml-api\.venv
