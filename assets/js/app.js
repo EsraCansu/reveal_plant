@@ -112,6 +112,11 @@ class DiagnosticsController {
 
             const result = await response.json();
             console.log('[API] Success:', result);
+            console.log('[API] Treatment Info:', {
+                symptom_description: result.symptom_description,
+                treatment: result.treatment,
+                recommended_medicines: result.recommended_medicines
+            });
             this.predictionResult = result;
             setTimeout(() => this.showResults(), 500);
         } catch (error) {
@@ -240,6 +245,8 @@ class DiagnosticsController {
         
         console.log('[FEEDBACK] PredictionResult:', result);
         console.log('[FEEDBACK] PredictionId:', predictionId, 'UserId:', userId, 'IsLoggedIn:', isLoggedIn);
+        console.log('[PLANT INFO] Scientific Name:', result.scientific_name, 'Category:', result.category);
+        console.log('[PLANT INFO] Description:', result.plant_description);
         
         return `
             <div class="text-center">
@@ -247,16 +254,24 @@ class DiagnosticsController {
                 <h3 class="mt-3">Plant Identification Result</h3>
                 <div class="alert alert-success mt-3">
                     <h5>Identified Plant: <strong>${predictedClass}</strong></h5>
+                    ${result.scientific_name ? `<p class="text-muted mb-1"><em>${result.scientific_name}</em></p>` : ''}
                     <p class="mb-2"><small>Confidence: <strong>${confidence}%</strong></small></p>
                     <hr>
-                    ${result.description ? `<p>${result.description}</p>` : ''}
-                    ${result.top_predictions ? `
-                        <p><strong>Other Possibilities:</strong></p>
-                        <ul class="text-start">
-                            ${result.top_predictions.slice(1, 4).map(p => 
-                                `<li>${this.parsePlantName(p.class_name)}: ${(p.probability * 100).toFixed(1)}%</li>`
-                            ).join('')}
-                        </ul>
+                    ${result.plant_description ? `
+                        <div class="text-start mb-3">
+                            <h6><i class="fas fa-info-circle"></i> Plant Information:</h6>
+                            <p class="mb-1">${result.plant_description}</p>
+                        </div>
+                    ` : ''}
+                    ${result.top_predictions && result.top_predictions.length > 1 ? `
+                        <div class="text-start">
+                            <h6><i class="fas fa-list"></i> Other Possibilities:</h6>
+                            <ul>
+                                ${result.top_predictions.slice(1, 4).map(p => 
+                                    `<li>${this.parsePlantName(p.class_name)}: ${(p.probability * 100).toFixed(1)}%</li>`
+                                ).join('')}
+                            </ul>
+                        </div>
                     ` : ''}
                 </div>
                 ${isLoggedIn && predictionId ? `
@@ -279,6 +294,7 @@ class DiagnosticsController {
 
     /**
      * ✅ DÜZELTME: Backend'den gelen gerçek veriyle disease sonucu göster
+     * Plant Identification gibi temiz ve düzenli format
      */
     getDiseaseResult() {
         const result = this.predictionResult || {};
@@ -286,11 +302,14 @@ class DiagnosticsController {
         const confidence = result.confidence ? (result.confidence * 100).toFixed(1) : '0';
         const isHealthy = predictedClass.toLowerCase().includes('healthy');
         const predictionId = result.prediction_id || 0;
-        const isLoggedIn = getCookie('userEmail') !== null; // Check cookie instead of localStorage
+        const isLoggedIn = getCookie('userEmail') !== null;
         const userId = parseInt(getCookie('userEmail') ? sessionStorage.getItem('userId') || localStorage.getItem('user_id') : null) || 1;
         
         console.log('[FEEDBACK] PredictionResult:', result);
         console.log('[FEEDBACK] PredictionId:', predictionId, 'UserId:', userId, 'IsLoggedIn:', isLoggedIn);
+        console.log('[DISEASE INFO] Symptoms:', result.symptom_description);
+        console.log('[DISEASE INFO] Treatment:', result.treatment);
+        console.log('[DISEASE INFO] Medicines:', result.recommended_medicines);
         
         return `
             <div class="text-center">
@@ -303,15 +322,32 @@ class DiagnosticsController {
                     </h5>
                     <p class="mb-2"><small>Confidence: <strong>${confidence}%</strong></small></p>
                     <hr>
-                    <p><strong>Result:</strong> ${predictedClass}</p>
-                    ${result.description ? `<p>${result.description}</p>` : ''}
-                    ${result.top_predictions && !isHealthy ? `
-                        <p><strong>Other Possibilities:</strong></p>
-                        <ul class="text-start">
-                            ${result.top_predictions.slice(1, 4).map(p => 
-                                `<li>${p.class_name}: ${(p.probability * 100).toFixed(1)}%</li>`
-                            ).join('')}
-                        </ul>
+                    <p class="mb-1"><strong>Result:</strong> ${predictedClass}</p>
+                    ${!isHealthy && (result.symptom_description || result.treatment || result.recommended_medicines) ? `
+                        <div class="text-start mt-3 mb-3">
+                            ${result.symptom_description ? `
+                                <h6><i class="fas fa-info-circle"></i> About Disease:</h6>
+                                <p class="mb-2">${result.symptom_description}</p>
+                            ` : ''}
+                            ${result.treatment ? `
+                                <h6><i class="fas fa-medkit"></i> Treatment:</h6>
+                                <p class="mb-2">${result.treatment}</p>
+                            ` : ''}
+                            ${result.recommended_medicines ? `
+                                <h6><i class="fas fa-pills"></i> Recommended Medicines:</h6>
+                                <p class="mb-2">${result.recommended_medicines}</p>
+                            ` : ''}
+                        </div>
+                    ` : ''}
+                    ${result.top_predictions && result.top_predictions.length > 1 ? `
+                        <div class="text-start">
+                            <h6><i class="fas fa-list"></i> Other Possibilities:</h6>
+                            <ul>
+                                ${result.top_predictions.slice(1, 4).map(p => 
+                                    `<li>${p.class_name}: ${(p.probability * 100).toFixed(1)}%</li>`
+                                ).join('')}
+                            </ul>
+                        </div>
                     ` : ''}
                 </div>
                 ${isLoggedIn && predictionId ? `

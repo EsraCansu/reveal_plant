@@ -34,7 +34,7 @@ public class PredictionServiceImpl implements PredictionService {
     private final PredictionDiseaseRepository predictionDiseaseRepository;
     private final PredictionPlantRepository predictionPlantRepository;
     private final FastAPIClientService fastAPIClientService;
-    private final PlantDiseaseCacheManager cacheManager;
+    private final PlantDiseaseCacheManager cacheManager; // Made package-private for controller access
     private final UserRepository userRepository;
 
     // %50 Confidence Threshold - Rule: if confidence < 50%, mark as invalid
@@ -57,6 +57,11 @@ public class PredictionServiceImpl implements PredictionService {
         this.fastAPIClientService = fastAPIClientService;
         this.cacheManager = cacheManager;
         this.userRepository = userRepository;
+    }
+
+    // Public getter for cache manager (needed by controller)
+    public PlantDiseaseCacheManager getCacheManager() {
+        return this.cacheManager;
     }
 
     @Override
@@ -169,8 +174,18 @@ public class PredictionServiceImpl implements PredictionService {
                 java.util.List<String> predStrings = new java.util.ArrayList<>();
                 for (int i = 0; i < Math.min(3, top3List.size()); i++) {
                     plant_village.model.dto.DiseasePrediction p = top3List.get(i);
-                    predStrings.add(String.format(java.util.Locale.US, "{\"disease\":\"%s\",\"confidence\":%.4f}", 
-                        p.getDisease(), p.getConfidenceScore()));
+                    Optional<Disease> diseaseOpt = cacheManager.getDiseaseByName(p.getDisease());
+                    String symptomDescription = "";
+                    String treatment = "";
+                    String recommendedMedicines = "";
+                    if (diseaseOpt.isPresent()) {
+                        Disease disease = diseaseOpt.get();
+                        symptomDescription = disease.getSymptomDescription();
+                        treatment = disease.getTreatment();
+                        recommendedMedicines = disease.getRecommendedMedicines();
+                    }
+                    predStrings.add(String.format(java.util.Locale.US, "{\"disease\":\"%s\",\"confidence\":%.4f,\"symptom_description\":\"%s\",\"treatment\":\"%s\",\"recommended_medicines\":\"%s\"}", 
+                        p.getDisease(), p.getConfidenceScore(), symptomDescription, treatment, recommendedMedicines));
                 }
                 top3Json = "[" + String.join(",", predStrings) + "]";
             } catch (Exception e) {

@@ -57,6 +57,9 @@ public class Disease {
     @Column(name = "treatment", columnDefinition = "VARCHAR(MAX)")
     private String treatment;
     
+        @Column(name = "recommended_medicines", columnDefinition = "VARCHAR(MAX)")
+        private String recommendedMedicines;
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "plant_id", nullable = false)
     private Plant plant;

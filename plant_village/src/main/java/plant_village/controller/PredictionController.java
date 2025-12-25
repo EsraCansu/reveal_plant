@@ -297,50 +297,131 @@ public class PredictionController {
                 description
             );
             
+
             // Build response matching frontend expectations
             Map<String, Object> response = new HashMap<>();
-            
+
             // Use topPrediction field which contains the actual ML result (e.g., "Tomato___Leaf_Mold")
             String predictedClass = prediction.getTopPrediction() != null ? prediction.getTopPrediction() : "Unknown";
             response.put("predicted_class", predictedClass);
             response.put("confidence", prediction.getConfidence() != null ? prediction.getConfidence() : 0.0);
             response.put("is_valid", prediction.getIsValid());
-            
+
             // Determine isHealthy from predicted class name
             boolean isHealthy = predictedClass.toLowerCase().contains("healthy");
             response.put("is_healthy", isHealthy);
             response.put("description", "Analysis completed");
             response.put("prediction_id", prediction.getId());
-            
-            // Top 3 predictions from description field (stored as JSON)
+
+            // Get cache manager for both plant and disease lookups
+            plant_village.util.PlantDiseaseCacheManager cacheManager = predictionService instanceof plant_village.service.PredictionServiceImpl ? 
+                ((plant_village.service.PredictionServiceImpl)predictionService).getCacheManager() : null;
+
+            // Plant identification mode - add plant information
+            if ("identify-plant".equals(predictionType)) {
+                String plantName = parsePlantNameFromMLFormat(predictedClass);
+                String plantDescription = "";
+                String scientificName = "";
+                
+                if (cacheManager != null) {
+                    java.util.Optional<plant_village.model.Plant> plantOpt = cacheManager.getPlantByName(plantName);
+                    if (plantOpt.isPresent()) {
+                        plant_village.model.Plant plant = plantOpt.get();
+                        plantDescription = plant.getDescription() != null ? plant.getDescription() : "";
+                        scientificName = plant.getScientificName() != null ? plant.getScientificName() : "";
+                    }
+                }
+                
+                response.put("plant_description", plantDescription);
+                response.put("scientific_name", scientificName);
+            }
+
+            // Disease detection mode - add disease info for main result (top1)
+            String symptomDescription = "";
+            String treatment = "";
+            String recommendedMedicines = "";
+            if (!isHealthy && "detect-disease".equals(predictionType)) {
+                if (cacheManager != null) {
+                    java.util.Optional<plant_village.model.Disease> diseaseOpt = cacheManager.getDiseaseByName(predictedClass);
+                    if (diseaseOpt.isPresent()) {
+                        plant_village.model.Disease disease = diseaseOpt.get();
+                        symptomDescription = disease.getSymptomDescription();
+                        treatment = disease.getTreatment();
+                        recommendedMedicines = disease.getRecommendedMedicines();
+                    }
+                }
+            }
+            response.put("symptom_description", symptomDescription);
+            response.put("treatment", treatment);
+            response.put("recommended_medicines", recommendedMedicines);
+
+            // Top 3 predictions from description field (stored as JSON) with full disease info
             List<Map<String, Object>> topPredictions = new java.util.ArrayList<>();
             String top3Json = prediction.getDescription();
+            
             if (top3Json != null && top3Json.startsWith("[")) {
                 try {
-                    // Parse simple JSON manually
+                    // Parse JSON and enrich with disease information
                     String cleaned = top3Json.replace("[", "").replace("]", "");
                     String[] preds = cleaned.split("\\},\\{");
+                    
                     for (String pred : preds) {
                         pred = pred.replace("{", "").replace("}", "");
-                        String[] parts = pred.split(",");
-                        if (parts.length >= 2) {
-                            String disease = parts[0].split(":")[1].replace("\"", "").trim();
-                            String conf = parts[1].split(":")[1].trim();
-                            Map<String, Object> p = new HashMap<>();
-                            p.put("class_name", disease);
-                            p.put("probability", Double.parseDouble(conf));
-                            topPredictions.add(p);
+                        String[] parts = pred.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"); // Split by comma but not inside quotes
+                        
+                        String diseaseName = "";
+                        Double confidence = 0.0;
+                        String symptoms = "";
+                        String treatmentInfo = "";
+                        String medicines = "";
+                        
+                        // Parse fields
+                        for (String part : parts) {
+                            if (part.contains("\"disease\"")) {
+                                diseaseName = part.split(":")[1].replace("\"", "").trim();
+                            } else if (part.contains("\"confidence\"")) {
+                                try {
+                                    confidence = Double.parseDouble(part.split(":")[1].trim());
+                                } catch (Exception ignored) {}
+                            } else if (part.contains("\"symptom_description\"")) {
+                                symptoms = part.substring(part.indexOf(":") + 1).replace("\"", "").trim();
+                            } else if (part.contains("\"treatment\"")) {
+                                treatmentInfo = part.substring(part.indexOf(":") + 1).replace("\"", "").trim();
+                            } else if (part.contains("\"recommended_medicines\"")) {
+                                medicines = part.substring(part.indexOf(":") + 1).replace("\"", "").trim();
+                            }
                         }
+                        
+                        // If disease info not in JSON, try to get from cache
+                        if (cacheManager != null && (symptoms.isEmpty() || treatmentInfo.isEmpty() || medicines.isEmpty())) {
+                            java.util.Optional<plant_village.model.Disease> diseaseOpt = cacheManager.getDiseaseByName(diseaseName);
+                            if (diseaseOpt.isPresent()) {
+                                plant_village.model.Disease disease = diseaseOpt.get();
+                                if (symptoms.isEmpty()) symptoms = disease.getSymptomDescription() != null ? disease.getSymptomDescription() : "";
+                                if (treatmentInfo.isEmpty()) treatmentInfo = disease.getTreatment() != null ? disease.getTreatment() : "";
+                                if (medicines.isEmpty()) medicines = disease.getRecommendedMedicines() != null ? disease.getRecommendedMedicines() : "";
+                            }
+                        }
+                        
+                        // Build prediction object
+                        Map<String, Object> p = new HashMap<>();
+                        p.put("class_name", diseaseName);
+                        p.put("probability", confidence);
+                        p.put("symptom_description", symptoms);
+                        p.put("treatment", treatmentInfo);
+                        p.put("recommended_medicines", medicines);
+                        
+                        topPredictions.add(p);
                     }
                 } catch (Exception e) {
                     log.warn("Failed to parse top predictions: {}", e.getMessage());
                 }
             }
             response.put("top_predictions", topPredictions);
-            
+
             log.info("✅ Prediction successful: ID={}, isValid={}, isHealthy={}, confidence={}", 
                 prediction.getId(), prediction.getIsValid(), isHealthy, prediction.getConfidence());
-            
+
             return new ResponseEntity<>(response, HttpStatus.OK);
             
         } catch (Exception e) {
@@ -352,6 +433,36 @@ public class PredictionController {
             
             return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * Parse plant name from ML model format
+     * Converts: "Tomato___Leaf_Mold" → "Tomato"
+     * Converts: "Strawberry___healthy" → "Strawberry"
+     * 
+     * @param mlFormat Plant name in ML format
+     * @return Cleaned plant name for database lookup
+     */
+    private String parsePlantNameFromMLFormat(String mlFormat) {
+        if (mlFormat == null || !mlFormat.contains("___")) {
+            return mlFormat;
+        }
+        
+        String[] parts = mlFormat.split("___");
+        if (parts.length < 1) {
+            return mlFormat;
+        }
+        
+        // Get plant part (before "___")
+        String plantPart = parts[0];
+        
+        // Remove parentheses content like (maize)
+        if (plantPart.contains("(")) {
+            plantPart = plantPart.substring(0, plantPart.indexOf("(")).trim();
+        }
+        
+        // Replace underscores with spaces
+        return plantPart.replace("_", " ").trim();
     }
 
     /**

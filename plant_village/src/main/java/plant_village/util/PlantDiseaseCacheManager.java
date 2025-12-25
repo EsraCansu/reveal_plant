@@ -146,6 +146,7 @@ public class PlantDiseaseCacheManager {
 
     /**
      * Get Disease by name - O(1) operation
+     * Supports ML model format: "Plant___Disease" or just "Disease"
      * 
      * @param name Disease name (label from ML model)
      * @return Optional containing Disease if found
@@ -156,27 +157,62 @@ public class PlantDiseaseCacheManager {
             return Optional.empty();
         }
         
+        // Parse ML format to extract disease name
+        // Format: "Tomato___Leaf_Mold" or "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot"
+        String parsedName = parseDiseaseNameFromMLFormat(name);
+        
+        log.debug("🔍 Searching for disease - Original: '{}', Parsed: '{}'", name, parsedName);
+        
         // Try to get from cache first (O(1))
-        Disease disease = diseaseCache.get(name);
+        Disease disease = diseaseCache.get(parsedName);
         
         // If not in cache, fetch from database and cache it
         if (disease == null) {
-            log.debug("📍 Cache miss for disease: '{}'. Fetching from database...", name);
-            Optional<Disease> dbDisease = diseaseRepository.findByNameIgnoreCase(name);
+            log.debug("📍 Cache miss for disease: '{}'. Fetching from database...", parsedName);
+            Optional<Disease> dbDisease = diseaseRepository.findByNameIgnoreCase(parsedName);
             if (dbDisease.isPresent()) {
                 disease = dbDisease.get();
-                // Store in both caches
-                diseaseCache.put(name, disease);
+                // Store in both caches (using parsed name)
+                diseaseCache.put(parsedName, disease);
                 diseaseIdCache.put(disease.getId(), disease);
-                log.debug("✅ Disease '{}' cached after DB fetch", name);
+                log.debug("✅ Disease '{}' cached after DB fetch", parsedName);
             } else {
-                log.warn("⚠️ Disease '{}' not found in database", name);
+                log.warn("⚠️ Disease '{}' not found in database", parsedName);
             }
         } else {
-            log.debug("✅ Cache hit for disease: '{}'", name);
+            log.debug("✅ Cache hit for disease: '{}'", parsedName);
         }
         
         return Optional.ofNullable(disease);
+    }
+
+    /**
+     * Parse disease name from ML model format
+     * Converts: "Tomato___Leaf_Mold" → "Leaf Mold"
+     * Converts: "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot" → "Cercospora leaf spot Gray leaf spot"
+     * 
+     * @param mlFormat Disease name in ML format
+     * @return Cleaned disease name for database lookup
+     */
+    private String parseDiseaseNameFromMLFormat(String mlFormat) {
+        if (mlFormat == null || !mlFormat.contains("___")) {
+            // If no "___" separator, return as-is (might be direct disease name)
+            return mlFormat;
+        }
+        
+        // Split by "___" to separate plant name from disease name
+        String[] parts = mlFormat.split("___");
+        if (parts.length < 2) {
+            return mlFormat;
+        }
+        
+        // Get disease part (after "___")
+        String diseasePart = parts[1];
+        
+        // Replace underscores with spaces
+        String cleaned = diseasePart.replace("_", " ");
+        
+        return cleaned;
     }
 
     /**
