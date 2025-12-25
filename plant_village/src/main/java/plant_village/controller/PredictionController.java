@@ -118,15 +118,8 @@ public class PredictionController {
         try {
             // Extract data from request
             Integer userId = (Integer) feedbackRequest.get("userId");
-            String predictionType = (String) feedbackRequest.get("predictionType");
-            String imageUrl = (String) feedbackRequest.get("imageUrl");
-            String predictedName = (String) feedbackRequest.get("predictedName");
+            String feedbackText = (String) feedbackRequest.getOrDefault("feedbackText", "");
             Boolean isCorrect = (Boolean) feedbackRequest.get("isCorrect");
-            String comment = (String) feedbackRequest.getOrDefault("comment", "");
-            
-            // Get user
-            User user = userService.findById(userId)
-                .orElseThrow(() -> new plant_village.exception.ResourceNotFoundException("User not found"));
             
             // Get prediction
             Prediction prediction = predictionService.findById(predictionId)
@@ -135,24 +128,19 @@ public class PredictionController {
             // Create feedback entity
             PredictionFeedback feedback = PredictionFeedback.builder()
                 .prediction(prediction)
-                .user(user)
-                .predictionType(predictionType)
-                .imageUrl(imageUrl)
-                .predictedName(predictedName)
                 .isCorrect(isCorrect)
-                .comment(comment.toString())
+                .feedbackText(feedbackText)
+                .isApproved(false)
+                .createdAt(java.time.LocalDateTime.now())
                 .build();
             
-            // Submit feedback (automatically adds image if positive)
+            // Submit feedback
             PredictionFeedback savedFeedback = feedbackService.submitFeedback(feedback);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("feedbackId", savedFeedback.getFeedbackId());
-            response.put("message", savedFeedback.getIsCorrect() 
-                ? "Thank you! Your feedback helps improve our model. Image added to our database." 
-                : "Thank you for your feedback!");
-            response.put("imageAdded", savedFeedback.getImageAddedToDb());
+            response.put("message", "Feedback submitted successfully");
             
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (Exception e) {
@@ -178,16 +166,12 @@ public class PredictionController {
                 Map<String, Object> dto = new HashMap<>();
                 dto.put("feedbackId", fb.getFeedbackId());
                 dto.put("predictionId", fb.getPrediction() != null ? fb.getPrediction().getId() : null);
-                dto.put("userId", fb.getUser() != null ? fb.getUser().getId() : null);
-                dto.put("userName", fb.getUser() != null ? fb.getUser().getUserName() : "Unknown");
-                dto.put("userEmail", fb.getUser() != null ? fb.getUser().getEmail() : "unknown@email.com");
                 dto.put("isCorrect", fb.getIsCorrect());
-                dto.put("comment", fb.getComment());
-                dto.put("predictionType", fb.getPredictionType());
-                dto.put("predictedName", fb.getPredictedName());
-                dto.put("imageUrl", fb.getImageUrl());
-                dto.put("imageAddedToDb", fb.getImageAddedToDb());
+                dto.put("isApproved", fb.getIsApproved());
+                dto.put("feedbackText", fb.getFeedbackText());
+                dto.put("adminNotes", fb.getAdminNotes());
                 dto.put("createdAt", fb.getCreatedAt() != null ? fb.getCreatedAt().toString() : null);
+                dto.put("updatedAt", fb.getUpdatedAt() != null ? fb.getUpdatedAt().toString() : null);
                 return dto;
             }).collect(java.util.stream.Collectors.toList());
             
@@ -357,13 +341,13 @@ public class PredictionController {
     /**
      * Submit feedback for a prediction
      * POST /api/predictions/feedback
-     * @param feedbackRequest Map containing predictionId, userId, isCorrect, predictedClass, feedbackText
+     * @param feedbackRequest Map containing predictionId, userId, isCorrect, feedbackText
      * @return Feedback response with success/failure status
      */
     @Operation(
         summary = "Submit feedback for a prediction",
         description = "Allows logged-in users to mark a prediction as correct or incorrect. " +
-                      "If marked as correct, the plant will be added to the plant catalog."
+                      "Feedback is stored for admin review and model improvement."
     )
     @PostMapping("/feedback")
     public ResponseEntity<?> submitFeedback(@RequestBody Map<String, Object> feedbackRequest) {
@@ -371,7 +355,6 @@ public class PredictionController {
             Integer predictionId = (Integer) feedbackRequest.get("predictionId");
             Integer userId = (Integer) feedbackRequest.get("userId");
             Boolean isCorrect = (Boolean) feedbackRequest.get("isCorrect");
-            String predictedClass = (String) feedbackRequest.get("predictedClass");
             String feedbackText = (String) feedbackRequest.get("feedbackText");
 
             log.info("📝 Feedback received: predictionId={}, userId={}, isCorrect={}", 
@@ -388,43 +371,30 @@ public class PredictionController {
             Prediction prediction = predictionService.findById(predictionId)
                 .orElseThrow(() -> new RuntimeException("Prediction not found"));
 
-            // Get user
-            User user = userService.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-            // Determine prediction type
-            String predictionType = predictedClass != null && 
-                (predictedClass.contains("disease") || predictedClass.contains("healthy")) 
-                ? "DISEASE" : "PLANT";
-
             // Create feedback
             PredictionFeedback feedback = PredictionFeedback.builder()
                 .prediction(prediction)
-                .user(user)
                 .isCorrect(isCorrect)
-                .comment(feedbackText != null ? feedbackText : "")
-                .predictionType(predictionType)
-                .predictedName(predictedClass)
-                .imageUrl(prediction.getUploadedImageUrl())
-                .imageAddedToDb(false)
+                .feedbackText(feedbackText != null ? feedbackText : "")
+                .isApproved(false) // Requires admin approval
                 .createdAt(java.time.LocalDateTime.now())
                 .build();
 
-            // Save feedback (automatically adds to catalog if correct)
+            // Save feedback
             feedback = feedbackService.submitFeedback(feedback);
 
-            log.info("✅ Feedback saved: ID={}, isCorrect={}, addedToDb={}", 
-                feedback.getFeedbackId(), isCorrect, feedback.getImageAddedToDb());
+            log.info("✅ Feedback saved: ID={}, isCorrect={}", 
+                feedback.getFeedbackId(), isCorrect);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("message", "Feedback submitted successfully");
             response.put("feedbackId", feedback.getFeedbackId());
-
+            response.put("message", "Feedback submitted successfully");
+            
             return new ResponseEntity<>(response, HttpStatus.OK);
-
+            
         } catch (Exception e) {
-            log.error("❌ Feedback error: {}", e.getMessage(), e);
+            log.error("❌ Error submitting feedback: {}", e.getMessage(), e);
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -446,8 +416,8 @@ public class PredictionController {
                 Map<String, Object> dto = new HashMap<>();
                 dto.put("id", log.getId());
                 dto.put("predictionId", log.getPrediction() != null ? log.getPrediction().getId() : null);
-                dto.put("adminUserId", log.getAdminUser() != null ? log.getAdminUser().getId() : null);
-                dto.put("adminUserName", log.getAdminUser() != null ? log.getAdminUser().getUserName() : "System");
+                dto.put("adminUserId", log.getUser() != null ? log.getUser().getId() : null);
+                dto.put("adminUserName", log.getUser() != null ? log.getUser().getUserName() : "System");
                 dto.put("actionType", log.getActionType());
                 dto.put("timestamp", log.getTimestamp() != null ? log.getTimestamp().toString() : null);
                 dto.put("oldValue", log.getOldValue());

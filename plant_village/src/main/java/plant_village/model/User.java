@@ -56,12 +56,6 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private java.util.List<PredictionFeedback> feedbacks;
     
-    @OneToMany(mappedBy = "submittedByUser", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private java.util.List<PlantUserImages> submittedPlantImages;
-    
-    @OneToMany(mappedBy = "submittedByUser", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private java.util.List<DiseaseUserImages> submittedDiseaseImages;
-    
-    @OneToMany(mappedBy = "adminUser", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private java.util.List<PredictionLog> adminLogs;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private java.util.List<PredictionLog> logs;
 }

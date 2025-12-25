@@ -27,6 +27,7 @@ public class PredictionDisease {
     @JoinColumn(name = "disease_id", nullable = false)
     private Disease disease;  // for Disease information in detail
     
-    @Column(name = "is_healthy", nullable = false)
+    @Builder.Default
+    @Column(name = "is_healthy", columnDefinition = "BIT DEFAULT 0")
     private Boolean isHealthy = false; // to indicate if the plant is healthy or not
 }
