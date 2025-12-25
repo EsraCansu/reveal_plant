@@ -21,48 +21,43 @@ public class PredictionFeedback {
     @Column(name = "feedback_id")
     private Integer feedbackId;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "prediction_id", nullable = false)
+    // Establishing One-to-One relationship with Prediction (onay durumu için)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "prediction_id", nullable = false, unique = true)
     private Prediction prediction;
     
+    // Many-to-One relationship with User
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
     
-    @Column(name = "prediction_type", length = 50, nullable = false)
-    private String predictionType; // 'PLANT' or 'DISEASE'
-    
-    @Column(name = "image_url", columnDefinition = "VARCHAR(MAX)", nullable = false)
-    private String imageUrl;
-    
-    @Column(name = "predicted_name", length = 200)
-    private String predictedName;
-    
+    // Kritik Sütunlar
     @Column(name = "is_correct", nullable = false)
-    private Boolean isCorrect; // true = like/correct, false = dislike/incorrect
+    private Boolean isCorrect; // Kullanıcının beyanı: true = doğru, false = yanlış
     
-    @Column(name = "comment", length = 500)
-    private String comment;
+    @Builder.Default
+    @Column(name = "is_approved", columnDefinition = "BIT DEFAULT 0")
+    private Boolean isApproved = false; // Admin onayı. True ise "doğrulanmış görsel"
     
-    @Column(name = "image_added_to_db", nullable = false)
-    private Boolean imageAddedToDb = false;
+    @Column(name = "feedback_text", columnDefinition = "NVARCHAR(MAX)")
+    private String feedbackText; // Kullanıcı yorumu
+    
+    @Column(name = "admin_notes", columnDefinition = "NVARCHAR(MAX)")
+    private String adminNotes; // Admin notları
     
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
     
-    @OneToMany(mappedBy = "feedback", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private java.util.List<PlantUserImages> plantUserImages;
-    
-    @OneToMany(mappedBy = "feedback", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private java.util.List<DiseaseUserImages> diseaseUserImages;
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt; // Son güncelleme zamanı
     
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
-        if (imageAddedToDb == null) {
-            imageAddedToDb = false;
+        if (isApproved == null) {
+            isApproved = false;
         }
     }
 }

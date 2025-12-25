@@ -49,7 +49,4 @@ public class Plant {
     
     @OneToMany(mappedBy = "plant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private java.util.List<PredictionPlant> predictions;
-    
-    @OneToMany(mappedBy = "plant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private java.util.List<PlantUserImages> userSubmittedImages;
 }

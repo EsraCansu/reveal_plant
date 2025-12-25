@@ -48,9 +48,6 @@ public class Disease {
     @Column(name = "cause", columnDefinition = "VARCHAR(MAX)")
     private String cause;
     
-    @Column(name = "confidence")
-    private Integer confidence;
-    
     @Column(name = "example_image_url", columnDefinition = "VARCHAR(MAX)")
     private String exampleImageUrl;
     
@@ -66,7 +63,4 @@ public class Disease {
     
     @OneToMany(mappedBy = "disease", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private java.util.List<PredictionDisease> predictions;
-    
-    @OneToMany(mappedBy = "disease", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private java.util.List<DiseaseUserImages> userSubmittedImages;
 }

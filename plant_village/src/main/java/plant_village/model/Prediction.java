@@ -45,9 +45,6 @@ public class Prediction {
     @Column(name = "top_prediction", length = 200)
     private String topPrediction; // Top prediction class name from ML model
     
-    @Column(name = "is_healthy")
-    private Boolean isHealthy; // Smart indicator: contains "healthy"?
-    
     @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
     private String description; // Optional description or analysis notes
 

@@ -30,9 +30,9 @@ public interface PredictionFeedbackRepository extends JpaRepository<PredictionFe
     List<PredictionFeedback> findByUser_Id(Integer userId);
     
     /**
-     * Find correct predictions that haven't been added to DB yet
+     * Find correct predictions
      */
-    List<PredictionFeedback> findByIsCorrectTrueAndImageAddedToDbFalse();
+    List<PredictionFeedback> findByIsCorrectTrue();
     
     /**
      * Count total correct predictions
@@ -43,11 +43,6 @@ public interface PredictionFeedbackRepository extends JpaRepository<PredictionFe
      * Count total incorrect predictions
      */
     long countByIsCorrectFalse();
-    
-    /**
-     * Count feedback by prediction type
-     */
-    long countByPredictionType(String predictionType);
     
     /**
      * Get feedback statistics using native query

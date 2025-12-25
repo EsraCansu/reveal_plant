@@ -285,9 +285,11 @@ public class PredictionServiceImpl implements PredictionService {
 
         // Step 7: Create Prediction Log entry (Stack)
         log.info("📚 [Step 7] Adding to prediction history stack...");
+        log.info("   📝 User ID: {} ({})", savedPrediction.getUser().getId(), savedPrediction.getUser().getUserName());
         
         PredictionLog logEntry = PredictionLog.builder()
             .prediction(savedPrediction)
+            .user(savedPrediction.getUser())
             .actionType("PREDICTION_CREATED")
             .timestamp(LocalDateTime.now())
             .newValue(String.format(
@@ -360,7 +362,7 @@ public class PredictionServiceImpl implements PredictionService {
 
         PredictionLog logEntry = PredictionLog.builder()
                 .prediction(savedPrediction)
-                .adminUser(adminUser)
+                .user(adminUser)
                 .actionType("UPDATE")
                 .timestamp(LocalDateTime.now())
                 .oldValue(oldValue)

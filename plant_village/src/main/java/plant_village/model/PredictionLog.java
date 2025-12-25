@@ -25,17 +25,14 @@ public class PredictionLog {
     private Prediction prediction;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "admin_user_id")
-    private User adminUser;
+    @JoinColumn(name = "user_id")
+    private User user;
     
     @Column(name = "action_type", length = 50)
     private String actionType;
     
     @Column(name = "timestamp", nullable = false)
     private LocalDateTime timestamp;
-    
-    @Column(name = "old_value", columnDefinition = "VARCHAR(MAX)")
-    private String oldValue;
     
     @Column(name = "new_value", columnDefinition = "VARCHAR(MAX)")
     private String newValue;
