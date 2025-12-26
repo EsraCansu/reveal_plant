@@ -37,6 +37,9 @@ public class PredictionLog {
     @Column(name = "new_value", columnDefinition = "VARCHAR(MAX)")
     private String newValue;
     
+    @Column(name = "old_value", columnDefinition = "VARCHAR(MAX)")
+    private String oldValue;
+    
     @PrePersist
     protected void onCreate() {
         if (timestamp == null) {

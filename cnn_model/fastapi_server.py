@@ -26,7 +26,7 @@ except ImportError:
 import uvicorn
 
 # ===================== CONFIG =====================
-MODEL_PATH = r'C:\Users\esracansu\OneDrive\Belgeler\GitHub\reveal_plant\ml-api\model\PlantVillage_Resnet101_FineTuning.keras'
+MODEL_PATH = r'C:\Users\myy\Documents\GitHub\reveal_plant\ml-api\model\PlantVillage_Resnet101_FineTuning.keras'
 IMAGE_SIZE = 224
 
 # Class labels for PlantVillage dataset

@@ -8,7 +8,7 @@ from pathlib import Path
 import sys
 
 # Add ml-api to path
-sys.path.insert(0, r'C:\Users\esracansu\OneDrive\Belgeler\GitHub\reveal_plant\ml-api')
+sys.path.insert(0, r'C:\Users\myy\Documents\GitHub\reveal_plant\ml-api')
 
 def test_workflow():
     print("\n" + "="*70)

@@ -70,14 +70,21 @@ def load_model():
     global MODEL, MODEL_LOADED
     
     try:
-        from tensorflow.keras.models import load_model
+        import tensorflow as tf
+        
+        logger.info(f"TensorFlow version: {tf.__version__}")
+        
+        from tensorflow.keras.models import load_model as keras_load_model
         
         if not MODEL_PATH.exists():
             logger.error(f"Model bulunamadı: {MODEL_PATH}")
             MODEL_LOADED = False
             return False
         
-        MODEL = load_model(str(MODEL_PATH))
+        logger.info(f"Model yükleniyor: {MODEL_PATH}")
+        logger.info(f"Model dosya boyutu: {MODEL_PATH.stat().st_size / (1024*1024):.2f} MB")
+        
+        MODEL = keras_load_model(str(MODEL_PATH))
         
         # Model bilgileri
         output_classes = MODEL.output_shape[-1]
@@ -90,7 +97,9 @@ def load_model():
         MODEL_LOADED = True
         return True
     except Exception as e:
+        import traceback
         logger.error(f"Model yükleme hatası: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         MODEL_LOADED = False
         return False
 
@@ -536,7 +545,7 @@ async def predict_base64(image_data: dict):
 
 if __name__ == "__main__":
     uvicorn.run(
-        "main:app",
+        "app.main:app",
         host="0.0.0.0",
         port=8000,
         reload=True,
