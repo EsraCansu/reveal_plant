@@ -152,17 +152,6 @@ app.put('/api/users/:id', async (req, res) => {
   }
 });
 
-// Tahminleme işlemleri
-app.get('/api/predictions', async (req, res) => {
-  try {
-    const response = await axios.get(`${JAVA_API_URL}/api/predictions`);
-    res.json(response.data);
-  } catch (error) {
-    console.error('Predictions fetch error:', error.message);
-    res.status(error.response?.status || 500).json(error.response?.data || { error: 'Failed to fetch predictions' });
-  }
-});
-
 app.get('/api/predictions/:id', async (req, res) => {
   try {
     const response = await axios.get(`${JAVA_API_URL}/api/predictions/${req.params.id}`);
@@ -173,6 +162,17 @@ app.get('/api/predictions/:id', async (req, res) => {
   }
 });
 
+// Kullanıcıya ait tahmin geçmişini al
+app.get('/api/predictions/history/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const response = await axios.get(`${JAVA_API_URL}/api/predictions/history/${userId}`);
+    res.json(response.data);
+  } catch (error) {
+    console.error('Prediction history error:', error.message);
+    res.status(error.response?.status || 500).json(error.response?.data || { error: 'Failed to fetch prediction history' });
+  }
+});
 // ======================== ERROR HANDLING ========================
 
 // 404 handler
