@@ -67,31 +67,30 @@ class DiagnosticsController {
             // Convert file to base64
             const base64Image = await this.fileToBase64(file);
             
-            // Get current user info - use guest ID if not logged in
+            // Get current user ID or fall back to guest (0)
             let userId = null;
             try {
-                if (typeof getCurrentUser === 'function') {
+                if (typeof getCurrentUserId === 'function') {
+                    userId = getCurrentUserId();
+                } else if (typeof getCurrentUser === 'function') {
                     const user = getCurrentUser();
-                    userId = user?.id || null;
+                    userId = Number.isInteger(user?.id) ? user.id : null;
                 }
             } catch (e) {
                 console.log('[API] User not logged in, using guest mode');
             }
-            
-            // If no user, use guest ID (1 for now - should be a real guest user in DB)
-            if (!userId) {
-                userId = 1; // Default guest user ID
-            }
+
+            const resolvedUserId = Number.isInteger(userId) ? userId : 0;
             
             const requestBody = {
                 imageBase64: base64Image,
                 predictionType: this.selectedMode === 'identify' ? 'identify-plant' : 'detect-disease',
-                userId: userId,
+                userId: resolvedUserId,
                 description: `Uploaded ${this.selectedMode} image`
             };
 
             console.log('[API] Sending request to:', `${BACKEND_URL}/api/predictions/analyze`);
-            console.log('[API] User ID:', userId);
+            console.log('[API] User ID:', resolvedUserId);
             console.log('[API] Prediction Type:', requestBody.predictionType);
             
             const response = await fetch(`${BACKEND_URL}/api/predictions/analyze`, {
@@ -237,11 +236,12 @@ class DiagnosticsController {
     getIdentificationResult() {
         const result = this.predictionResult || {};
         const rawClass = result.predicted_class || 'Unknown Plant';
-        const predictedClass = this.parsePlantName(rawClass); // "Strawberry___healthy" → "Strawberry"
+        const predictedClass = this.parsePlantName(rawClass);
         const confidence = result.confidence ? (result.confidence * 100).toFixed(1) : '0';
         const predictionId = result.prediction_id || 0;
-        const isLoggedIn = getCookie('userEmail') !== null;
-        const userId = parseInt(getCookie('userEmail') ? sessionStorage.getItem('userId') || localStorage.getItem('user_id') : null) || 1;
+        const storedUserId = typeof getCurrentUserId === 'function' ? getCurrentUserId() : null;
+        const userId = Number.isInteger(storedUserId) ? storedUserId : 0;
+        const isLoggedIn = getCookie('userEmail') !== null && userId > 0;
         
         console.log('[FEEDBACK] PredictionResult:', result);
         console.log('[FEEDBACK] PredictionId:', predictionId, 'UserId:', userId, 'IsLoggedIn:', isLoggedIn);
@@ -302,8 +302,9 @@ class DiagnosticsController {
         const confidence = result.confidence ? (result.confidence * 100).toFixed(1) : '0';
         const isHealthy = predictedClass.toLowerCase().includes('healthy');
         const predictionId = result.prediction_id || 0;
-        const isLoggedIn = getCookie('userEmail') !== null;
-        const userId = parseInt(getCookie('userEmail') ? sessionStorage.getItem('userId') || localStorage.getItem('user_id') : null) || 1;
+        const storedUserId = typeof getCurrentUserId === 'function' ? getCurrentUserId() : null;
+        const userId = Number.isInteger(storedUserId) ? storedUserId : 0;
+        const isLoggedIn = getCookie('userEmail') !== null && userId > 0;
         
         console.log('[FEEDBACK] PredictionResult:', result);
         console.log('[FEEDBACK] PredictionId:', predictionId, 'UserId:', userId, 'IsLoggedIn:', isLoggedIn);
@@ -419,20 +420,20 @@ class DiagnosticsController {
                 console.error('[FEEDBACK-DEBUG] messageDiv not found!');
             }
             
-            // Get userId from cookie or fall back to parameter
+            // Resolve userId from helper, cookies, or fallback to guest
             if (!userId) {
-                // Try to get from cookie system first
-                const userEmail = getCookie('userEmail');
-                if (userEmail) {
-                    // User is logged in, get userId from sessionStorage or backend
-                    userId = parseInt(sessionStorage.getItem('userId')) || parseInt(localStorage.getItem('user_id'));
-                    console.log('[FEEDBACK-DEBUG] Got userId from session/local:', userId);
+                const storedUserId = typeof getCurrentUserId === 'function' ? getCurrentUserId() : null;
+                if (Number.isInteger(storedUserId)) {
+                    userId = storedUserId;
+                    console.log('[FEEDBACK-DEBUG] Got userId from helper:', userId);
+                } else if (getCookie('userEmail')) {
+                    userId = Number.parseInt(sessionStorage.getItem('userId')) || Number.parseInt(localStorage.getItem('user_id'));
+                    console.log('[FEEDBACK-DEBUG] Got userId from storage:', userId);
                 }
-                // If still no userId, default to guest (1)
-                if (!userId) {
-                    userId = 1;
-                    console.log('[FEEDBACK-DEBUG] Using guest userId:', userId);
-                }
+            }
+            if (!Number.isInteger(userId)) {
+                userId = 0;
+                console.log('[FEEDBACK-DEBUG] Using guest userId:', userId);
             }
             
             console.log('[FEEDBACK-DEBUG] Final userId:', userId);
@@ -533,9 +534,16 @@ class PredictionWebSocketClient {
      * Get current user ID from session/localStorage
      */
     getUserId() {
-        // TODO: Get from authentication context
-        // For now, use sessionStorage or query parameter
-        return sessionStorage.getItem('userId') || new URLSearchParams(window.location.search).get('userId') || 'guest';
+        const stored = typeof getCurrentUserId === 'function' ? getCurrentUserId() : null;
+        if (Number.isInteger(stored)) {
+            return stored;
+        }
+
+        const sessionId = sessionStorage.getItem('userId');
+        const queryId = new URLSearchParams(window.location.search).get('userId');
+        const candidate = sessionId || queryId;
+        const parsed = Number.parseInt(candidate, 10);
+        return Number.isNaN(parsed) ? 0 : parsed;
     }
 
     /**

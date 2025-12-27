@@ -51,10 +51,22 @@ function isLoggedIn() {
  */
 function getCurrentUser() {
     return {
+        id: getCurrentUserId(),
         email: getCookie('userEmail'),
         name: getCookie('userName'),
         role: getCookie('userRole')
     };
+}
+
+function getCurrentUserId() {
+    const sessionId = sessionStorage.getItem('userId');
+    const localId = localStorage.getItem('user_id');
+    const candidate = sessionId || localId;
+    if (!candidate) {
+        return null;
+    }
+    const parsed = Number.parseInt(candidate, 10);
+    return Number.isNaN(parsed) ? null : parsed;
 }
 
 /**
@@ -83,6 +95,8 @@ async function logout() {
     localStorage.removeItem('user_email');
     localStorage.removeItem('user_role');
     localStorage.removeItem('user_remember');
+    localStorage.removeItem('user_id');
+    sessionStorage.removeItem('userId');
     
     // Login sayfasına yönlendir
     window.location.href = '/app/views/login.html';
