@@ -278,7 +278,8 @@ public class PredictionController {
                 userId,
                 null,
                 imageBase64,
-                description
+                description,
+                predictionType
             );
             
 

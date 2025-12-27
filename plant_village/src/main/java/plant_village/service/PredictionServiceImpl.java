@@ -97,13 +97,16 @@ public class PredictionServiceImpl implements PredictionService {
         Integer userId, 
         Integer plantId, 
         String imageBase64, 
-        String description) {
+        String description,
+        String predictionMode) {
         
         log.info("═══════════════════════════════════════════════════════════");
         log.info("🔄 STARTING PREDICTION WORKFLOW");
         log.info("═══════════════════════════════════════════════════════════");
         log.info("   👤 User ID: {}", userId);
         log.info("   🌿 Plant ID: {}", plantId != null ? plantId : "PLANT_RECOGNITION_MODE");
+        String normalizedMode = predictionMode != null ? predictionMode.trim().toLowerCase() : "";
+        log.info("   🧭 Prediction Mode: {}", normalizedMode.isEmpty() ? "auto" : normalizedMode);
         log.info("═══════════════════════════════════════════════════════════");
         
         // Step 1: Get or create guest user
@@ -150,7 +153,7 @@ public class PredictionServiceImpl implements PredictionService {
                 .user(user)
                 .confidence(apiResponse.getTopConfidence())
                 .createdAt(LocalDateTime.now())
-                .predictionType(plantId == null ? "PLANT_PREDICTION" : "DISEASE_PREDICTION")
+                .predictionType(resolvePredictionType(plantId, normalizedMode))
                 .isValid(false)  // ❌ Invalid prediction
                 .uploadedImageUrl("uploads/" + LocalDateTime.now().getNano() + ".jpg")
                 .build();
@@ -199,7 +202,7 @@ public class PredictionServiceImpl implements PredictionService {
             .topPrediction(apiResponse.getTopPrediction())  // 🔥 Store ML result
             .description(top3Json)  // 🔥 Store Top 3 as JSON
             .createdAt(LocalDateTime.now())
-            .predictionType(plantId == null ? "PLANT_PREDICTION" : "DISEASE_PREDICTION")
+            .predictionType(resolvePredictionType(plantId, normalizedMode))
             .isValid(true)  // ✅ Valid prediction
             .uploadedImageUrl("uploads/" + LocalDateTime.now().getNano() + ".jpg")
             .build();
@@ -212,6 +215,7 @@ public class PredictionServiceImpl implements PredictionService {
         
         String topPredictionLabel = apiResponse.getTopPrediction().toLowerCase();
         boolean isHealthy = topPredictionLabel.contains("healthy");
+        boolean isIdentifyMode = "identify-plant".equals(normalizedMode);
         
         log.info("✅ [Step 5] Health status determined: isHealthy = {}", isHealthy);
         if (isHealthy) {
@@ -242,7 +246,7 @@ public class PredictionServiceImpl implements PredictionService {
             boolean resultIsHealthy = label.toLowerCase().contains("healthy");
 
             // Step 6A: If Plant prediction or result contains "healthy" → Store in PredictionPlant
-            if (plantId == null || resultIsHealthy) {
+            if (isIdentifyMode || resultIsHealthy) {
                 // Step 6A.1: Hash Map Lookup - O(1) operation
                 Optional<Plant> plantOpt = cacheManager.getPlantByName(label);
                 
@@ -315,6 +319,16 @@ public class PredictionServiceImpl implements PredictionService {
         log.info("═══════════════════════════════════════════════════════════\n");
         
         return savedPrediction;
+    }
+
+    private String resolvePredictionType(Integer plantId, String normalizedMode) {
+        if ("identify-plant".equals(normalizedMode)) {
+            return "PLANT_PREDICTION";
+        }
+        if ("detect-disease".equals(normalizedMode)) {
+            return "DISEASE_PREDICTION";
+        }
+        return plantId != null ? "DISEASE_PREDICTION" : "PLANT_PREDICTION";
     }
 
     /**
