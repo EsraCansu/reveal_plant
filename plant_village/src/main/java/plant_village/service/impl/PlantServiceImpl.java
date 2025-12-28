@@ -19,38 +19,38 @@ public class PlantServiceImpl implements PlantService {
     
     @Override
     public List<Plant> getAllPlants() {
-        log.info("Tüm bitkiler listeleniyor");
+        log.info("Listing all plants");
         return plantRepository.findAll();
     }
     
     @Override
     public Optional<Plant> getPlantById(Integer id) {
-        log.info("Bitki getiriliyor - ID: {}", id);
+        log.info("Fetching plant - ID: {}", id);
         Optional<Plant> plant = plantRepository.findById(id);
         if (plant.isEmpty()) {
-            log.warn("Bitki bulunamadı - ID: {}", id);
-            throw new ResourceNotFoundException("Bitki bulunamadı - ID: " + id);
+            log.warn("Plant not found - ID: {}", id);
+            throw new ResourceNotFoundException("Plant not found - ID: " + id);
         }
         return plant;
     }
     
     @Override
     public List<Plant> searchByName(String name) {
-        log.info("Bitki aranıyor - Ad: {}", name);
+        log.info("Searching plant - Name: {}", name);
         return plantRepository.findByPlantNameContainingIgnoreCase(name);
     }
     
     @Override
     public Plant createPlant(Plant plant) {
-        log.info("Yeni bitki oluşturuluyor - Adı: {}", plant.getPlantName());
+        log.info("Creating new plant - Name: {}", plant.getPlantName());
         return plantRepository.save(plant);
     }
     
     @Override
     public Plant updatePlant(Integer id, Plant plantDetails) {
-        log.info("Bitki güncelleniyor - ID: {}", id);
+        log.info("Updating plant - ID: {}", id);
         Plant plant = plantRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Bitki bulunamadı - ID: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("Plant not found - ID: " + id));
         
         if (plantDetails.getPlantName() != null) {
             plant.setPlantName(plantDetails.getPlantName());
@@ -88,11 +88,11 @@ public class PlantServiceImpl implements PlantService {
     
     @Override
     public void deletePlant(Integer id) {
-        log.info("Bitki siliniyor - ID: {}", id);
+        log.info("Deleting plant - ID: {}", id);
         if (!plantRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Bitki bulunamadı - ID: " + id);
+            throw new ResourceNotFoundException("Plant not found - ID: " + id);
         }
         plantRepository.deleteById(id);
-        log.info("Bitki silindi - ID: {}", id);
+        log.info("Plant deleted - ID: {}", id);
     }
 }

@@ -9,10 +9,10 @@ import java.util.List;
 @Repository
 public interface DiseaseRepository extends JpaRepository<Disease, Integer> {
 
-    // 1. Hastalık adına göre arama
+    // 1. Search by disease name
     Optional<Disease> findByDiseaseName(String diseaseName);
 
-    // 2. Büyük/Küçük harf duyarsız isimle arama
+    // 2. Case-insensitive name search
     Optional<Disease> findByDiseaseNameIgnoreCase(String diseaseName);
     
     // 3. For feedback system - find disease by exact name match

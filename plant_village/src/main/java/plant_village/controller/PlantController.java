@@ -65,7 +65,7 @@ public class PlantController {
             log.info("Fetching plant by ID: {}", id);
             
             Plant plant = plantService.getPlantById(id)
-                .orElseThrow(() -> new RuntimeException("Bitki bulunamadı - ID: " + id));
+                .orElseThrow(() -> new RuntimeException("Plant not found - ID: " + id));
             PlantResponse response = convertToResponse(plant);
             
             log.info("Plant retrieved successfully: {}", id);
@@ -116,7 +116,7 @@ public class PlantController {
             
             log.info("Plant created successfully: {} (ID: {})", createdPlant.getPlantName(), createdPlant.getId());
             return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.created(response, "Bitki başarıyla oluşturuldu"));
+                .body(ApiResponse.created(response, "Plant created successfully"));
         } catch (Exception e) {
             log.error("Error creating plant: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -140,7 +140,7 @@ public class PlantController {
             PlantResponse response = convertToResponse(updatedPlant);
             
             log.info("Plant updated successfully: {}", id);
-            return ResponseEntity.ok(ApiResponse.success(response, "Bitki başarıyla güncellendi"));
+            return ResponseEntity.ok(ApiResponse.success(response, "Plant updated successfully"));
         } catch (Exception e) {
             log.error("Error updating plant {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -161,7 +161,7 @@ public class PlantController {
             plantService.deletePlant(id);
             
             log.info("Plant deleted successfully: {}", id);
-            return ResponseEntity.ok(ApiResponse.success("Bitki başarıyla silindi", "Silme işlemi tamamlandı"));
+            return ResponseEntity.ok(ApiResponse.success("Plant deleted successfully", "Delete operation completed"));
         } catch (Exception e) {
             log.error("Error deleting plant {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

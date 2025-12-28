@@ -11,8 +11,8 @@ function getCookie(name) {
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2) {
         const cookieValue = parts.pop().split(';').shift();
-        // URL decode cookie value (backend URL encode yapıyor)
-        // + karakterlerini boşluğa çevir (URL encoding)
+        // URL decode cookie value (backend does URL encoding)
+        // Convert + characters to space (URL encoding)
         try {
             const decodedValue = decodeURIComponent(cookieValue.replace(/\+/g, ' '));
             return decodedValue;
@@ -99,34 +99,34 @@ function getCurrentUserId() {
  */
 async function logout() {
     try {
-        // Backend'e logout isteği gönder (cookie'leri sunucu tarafında temizlemek için)
+        // Send logout request to backend (to clear cookies on server side)
         await fetch('http://localhost:8080/api/users/auth/logout', {
             method: 'POST',
-            credentials: 'include' // Cookie'leri gönder
+            credentials: 'include' // Send cookies
         });
     } catch (error) {
         console.error('Logout error:', error);
     }
     
-    // Client-side cookie'leri temizle
+    // Clear client-side cookies
     deleteCookie('userEmail');
     deleteCookie('userName');
     deleteCookie('userRole');
-    deleteCookie('userId');  // ✅ userId cookie'sini de temizle
+    deleteCookie('userId');  // ✅ Also clear userId cookie
     deleteCookie('jwt_token');
     deleteCookie('remember_me');
     
-    // localStorage'ı da temizle (eski veri varsa)
+    // Also clear localStorage (if old data exists)
     localStorage.removeItem('user_logged_in');
     localStorage.removeItem('user_email');
     localStorage.removeItem('user_role');
     localStorage.removeItem('user_remember');
-    localStorage.removeItem('user_id');  // ✅ user_id'yi de temizle
+    localStorage.removeItem('user_id');  // ✅ Also clear user_id
     
-    // sessionStorage'ı da temizle
-    sessionStorage.removeItem('userId');  // ✅ sessionStorage userId'yi de temizle
+    // Also clear sessionStorage
+    sessionStorage.removeItem('userId');  // ✅ Also clear sessionStorage userId
     
-    // Login sayfasına yönlendir
+    // Redirect to login page
     window.location.href = '/app/views/login.html';
 }
 
@@ -190,7 +190,7 @@ function requireAdmin() {
  */
 async function authenticatedFetch(url, options = {}) {
     const defaultOptions = {
-        credentials: 'include', // Cookie'leri otomatik gönder
+        credentials: 'include', // Automatically send cookies
         headers: {
             'Content-Type': 'application/json',
             ...options.headers

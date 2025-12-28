@@ -21,7 +21,7 @@
             document.documentElement.setAttribute('data-theme', theme);
         })();
         
-        // ✅ Sayfa yüklenmeden önce auth kontrolü
+        // ✅ Auth check before page loads
         if (!requireAuth()) {
             // requireAuth zaten yönlendiriyor
         }
@@ -236,7 +236,7 @@
             return fetch(url, { ...defaultOptions, ...options });
         }
 
-        // ✅ Kullanıcı bilgilerini cookie'den al
+        // ✅ Get user info from cookie
         function loadUserInfo() {
             const user = getCurrentUser();
             
@@ -245,20 +245,20 @@
                 return null;
             }
             
-            // İsim gösterimi
+            // Name display
             const displayName = user.name || user.email.split('@')[0];
             document.getElementById('userName').textContent = displayName;
             
             return user;
         }
 
-        // ✅ Dashboard verilerini backend'den yükle
+        // ✅ Load dashboard data from backend
         async function loadDashboardData() {
             try {
                 currentUser = loadUserInfo();
                 if (!currentUser) return;
                 
-                // ✅ Kullanıcı ID'sini önce getCurrentUser()'dan al (localStorage/sessionStorage/cookie)
+                // ✅ Get user ID first from getCurrentUser() (localStorage/sessionStorage/cookie)
                 let userId = currentUser.id;
                 
                 // Eğer yoksa backend'den email ile sorgula
@@ -281,7 +281,7 @@
                 
                 console.log('✅ Dashboard loading for userId:', userId);
                 
-                // ✅ Prediction geçmişini backend'den al
+                // ✅ Get prediction history from backend
                 const response = await authenticatedFetch(
                     `${BACKEND_URL}/api/predictions/history/${userId}`
                 );
@@ -295,10 +295,10 @@
                 const predictions = await response.json();
                 console.log('✅ Loaded predictions:', predictions);
                 
-                // ✅ İstatistikleri hesapla
+                // ✅ Calculate statistics
                 updateStatistics(predictions);
                 
-                // ✅ Son teşhisleri göster
+                // ✅ Display recent diagnoses
                 displayRecentDiagnoses(predictions);
                 
             } catch (error) {
@@ -307,7 +307,7 @@
             }
         }
 
-        // ✅ İstatistikleri güncelle
+        // ✅ Update statistics
         function updateStatistics(predictions) {
             const totalDiagnoses = predictions.length;
             
@@ -323,7 +323,7 @@
                 return type.includes('___') && !type.includes('healthy');
             }).length;
             
-            // Bu ay yapılan teşhis sayısı - createAt alanını kullan
+            // Count of diagnoses made this month - use createAt field
             const today = new Date();
             const thisMonth = predictions.filter(p => {
                 const dateStr = p.createAt || p.predictedAt || p.createdAt;
@@ -341,7 +341,7 @@
             console.log('📊 Statistics:', { totalDiagnoses, diseasesFound, plantsIdentified, thisMonth });
         }
 
-        // ✅ Son teşhisleri göster
+        // ✅ Display recent diagnoses
         function displayRecentDiagnoses(predictions) {
             const recentList = document.getElementById('recentDiagnosesList');
             
@@ -355,11 +355,11 @@
                 return;
             }
             
-            // En son 5 teşhisi göster (en yeniler en üstte)
+            // Show last 5 diagnoses (newest first)
             const recent = predictions.slice(-5).reverse();
             
             recentList.innerHTML = recent.map(p => {
-                // createAt alanını kullan (backend'den gelen)
+                // Use createAt field (from backend)
                 const dateStr = p.createAt || p.predictedAt || p.createdAt;
                 const date = dateStr ? new Date(dateStr) : new Date();
                 
@@ -381,7 +381,7 @@
                     badgeClass = 'warning';
                 }
                 
-                // Hastalık/bitki adını formatla
+                // Format disease/plant name
                 const displayName = formatPredictionName(predictionType);
                 
                 return `
@@ -405,7 +405,7 @@
             }).join('');
         }
         
-        // Prediction type'ı okunabilir formata çevir
+        // Convert prediction type to readable format
         function formatPredictionName(predictionType) {
             if (!predictionType || predictionType === 'Unknown' || predictionType === 'PLANT_PREDICTION') {
                 return 'Plant Analysis';
@@ -432,21 +432,21 @@
             `;
         }
 
-        // ✅ Sayfa yüklendiğinde
+        // ✅ When page loads
         document.addEventListener('DOMContentLoaded', () => {
             // Auth kontrolü
             if (!requireAuth()) {
                 return;
             }
             
-            // Component'leri yükle
+            // Load components
             loadAllComponents();
             
-            // Dashboard verilerini yükle
+            // Load dashboard data
             setTimeout(() => {
                 loadDashboardData();
                 
-                // Kullanıcı ismini dropdown'a yükle
+                // Load user name to dropdown
                 const user = getCurrentUser();
                 if (user && user.name) {
                     const dropdownElement = document.getElementById('userNameDropdown');
@@ -455,7 +455,7 @@
                     }
                 }
                 
-                // Bootstrap dropdown'larını başlat
+                // Initialize Bootstrap dropdowns
                 document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(el => {
                     new bootstrap.Dropdown(el);
                 });

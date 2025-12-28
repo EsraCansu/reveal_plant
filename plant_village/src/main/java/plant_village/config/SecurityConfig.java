@@ -28,15 +28,15 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                // ✅ Public endpoints - Authentication gerektirmez
+                // ✅ Public endpoints - No authentication required
                 .requestMatchers(
                     "/api/users/auth/**",      // Login, register, logout endpoints
                     "/ws/**",                   // WebSocket endpoints
-                    "/api/predictions/predict"  // Geçici olarak açık
+                    "/api/predictions/predict"  // Temporarily open
                 ).permitAll()
                 
-                // ✅ Tüm diğer endpoint'ler şimdilik permitAll
-                // Güvenlik sonra sıkılaştırılacak
+                // ✅ All other endpoints are permitAll for now
+                // Security will be tightened later
                 .anyRequest().permitAll()
             )
             .httpBasic(basic -> basic.disable());

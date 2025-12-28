@@ -45,14 +45,14 @@ public class PredictionController {
     }
 
     /**
-     * Yeni bir tahmin kaydı oluşturur (FastAPI'dan gelen POST isteği)
+     * Creates a new prediction record (POST request from FastAPI)
      * POST /api/predictions
-     * @param prediction Tahmin verisi (ML çıktısı ve kullanıcı ID'si dahil)
-     * @return Yeni tahmin nesnesi ve HTTP 201 Created
+     * @param prediction Prediction data (including ML output and user ID)
+     * @return New prediction object and HTTP 201 Created
      */
     @PostMapping
     public ResponseEntity<Prediction> createPrediction(@RequestBody Prediction prediction) {
-        // userId varsa, User nesnesini veritabanından al
+        // If userId exists, get User object from database
         if (prediction.getUser() == null) {
             Integer userId = prediction.getUserId();
             if (userId != null && userId > 0) {
@@ -69,10 +69,10 @@ public class PredictionController {
     }
 
     /**
-     * Bir kullanıcıya ait tüm tahmin geçmişini getirir.
+     * Retrieves all prediction history for a user.
      * GET /api/predictions/history/{userId}
-     * @param userId Yolda belirtilen kullanıcı ID'si
-     * @return Tahmin listesi ve HTTP 200 OK
+     * @param userId User ID specified in the path
+     * @return Prediction list and HTTP 200 OK
      */
     @GetMapping("/history/{userId}")
     public ResponseEntity<List<Prediction>> getPredictionHistory(@PathVariable Integer userId) {
@@ -81,12 +81,12 @@ public class PredictionController {
     }
 
     /**
-     * Yöneticiler için tahmin düzeltme uç noktası.
+     * Admin endpoint for prediction correction.
      * PUT /api/predictions/{predictionId}
-     * @param predictionId Düzeltilecek tahminin ID'si
-     * @param updatedPrediction Güncel veri (isValid, confidence vb.)
-     * @param adminId Düzeltmeyi yapan yöneticinin ID'si (Normalde JWT'den alınır)
-     * @return Güncellenmiş tahmin nesnesi
+     * @param predictionId ID of the prediction to correct
+     * @param updatedPrediction Updated data (isValid, confidence, etc.)
+     * @param adminId ID of the admin making the correction (Normally obtained from JWT)
+     * @return Updated prediction object
      */
     @PutMapping("/{predictionId}")
     public ResponseEntity<?> updatePrediction(
@@ -94,11 +94,11 @@ public class PredictionController {
             @RequestBody Prediction updatedPrediction,
             @RequestParam Integer adminId) {
         
-        // İş Mantığı: Yönetici var mı?
+        // Business Logic: Does admin exist?
         User adminUser = userService.findById(adminId)
-                                    .orElseThrow(() -> new plant_village.exception.ResourceNotFoundException("Yönetici kullanıcı bulunamadı."));
+                                    .orElseThrow(() -> new plant_village.exception.ResourceNotFoundException("Admin user not found."));
         
-        // İş Mantığı: Yönetici rolüne sahip mi? (Gerçek projede yapılır)
+        // Business Logic: Does admin have admin role? (Done in real project)
         // if (!adminUser.getRole().equals("ADMIN")) { ... }
         
         try {
@@ -485,10 +485,10 @@ public class PredictionController {
             Prediction prediction = predictionService.findById(predictionId)
                 .orElseThrow(() -> new RuntimeException("Prediction not found"));
 
-            // Create feedback with userId (0 = anonim)
+            // Create feedback with userId (0 = anonymous)
             PredictionFeedback feedback = PredictionFeedback.builder()
                 .prediction(prediction)
-                .userId(userId != null ? userId : 0)  // 0 = anonim kullanıcı
+                .userId(userId != null ? userId : 0)  // 0 = anonymous user
                 .isCorrect(isCorrect)
                 .comment(feedbackText != null ? feedbackText : "")
                 .isApprovedFromAdmin(false) // Requires admin approval

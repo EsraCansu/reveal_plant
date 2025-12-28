@@ -46,7 +46,7 @@ public class AuthController {
             LoginResponse response = authService.login(loginRequest);
             
             log.info("Login successful for email: {}", loginRequest.getEmail());
-            return ResponseEntity.ok(ApiResponse.success(response, "Giriş başarılı"));
+            return ResponseEntity.ok(ApiResponse.success(response, "Login successful"));
         } catch (Exception e) {
             log.error("Login failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -77,7 +77,7 @@ public class AuthController {
             
             log.info("Registration successful for email: {}", registerRequest.getEmail());
             return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.created(response, "Kayıt başarılı"));
+                .body(ApiResponse.created(response, "Registration successful"));
         } catch (Exception e) {
             log.error("Registration failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -102,7 +102,7 @@ public class AuthController {
             // Validate and refresh token
             Integer userId = authService.validateToken(token);
             User user = userService.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
             
             String newToken = authService.generateToken(user);
             
@@ -115,7 +115,7 @@ public class AuthController {
                 .build();
             
             log.info("Token refreshed successfully for user ID: {}", userId);
-            return ResponseEntity.ok(ApiResponse.success(response, "Token başarıyla yenilendi"));
+            return ResponseEntity.ok(ApiResponse.success(response, "Token refreshed successfully"));
         } catch (Exception e) {
             log.error("Token refresh failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -141,11 +141,11 @@ public class AuthController {
             Integer userId = authService.validateToken(token);
             
             log.info("Token validation successful for user ID: {}", userId);
-            return ResponseEntity.ok(ApiResponse.success("Token is valid", "Token geçerli"));
+            return ResponseEntity.ok(ApiResponse.success("Token is valid", "Token validated successfully"));
         } catch (Exception e) {
             log.error("Token validation failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error(HttpStatus.UNAUTHORIZED.value(), "Geçersiz token"));
+                .body(ApiResponse.error(HttpStatus.UNAUTHORIZED.value(), "Invalid token"));
         }
     }
 }

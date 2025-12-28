@@ -53,14 +53,14 @@ class DiagnosticsController {
                 imagePreview.innerHTML = `<img src="${this.uploadedImage}" class="preview-image" alt="Uploaded plant image"><div class="text-center mt-3"><div class="spinner-border text-success" role="status"><span class="visually-hidden">Analyzing...</span></div><p class="mt-2">Analyzing your plant...</p></div>`;
             }
             
-            // ✅ DÜZELTME: Backend'e gerçek istek gönder
+            // ✅ FIX: Send actual request to backend
             await this.sendToBackend(file);
         };
         reader.readAsDataURL(file);
     }
 
     /**
-     * ✅ YENİ: Backend'e görüntü gönder ve gerçek sonuç al
+     * ✅ NEW: Send image to backend and get real result
      */
     async sendToBackend(file) {
         try {
@@ -200,7 +200,7 @@ class DiagnosticsController {
         
         if (!isLoggedIn) return; // Only save if user is logged in
 
-        // ✅ DÜZELTME: Backend'den gelen gerçek veriyi kullan
+        // ✅ FIX: Use real data from backend
         const result = this.predictionResult || {};
         
         const diagnosis = {
@@ -230,8 +230,8 @@ class DiagnosticsController {
     }
 
     /**
-     * ✅ DÜZELTME: Backend'den gelen gerçek veriyle identification sonucu göster
-     * 🌱 Sadece bitki adını göster (hastalık adını değil)
+     * ✅ FIX: Show identification result with real data from backend
+     * 🌱 Only show plant name (not disease name)
      */
     getIdentificationResult() {
         const result = this.predictionResult || {};
@@ -342,8 +342,8 @@ class DiagnosticsController {
     }
 
     /**
-     * ✅ DÜZELTME: Backend'den gelen gerçek veriyle disease sonucu göster
-     * Plant Identification gibi temiz ve düzenli format
+     * ✅ FIX: Show disease result with real data from backend
+     * Clean and organized format like Plant Identification
      */
     getDiseaseResult() {
         const result = this.predictionResult || {};
@@ -445,7 +445,7 @@ class DiagnosticsController {
         try {
             console.log(`[Feedback] Submitting: predictionId=${predictionId}, isCorrect=${isCorrect}`);
             
-            // HEMEN butonları gizle ve loading mesajı göster
+            // IMMEDIATELY hide buttons and show loading message
             const feedbackSection = document.getElementById(`feedback-section-${predictionId}`);
             const messageDiv = document.getElementById(`feedback-message-${predictionId}`);
             
@@ -520,7 +520,7 @@ class DiagnosticsController {
                 console.log('[Feedback] Submitted successfully:', result);
             } else {
                 messageDiv.innerHTML = `<small class="text-danger"><i class="fas fa-exclamation-circle"></i> Failed to submit feedback</small>`;
-                // Hata durumunda butonları tekrar göster
+                // Show buttons again on error
                 if (buttons) {
                     buttons.forEach(btn => btn.style.display = 'inline-block');
                 }
@@ -536,7 +536,7 @@ class DiagnosticsController {
                 messageDiv.innerHTML = `<small class="text-danger"><i class="fas fa-exclamation-circle"></i> Network error. Please try again.</small>`;
             }
             
-            // Hata durumunda butonları tekrar göster
+            // Show buttons again on error
             if (buttons) {
                 buttons.forEach(btn => btn.style.display = 'inline-block');
             }
@@ -797,8 +797,8 @@ class PredictionWebSocketClient {
 // Initialize controller when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.diagnosticsController = new DiagnosticsController();
-    window.controller = window.diagnosticsController; // ✅ DÜZELTME: index.html'deki onclick için alias
-    window.app = window.diagnosticsController; // ✅ DÜZELTME: feedback onclick için alias
+    window.controller = window.diagnosticsController; // ✅ FIX: alias for onclick in index.html
+    window.app = window.diagnosticsController; // ✅ FIX: alias for feedback onclick
     window.webSocketClient = new PredictionWebSocketClient();
 
     // Send heartbeat every 30 seconds

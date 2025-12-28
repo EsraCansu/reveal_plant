@@ -15,7 +15,7 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // İzin verilen origin'ler (Frontend URL'leri)
+        // Allowed origins (Frontend URLs)
         configuration.setAllowedOrigins(Arrays.asList(
             "http://localhost:3000",
             "http://localhost:5500",
@@ -25,16 +25,16 @@ public class CorsConfig {
             "http://127.0.0.1:8080"
         ));
         
-        // İzin verilen HTTP metodları
+        // Allowed HTTP methods
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         
-        // İzin verilen header'lar
+        // Allowed headers
         configuration.setAllowedHeaders(Arrays.asList("*"));
         
-        // Cookie'lere izin ver (JWT için önemli)
+        // Allow cookies (important for JWT)
         configuration.setAllowCredentials(true);
         
-        // CORS ayarlarını tüm endpoint'lere uygula
+        // Apply CORS settings to all endpoints
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         

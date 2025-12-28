@@ -20,37 +20,37 @@ public class DiseaseServiceImpl implements DiseaseService {
     
     @Override
     public List<Disease> getAllDiseases() {
-        log.info("Tüm hastalıklar listeleniyor");
+        log.info("Listing all diseases");
         return diseaseRepository.findAll();
     }
     
     @Override
     public Optional<Disease> getDiseaseById(Integer id) {
-        log.info("Hastalık getiriliyor - ID: {}", id);
+        log.info("Fetching disease - ID: {}", id);
         Optional<Disease> disease = diseaseRepository.findById(id);
         if (disease.isEmpty()) {
-            log.warn("Hastalık bulunamadı - ID: {}", id);
-            throw new ResourceNotFoundException("Hastalık bulunamadı - ID: " + id);
+            log.warn("Disease not found - ID: {}", id);
+            throw new ResourceNotFoundException("Disease not found - ID: " + id);
         }
         return disease;
     }
     
     @Override
     public List<Disease> searchByName(String name) {
-        log.info("Hastalık aranıyor - Ad: {}", name);
+        log.info("Searching disease - Name: {}", name);
         List<Disease> diseases = diseaseRepository.findAll().stream()
             .filter(d -> d.getDiseaseName().equalsIgnoreCase(name))
             .collect(Collectors.toList());
         
         if (diseases.isEmpty()) {
-            throw new ResourceNotFoundException("Hastalık bulunamadı - Ad: " + name);
+            throw new ResourceNotFoundException("Disease not found - Name: " + name);
         }
         return diseases;
     }
     
     @Override
     public List<Disease> searchByKeyword(String keyword) {
-        log.info("Hastalık anahtar kelimeyle aranıyor - Kelime: {}", keyword);
+        log.info("Searching disease by keyword - Keyword: {}", keyword);
         return diseaseRepository.findAll().stream()
             .filter(d -> d.getDiseaseName().toLowerCase().contains(keyword.toLowerCase()) ||
                         (d.getSymptomDescription() != null && d.getSymptomDescription().toLowerCase().contains(keyword.toLowerCase())) ||
@@ -60,15 +60,15 @@ public class DiseaseServiceImpl implements DiseaseService {
     
     @Override
     public Disease createDisease(Disease disease) {
-        log.info("Yeni hastalık oluşturuluyor - Adı: {}", disease.getDiseaseName());
+        log.info("Creating new disease - Name: {}", disease.getDiseaseName());
         return diseaseRepository.save(disease);
     }
     
     @Override
     public Disease updateDisease(Integer id, Disease diseaseDetails) {
-        log.info("Hastalık güncelleniyor - ID: {}", id);
+        log.info("Updating disease - ID: {}", id);
         Disease disease = diseaseRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Hastalık bulunamadı - ID: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("Disease not found - ID: " + id));
         
         if (diseaseDetails.getDiseaseName() != null) {
             disease.setDiseaseName(diseaseDetails.getDiseaseName());
@@ -91,11 +91,11 @@ public class DiseaseServiceImpl implements DiseaseService {
     
     @Override
     public void deleteDisease(Integer id) {
-        log.info("Hastalık siliniyor - ID: {}", id);
+        log.info("Deleting disease - ID: {}", id);
         if (!diseaseRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Hastalık bulunamadı - ID: " + id);
+            throw new ResourceNotFoundException("Disease not found - ID: " + id);
         }
         diseaseRepository.deleteById(id);
-        log.info("Hastalık silindi - ID: {}", id);
+        log.info("Disease deleted - ID: {}", id);
     }
 }

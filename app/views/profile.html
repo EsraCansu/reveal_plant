@@ -273,7 +273,7 @@
                     document.getElementById('bio').value = userData.bio || '';
                     
                     if (userData.avatarUrl) {
-                        // Avatar URL backend'den geliyor, tam URL oluştur
+                        // Avatar URL comes from backend, create full URL
                         const avatarSrc = userData.avatarUrl.startsWith('data:') 
                             ? userData.avatarUrl 
                             : `http://localhost:8080${userData.avatarUrl}`;
@@ -321,7 +321,7 @@
             if (file && file.type.startsWith('image/')) {
                 // Check file size (max 5MB)
                 if (file.size > 5 * 1024 * 1024) {
-                    alert('Dosya boyutu 5MB\'dan küçük olmalıdır');
+                    alert('File size must be less than 5MB');
                     return;
                 }
                 
@@ -351,14 +351,14 @@
                             
                             if (response.ok) {
                                 console.log('Avatar uploaded successfully:', result.avatarUrl);
-                                alert('Profil resmi başarıyla güncellendi!');
+                                alert('Profile picture updated successfully!');
                             } else {
                                 console.error('Failed to upload avatar:', result.error);
-                                alert('Resim yüklenemedi: ' + (result.error || 'Bilinmeyen hata'));
+                                alert('Image could not be uploaded: ' + (result.error || 'Unknown error'));
                             }
                         } catch (error) {
                             console.error('Error uploading avatar:', error);
-                            alert('Resim yüklenirken bir hata oluştu');
+                            alert('An error occurred while uploading the image');
                         }
                     }
                 };

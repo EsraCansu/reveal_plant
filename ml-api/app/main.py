@@ -22,10 +22,10 @@ from .schema import PredictionResponse, PredictionResult, HealthResponse, FastAP
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# FastAPI uygulaması
+# FastAPI application
 app = FastAPI(
     title="Reveal Plant API",
-    description="Bitki hastalığı tespiti - ResNet101 Fine-Tuning Modeli",
+    description="Plant disease detection - ResNet101 Fine-Tuning Model",
     version="1.0.0"
 )
 
@@ -38,12 +38,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Model ve konfigürasyon
+# Model and configuration
 MODEL_PATH = Path(__file__).parent.parent / "model" / "PlantVillage_Resnet101_FineTuning.keras"
 MODEL = None
 MODEL_LOADED = False
 
-# Model konfigürasyonu
+# Model configuration
 INPUT_SIZE = 224
 NUM_CLASSES = 38
 
@@ -66,7 +66,7 @@ CLASS_NAMES = [
 
 
 def load_model():
-    """Modeli yükle"""
+    """Load the model"""
     global MODEL, MODEL_LOADED
     
     try:
@@ -77,28 +77,28 @@ def load_model():
         from tensorflow.keras.models import load_model as keras_load_model
         
         if not MODEL_PATH.exists():
-            logger.error(f"Model bulunamadı: {MODEL_PATH}")
+            logger.error(f"Model not found: {MODEL_PATH}")
             MODEL_LOADED = False
             return False
         
-        logger.info(f"Model yükleniyor: {MODEL_PATH}")
-        logger.info(f"Model dosya boyutu: {MODEL_PATH.stat().st_size / (1024*1024):.2f} MB")
+        logger.info(f"Loading model: {MODEL_PATH}")
+        logger.info(f"Model file size: {MODEL_PATH.stat().st_size / (1024*1024):.2f} MB")
         
         MODEL = keras_load_model(str(MODEL_PATH))
         
-        # Model bilgileri
+        # Model info
         output_classes = MODEL.output_shape[-1]
-        logger.info(f"Model yüklendi: {MODEL_PATH}")
-        logger.info(f"Çıkış sınıfları: {output_classes}")
+        logger.info(f"Model loaded: {MODEL_PATH}")
+        logger.info(f"Output classes: {output_classes}")
         
         if output_classes != NUM_CLASSES:
-            logger.warning(f"Sınıf sayısı uyumsuz: {output_classes} vs {NUM_CLASSES}")
+            logger.warning(f"Class count mismatch: {output_classes} vs {NUM_CLASSES}")
         
         MODEL_LOADED = True
         return True
     except Exception as e:
         import traceback
-        logger.error(f"Model yükleme hatası: {e}")
+        logger.error(f"Model loading error: {e}")
         logger.error(f"Traceback: {traceback.format_exc()}")
         MODEL_LOADED = False
         return False
@@ -106,70 +106,70 @@ def load_model():
 
 def preprocess_image(image_path: str, target_size: tuple = (224, 224)) -> Optional[np.ndarray]:
     """
-    Görseli ResNet101 modeline uygun şekilde ön işle
+    Preprocess image for ResNet101 model
     
-    Model eğitim normalizasyonu: (image / 127.5) - 1.0 [-1, 1] range
+    Model training normalization: (image / 127.5) - 1.0 [-1, 1] range
     - Resize: 224x224 (ResNet101 input size)
-    - BGR -> RGB dönüşümü (OpenCV BGR, model RGB)
-    - Normalizasyon: (pixel / 127.5) - 1.0 (ImageNet ResNet normalization)
-    - Batch dimension ekleme
+    - BGR -> RGB conversion (OpenCV BGR, model expects RGB)
+    - Normalization: (pixel / 127.5) - 1.0 (ImageNet ResNet normalization)
+    - Add batch dimension
     
     ResNet101 specifications (plant_village_optimized.ipynb):
     - Input size: 224x224x3 (RGB)
     - Output: 38 plant disease classes
     - Normalization: [-1, 1] range: (image / 127.5) - 1.0
-    - CELL 4'te kullanılan normalizasyon
+    - Normalization used in CELL 4
     """
     try:
-        # 1. Görseli oku (OpenCV -> BGR format)
+        # 1. Read image (OpenCV -> BGR format)
         img = cv2.imread(image_path)
         if img is None:
-            raise ValueError(f"Görsel okunamadı: {image_path}")
+            raise ValueError(f"Could not read image: {image_path}")
         
-        logger.debug(f"Orijinal görsel boyutu: {img.shape}")
+        logger.debug(f"Original image size: {img.shape}")
         
         # 2. Resize to 224x224 (ResNet101 standart input size)
         img = cv2.resize(img, target_size)
         
-        # 3. BGR -> RGB dönüşümü (OpenCV BGR formatında okuyor, model RGB beklıyor)
+        # 3. BGR -> RGB conversion (OpenCV reads BGR format, model expects RGB)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         
-        # 4. Float32'ye dönüştür
+        # 4. Convert to Float32
         img = img.astype('float32')
         
-        # 5. ResNet101 normalizasyonu: [-1, 1] range
+        # 5. ResNet101 normalization: [-1, 1] range
         # plant_village_optimized.ipynb CELL 4 - Data Preprocessing
-        # Model bu normalizasyon ile eğitilmiştir: (image / 127.5) - 1.0
+        # Model was trained with this normalization: (image / 127.5) - 1.0
         img = (img / 127.5) - 1.0
         
-        # Değer aralığını kontrol et (debugging için)
-        logger.debug(f"Normalizasyon sonrası - Min: {img.min():.4f}, Max: {img.max():.4f}, "
+        # Check value range (for debugging)
+        logger.debug(f"After normalization - Min: {img.min():.4f}, Max: {img.max():.4f}, "
                     f"Mean: {img.mean():.4f}, Std: {img.std():.4f}")
         
-        # 6. Batch dimension ekle (model batch input bekler)
+        # 6. Add batch dimension (model expects batch input)
         img = np.expand_dims(img, axis=0)
         
         logger.debug(f"Final shape: {img.shape} (batch, height, width, channels)")
         return img
         
     except Exception as e:
-        logger.error(f"Ön işleme hatası: {e}")
+        logger.error(f"Preprocessing error: {e}")
         return None
 
 
 @app.on_event("startup")
 async def startup_event():
-    """Uygulama başlangıcında model yükle"""
-    logger.info("API başlatılıyor...")
+    """Load model on application startup"""
+    logger.info("Starting API...")
     load_model()
-    logger.info(f"Model durumu: {'Yüklendi ✓' if MODEL_LOADED else 'Yüklenemedi ✗'}")
+    logger.info(f"Model status: {'Loaded ✓' if MODEL_LOADED else 'Failed to load ✗'}")
 
 
 @app.get("/", tags=["Root"], response_class=HTMLResponse)
 async def root():
-    """Root endpoint - API hoş geldin sayfası"""
+    """Root endpoint - API welcome page"""
     status_color = "green" if MODEL_LOADED else "red"
-    status_text = "✓ Yüklendi" if MODEL_LOADED else "✗ Yüklenemedi"
+    status_text = "✓ Loaded" if MODEL_LOADED else "✗ Failed to load"
     
     return f"""
     <!DOCTYPE html>
@@ -293,49 +293,49 @@ async def root():
     <body>
         <div class="container">
             <h1>🌿 Reveal Plant API</h1>
-            <p style="text-align: center; color: #666; margin-bottom: 20px;">Bitki Hastalığı Tespiti Sistemi</p>
+            <p style="text-align: center; color: #666; margin-bottom: 20px;">Plant Disease Detection System</p>
             
             <div class="status">
                 <span class="status-indicator"></span>
-                <strong>Model Durumu:</strong> {status_text}
+                <strong>Model Status:</strong> {status_text}
             </div>
             
             <div class="endpoints">
-                <h3 style="color: #333; margin-bottom: 15px;">📡 API Endpoint'leri</h3>
+                <h3 style="color: #333; margin-bottom: 15px;">📡 API Endpoints</h3>
                 
                 <div class="endpoint">
                     <span class="endpoint-method">GET</span>
                     <span class="endpoint-url">/health</span>
-                    <p style="color: #999; font-size: 12px; margin-top: 5px;">Servis sağlık kontrolü</p>
+                    <p style="color: #999; font-size: 12px; margin-top: 5px;">Service health check</p>
                 </div>
                 
                 <div class="endpoint">
                     <span class="endpoint-method">POST</span>
                     <span class="endpoint-url">/predict</span>
-                    <p style="color: #999; font-size: 12px; margin-top: 5px;">Görsel dosyası ile tahmin yap</p>
+                    <p style="color: #999; font-size: 12px; margin-top: 5px;">Predict with image file</p>
                 </div>
                 
                 <div class="endpoint">
                     <span class="endpoint-method">POST</span>
                     <span class="endpoint-url">/predict/base64</span>
-                    <p style="color: #999; font-size: 12px; margin-top: 5px;">Base64 kodlanmış görsel ile tahmin</p>
+                    <p style="color: #999; font-size: 12px; margin-top: 5px;">Predict with Base64 encoded image</p>
                 </div>
                 
                 <div class="endpoint">
                     <span class="endpoint-method">GET</span>
                     <span class="endpoint-url">/classes</span>
-                    <p style="color: #999; font-size: 12px; margin-top: 5px;">Mevcut hastalık sınıflarını listele</p>
+                    <p style="color: #999; font-size: 12px; margin-top: 5px;">List available disease classes</p>
                 </div>
             </div>
             
             <div class="buttons">
-                <a href="/docs" class="button button-primary">📚 API Dokümantasyonu</a>
-                <a href="/redoc" class="button button-secondary">📖 ReDoc Dokümantasyonu</a>
+                <a href="/docs" class="button button-primary">📚 API Documentation</a>
+                <a href="/redoc" class="button button-secondary">📖 ReDoc Documentation</a>
                 <a href="/health" class="button button-secondary">🏥 Health Check</a>
             </div>
             
             <div class="info">
-                💡 <strong>İpucu:</strong> /docs sayfasında API endpoint'lerini test edebilir ve detaylı dokümantasyonu görebilirsiniz.
+                💡 <strong>Tip:</strong> You can test API endpoints and view detailed documentation on the /docs page.
             </div>
         </div>
     </body>
@@ -345,7 +345,7 @@ async def root():
 
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
-    """Servis sağlık kontrolü"""
+    """Service health check"""
     return {
         "status": "healthy" if MODEL_LOADED else "unhealthy",
         "model_loaded": MODEL_LOADED,
@@ -356,53 +356,53 @@ async def health_check():
 @app.post("/predict", response_model=PredictionResponse)
 async def predict(file: UploadFile = File(...)):
     """
-    Görseli analiz et ve tahmin yap
+    Analyze image and make prediction
     
-    **Parametre:**
-    - file: Yüklenecek görsel dosyası (JPG, PNG)
+    **Parameter:**
+    - file: Image file to upload (JPG, PNG)
     
-    **Yanıt:**
-    - success: İşlem başarılı mı
-    - top_prediction: En yüksek tahmin
-    - all_predictions: Top 3 tahmin
-    - processing_time: İşlem süresi
+    **Response:**
+    - success: Whether operation succeeded
+    - top_prediction: Highest prediction
+    - all_predictions: Top 3 predictions
+    - processing_time: Processing time
     """
     start_time = time.time()
     
-    # Model kontrol
+    # Model check
     if not MODEL_LOADED:
-        raise HTTPException(status_code=503, detail="Model yüklenmedi. API başlatma sırasında hata oluştu.")
+        raise HTTPException(status_code=503, detail="Model not loaded. Error occurred during API startup.")
     
-    # Dosya uzantı kontrol
+    # File extension check
     if file.filename.lower().split('.')[-1] not in ['jpg', 'jpeg', 'png']:
-        raise HTTPException(status_code=400, detail="Sadece JPG, JPEG, PNG dosyaları kabul edilir")
+        raise HTTPException(status_code=400, detail="Only JPG, JPEG, PNG files are accepted")
     
     try:
-        # Görsel dosyasını temp klasörüne kaydet
+        # Save image file to temp folder
         temp_dir = Path("/tmp") if os.name != 'nt' else Path(os.environ.get('TEMP', '.'))
         temp_dir.mkdir(exist_ok=True)
         temp_path = temp_dir / file.filename
         
-        # Dosyayı oku ve kaydet
+        # Read and save file
         content = await file.read()
         with open(temp_path, "wb") as f:
             f.write(content)
         
-        # Görseli ön işle
+        # Preprocess image
         processed_img = preprocess_image(str(temp_path))
         if processed_img is None:
-            raise ValueError("Görsel ön işleme başarısız")
+            raise ValueError("Image preprocessing failed")
         
-        logger.info(f"Tahmin yapılıyor: {file.filename}")
+        logger.info(f"Making prediction: {file.filename}")
         
         # Tahmin yap
         predictions = MODEL.predict(processed_img, verbose=0)
         
-        # Softmax uygulanmış olabilir, değilse uygula
-        # Model output zaten softmax ile normalize edilmiştir (categorical output)
-        predictions = predictions[0]  # Batch dimension kaldır
+        # Softmax may already be applied, if not apply it
+        # Model output is already normalized with softmax (categorical output)
+        predictions = predictions[0]  # Remove batch dimension
         
-        # Top 5 tahmini al
+        # Get top 5 predictions
         top_5_idx = np.argsort(predictions)[::-1][:5]
         
         predictions_list = [
@@ -416,7 +416,7 @@ async def predict(file: UploadFile = File(...)):
         
         processing_time = time.time() - start_time
         
-        logger.info(f"Tahmin tamamlandı - Top: {predictions_list[0].disease} ({predictions_list[0].confidence_percent:.2f}%)")
+        logger.info(f"Prediction completed - Top: {predictions_list[0].disease} ({predictions_list[0].confidence_percent:.2f}%)")
         
         return {
             "success": True,
@@ -427,7 +427,7 @@ async def predict(file: UploadFile = File(...)):
         }
     
     except Exception as e:
-        logger.error(f"Tahmin hatası: {e}")
+        logger.error(f"Prediction error: {e}")
         processing_time = time.time() - start_time
         return {
             "success": False,
@@ -437,17 +437,17 @@ async def predict(file: UploadFile = File(...)):
         }
     
     finally:
-        # Temp dosyasını sil
+        # Delete temp file
         if temp_path.exists():
             try:
                 temp_path.unlink()
             except Exception as e:
-                logger.warning(f"Temp dosya silinemedi: {e}")
+                logger.warning(f"Could not delete temp file: {e}")
 
 
 @app.get("/classes")
 async def get_classes():
-    """Mevcut sınıfları listele"""
+    """List available classes"""
     return {
         "total_classes": len(CLASS_NAMES),
         "classes": CLASS_NAMES
@@ -457,29 +457,29 @@ async def get_classes():
 @app.post("/predict/base64", response_model=FastAPIResponseFormat)
 async def predict_base64(image_data: dict):
     """
-    Base64 encoded image ile tahmin yap (Java Backend'den gelen isteği karşılayan endpoint)
+    Predict with Base64 encoded image (endpoint that handles requests from Java Backend)
     
     **Request Body:**
     - imageBase64: Base64 encoded image string
     - mode: Prediction mode (optional)
     - description: Image description (optional)
     
-    **Yanıt:** Java Backend'in beklediği FastAPIResponseFormat
+    **Response:** FastAPIResponseFormat expected by Java Backend
     """
     start_time = time.time()
     
-    # Model kontrol
+    # Model check
     if not MODEL_LOADED:
-        raise HTTPException(status_code=503, detail="Model yüklenmedi. API başlatma sırasında hata oluştu.")
+        raise HTTPException(status_code=503, detail="Model not loaded. Error occurred during API startup.")
     
     try:
         import base64
         from io import BytesIO
         from PIL import Image as PILImage
         
-        # Base64 string'i decode et
+        # Decode Base64 string
         if "imageBase64" not in image_data:
-            raise ValueError("imageBase64 parametresi gerekli")
+            raise ValueError("imageBase64 parameter is required")
         
         image_base64 = image_data.get("imageBase64", "")
         
@@ -503,26 +503,26 @@ async def predict_base64(image_data: dict):
         elif image.mode != 'RGB':
             image = image.convert('RGB')
         
-        # Temp klasöre kaydet
+        # Save to temp folder
         temp_dir = Path("/tmp") if os.name != 'nt' else Path(os.environ.get('TEMP', '.'))
         temp_dir.mkdir(exist_ok=True)
         temp_path = temp_dir / "temp_predict.jpg"
         image.save(temp_path, 'JPEG')
         
-        # Görseli ön işle
+        # Preprocess image
         processed_img = preprocess_image(str(temp_path))
         if processed_img is None:
-            raise ValueError("Görsel ön işleme başarısız")
+            raise ValueError("Image preprocessing failed")
         
-        logger.info("Base64 görsel tahmin yapılıyor")
+        logger.info("Making prediction for Base64 image")
         
         # Tahmin yap
         predictions = MODEL.predict(processed_img, verbose=0)
         
-        # Softmax output'u al ve normalize et
-        predictions = predictions[0]  # Batch dimension kaldır
+        # Get softmax output and normalize
+        predictions = predictions[0]  # Remove batch dimension
         
-        # Top 5 tahmini al
+        # Get top 5 predictions
         top_5_idx = np.argsort(predictions)[::-1][:5]
         
         predictions_list = [
@@ -548,7 +548,7 @@ async def predict_base64(image_data: dict):
         }
     
     except Exception as e:
-        logger.error(f"Base64 tahmin hatası: {e}")
+        logger.error(f"Base64 prediction error: {e}")
         return {
             "status": "error",
             "message": str(e),
@@ -559,7 +559,7 @@ async def predict_base64(image_data: dict):
         }
     
     finally:
-        # Temp dosyasını sil
+        # Delete temp file
         try:
             if temp_path.exists():
                 temp_path.unlink()

@@ -1,7 +1,7 @@
 package plant_village.exception;
 
 /**
- * Kaynak bulunamadığında throw edilecek exception
+ * Exception to be thrown when a resource is not found
  */
 public class ResourceNotFoundException extends RuntimeException {
     

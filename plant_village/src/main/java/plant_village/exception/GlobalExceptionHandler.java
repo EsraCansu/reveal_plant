@@ -11,7 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Global Exception Handler - Tüm controller'lardaki exception'ları yakalar ve uygun HTTP response döndürür
+ * Global Exception Handler - Catches exceptions from all controllers and returns appropriate HTTP responses
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -43,7 +43,7 @@ public class GlobalExceptionHandler {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("timestamp", LocalDateTime.now());
         body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        body.put("message", "Bir hata oluştu: " + ex.getMessage());
+        body.put("message", "An error occurred: " + ex.getMessage());
         body.put("path", request.getDescription(false).replace("uri=", ""));
         
         return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);

@@ -390,11 +390,11 @@
                 const userId = user.id || getCookie('userId');
                 
                 if (!userId) {
-                    alert('Kullanıcı bilgisi bulunamadı. Lütfen tekrar giriş yapın.');
+                    alert('User information not found. Please login again.');
                     return;
                 }
                 
-                // Backend'den veri çek
+                // Fetch data from backend
                 const response = await fetch(`${BACKEND_URL}/api/users/${userId}/export`, {
                     method: 'GET',
                     headers: {
@@ -404,12 +404,12 @@
                 });
                 
                 if (!response.ok) {
-                    throw new Error('Veri dışa aktarılamadı');
+                    throw new Error('Data could not be exported');
                 }
                 
                 const data = await response.json();
                 
-                // JSON dosyası olarak indir
+                // Download as JSON file
                 const json = JSON.stringify(data, null, 2);
                 const blob = new Blob([json], { type: 'application/json' });
                 const url = window.URL.createObjectURL(blob);
@@ -419,10 +419,10 @@
                 a.click();
                 window.URL.revokeObjectURL(url);
                 
-                alert('Verileriniz başarıyla dışa aktarıldı!');
+                alert('Your data has been successfully exported!');
             } catch (error) {
                 console.error('Export error:', error);
-                alert('Veri dışa aktarılırken hata oluştu: ' + error.message);
+                alert('Error occurred while exporting data: ' + error.message);
             }
         }
 
@@ -443,18 +443,18 @@
         }
 
         async function deleteAccount() {
-            if (!confirm('⚠️ UYARI: Bu işlem hesabınızı ve tüm verilerinizi kalıcı olarak silecektir. Emin misiniz?')) {
+            if (!confirm('⚠️ WARNING: This action will permanently delete your account and all your data. Are you sure?')) {
                 return;
             }
             
-            if (!confirm('Bu işlem geri alınamaz! Silme işlemini onaylamak için OK\'a tıklayın.')) {
+            if (!confirm('This action cannot be undone! Click OK to confirm deletion.')) {
                 return;
             }
             
-            // Şifre doğrulama için prompt
-            const password = prompt('Güvenlik için şifrenizi girin:');
+            // Prompt for password verification
+            const password = prompt('Enter your password for security:');
             if (!password) {
-                alert('Hesap silme işlemi iptal edildi.');
+                alert('Account deletion has been cancelled.');
                 return;
             }
             
@@ -463,11 +463,11 @@
                 const userId = user.id || getCookie('userId');
                 
                 if (!userId) {
-                    alert('Kullanıcı bilgisi bulunamadı. Lütfen tekrar giriş yapın.');
+                    alert('User information not found. Please login again.');
                     return;
                 }
                 
-                // Backend'e silme isteği gönder
+                // Send delete request to backend
                 const response = await fetch(`${BACKEND_URL}/api/users/${userId}/account`, {
                     method: 'DELETE',
                     headers: {
@@ -478,7 +478,7 @@
                 
                 if (!response.ok) {
                     const error = await response.json();
-                    throw new Error(error.error || 'Hesap silinemedi');
+                    throw new Error(error.error || 'Account could not be deleted');
                 }
                 
                 const result = await response.json();
@@ -490,12 +490,12 @@
                     document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
                 });
                 
-                alert(`Hesabınız başarıyla silindi! ${result.deletedPredictions || 0} tahmin kaydı da silindi.`);
+                alert(`Your account has been successfully deleted! ${result.deletedPredictions || 0} prediction records were also deleted.`);
                 window.location.href = '../../index.html';
                 
             } catch (error) {
                 console.error('Delete account error:', error);
-                alert('Hesap silinirken hata oluştu: ' + error.message);
+                alert('Error occurred while deleting account: ' + error.message);
             }
         }
 

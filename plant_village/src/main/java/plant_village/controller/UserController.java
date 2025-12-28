@@ -47,18 +47,18 @@ public class UserController {
         String email = loginRequest.get("email");
         String password = loginRequest.get("password");
         
-        // XSS koruması
+        // XSS protection
         if (xssProtection.isDangerous(email) || xssProtection.isDangerous(password)) {
             return ResponseEntity.badRequest().body("Invalid input detected");
         }
         
         // Validation
         if (email == null || password == null) {
-            return ResponseEntity.badRequest().body("Email ve şifre gereklidir.");
+            return ResponseEntity.badRequest().body("Email and password are required.");
         }
         
         if (!xssProtection.isValidEmail(email)) {
-            return ResponseEntity.badRequest().body("Geçersiz email formatı.");
+            return ResponseEntity.badRequest().body("Invalid email format.");
         }
         
         return userService.findByEmail(email)
@@ -67,19 +67,19 @@ public class UserController {
                         plant_village.service.impl.UserServiceImpl impl = (plant_village.service.impl.UserServiceImpl) userService;
                         if (impl.verifyPassword(password, user.getPasswordHash())) {
                             
-                            // ✅ JWT Token oluştur
+                            // ✅ Generate JWT Token
                             String token = jwtUtil.generateToken(user.getEmail(), user.getRole(), user.getId());
                             
-                            // ✅ Secure Cookie ekle
+                            // ✅ Add Secure Cookie
                             Cookie jwtCookie = new Cookie("jwt_token", token);
-                            jwtCookie.setHttpOnly(true);  // XSS koruması
-                            jwtCookie.setSecure(false);    // Production'da true olmalı (HTTPS)
+                            jwtCookie.setHttpOnly(true);  // XSS protection
+                            jwtCookie.setSecure(false);    // Should be true in production (HTTPS)
                             jwtCookie.setPath("/");
-                            jwtCookie.setMaxAge(24 * 60 * 60); // 24 saat
+                            jwtCookie.setMaxAge(24 * 60 * 60); // 24 hours
                             response.addCookie(jwtCookie);
                             
-                            // Kullanıcı bilgisi için ayrı cookie (frontend'de okunabilir)
-                            // Cookie değerlerini URL encode et (boşluk ve özel karakterler için)
+                            // Separate cookie for user info (readable by frontend)
+                            // URL encode cookie values (for spaces and special characters)
                             String encodedEmail = URLEncoder.encode(user.getEmail(), StandardCharsets.UTF_8);
                             String encodedName = URLEncoder.encode(user.getUserName(), StandardCharsets.UTF_8);
                             String encodedRole = URLEncoder.encode(user.getRole(), StandardCharsets.UTF_8);
@@ -89,7 +89,7 @@ public class UserController {
                             userEmailCookie.setMaxAge(24 * 60 * 60);
                             response.addCookie(userEmailCookie);
                             
-                            // ✅ User ID cookie'si ekle
+                            // ✅ Add User ID cookie
                             Cookie userIdCookie = new Cookie("userId", String.valueOf(user.getId()));
                             userIdCookie.setPath("/");
                             userIdCookie.setMaxAge(24 * 60 * 60);
@@ -111,25 +111,25 @@ public class UserController {
                             result.put("email", user.getEmail());
                             result.put("role", user.getRole());
                             result.put("name", user.getUserName());
-                            result.put("token", token); // İsteğe bağlı: frontend'de de kullanılabilir
+                            result.put("token", token); // Optional: can also be used in frontend
                             result.put("message", "Login successful");
                             
                             return ResponseEntity.ok(result);
                         }
                     }
                     java.util.Map<String, String> error = new java.util.HashMap<>();
-                    error.put("error", "Geçersiz şifre");
+                    error.put("error", "Invalid password");
                     return ResponseEntity.status(401).body(error);
                 })
                 .orElseGet(() -> {
                     java.util.Map<String, String> error = new java.util.HashMap<>();
-                    error.put("error", "Kullanıcı bulunamadı");
+                    error.put("error", "User not found");
                     return ResponseEntity.status(404).body(error);
                 });
     }
 
     /**
-     * ✅ YENİ: Get current user from JWT token
+     * ✅ NEW: Get current user from JWT token
      * GET /api/auth/me
      */
     @GetMapping("/auth/me")
@@ -137,34 +137,34 @@ public class UserController {
             @CookieValue(value = "jwt_token", required = false) String jwtToken) {
         
         try {
-            // Token kontrolü
+            // Token check
             if (jwtToken == null || jwtToken.isEmpty()) {
                 java.util.Map<String, String> error = new java.util.HashMap<>();
-                error.put("error", "Token bulunamadı");
+                error.put("error", "Token not found");
                 return ResponseEntity.status(401).body(error);
             }
             
-            // Token'dan email çıkar
+            // Extract email from token
             String email = jwtUtil.extractEmail(jwtToken);
             
             if (email == null || email.isEmpty()) {
                 java.util.Map<String, String> error = new java.util.HashMap<>();
-                error.put("error", "Geçersiz token");
+                error.put("error", "Invalid token");
                 return ResponseEntity.status(401).body(error);
             }
             
-            // Kullanıcıyı bul
+            // Find user
             Optional<User> userOpt = userService.findByEmail(email);
             
             if (!userOpt.isPresent()) {
                 java.util.Map<String, String> error = new java.util.HashMap<>();
-                error.put("error", "Kullanıcı bulunamadı");
+                error.put("error", "User not found");
                 return ResponseEntity.status(404).body(error);
             }
             
             User user = userOpt.get();
             
-            // User DTO oluştur (password hash'i gönderme!)
+            // Create User DTO (don't send password hash!)
             java.util.Map<String, Object> userData = new java.util.HashMap<>();
             userData.put("id", user.getId());
             userData.put("name", user.getUserName());
@@ -226,12 +226,12 @@ public class UserController {
     }
 
     /**
-     * ✅ GÜNCELLEME: XSS korumalı kullanıcı kaydı
+     * ✅ UPDATE: User registration with XSS protection
      */
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody User user) {
         try {
-            // XSS koruması
+            // XSS protection
             if (xssProtection.isDangerous(user.getEmail()) || 
                 xssProtection.isDangerous(user.getUserName())) {
                 java.util.Map<String, String> error = new java.util.HashMap<>();
@@ -242,7 +242,7 @@ public class UserController {
             // Email validation
             if (!xssProtection.isValidEmail(user.getEmail())) {
                 java.util.Map<String, String> error = new java.util.HashMap<>();
-                error.put("error", "Geçersiz email formatı");
+                error.put("error", "Invalid email format");
                 return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
             }
             
@@ -255,7 +255,7 @@ public class UserController {
             // Success response
             java.util.Map<String, Object> response = new java.util.HashMap<>();
             response.put("success", true);
-            response.put("message", "Kayıt başarılı");
+            response.put("message", "Registration successful");
             response.put("user", newUser);
             
             return new ResponseEntity<>(response, HttpStatus.CREATED);
@@ -265,7 +265,7 @@ public class UserController {
             return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
             java.util.Map<String, String> error = new java.util.HashMap<>();
-            error.put("error", "Kayıt sırasında bir hata oluştu: " + e.getMessage());
+            error.put("error", "An error occurred during registration: " + e.getMessage());
             return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -280,7 +280,7 @@ public class UserController {
         try {
             java.util.List<User> users = userService.findAll();
             
-            // Password'ları çıkar (güvenlik)
+            // Remove passwords (security)
             java.util.List<java.util.Map<String, Object>> sanitizedUsers = users.stream()
                 .map(user -> {
                     java.util.Map<String, Object> userMap = new java.util.HashMap<>();
@@ -297,7 +297,7 @@ public class UserController {
             return ResponseEntity.ok(sanitizedUsers);
         } catch (Exception e) {
             java.util.Map<String, String> error = new java.util.HashMap<>();
-            error.put("error", "Kullanıcılar yüklenemedi: " + e.getMessage());
+            error.put("error", "Could not load users: " + e.getMessage());
             return ResponseEntity.status(500).body(error);
         }
     }
@@ -318,7 +318,7 @@ public class UserController {
             
             if (newRole == null || (!newRole.equals("USER") && !newRole.equals("ADMIN"))) {
                 java.util.Map<String, String> error = new java.util.HashMap<>();
-                error.put("error", "Geçersiz rol. USER veya ADMIN olmalı.");
+                error.put("error", "Invalid role. Must be USER or ADMIN.");
                 return ResponseEntity.badRequest().body(error);
             }
             
@@ -335,14 +335,14 @@ public class UserController {
             
             java.util.Map<String, Object> result = new java.util.HashMap<>();
             result.put("success", true);
-            result.put("message", "Rol güncellendi");
+            result.put("message", "Role updated");
             result.put("userId", updatedUser.getId());
             result.put("newRole", updatedUser.getRole());
             
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             java.util.Map<String, String> error = new java.util.HashMap<>();
-            error.put("error", "Rol güncellenemedi: " + e.getMessage());
+            error.put("error", "Could not update role: " + e.getMessage());
             return ResponseEntity.status(500).body(error);
         }
     }
@@ -360,13 +360,13 @@ public class UserController {
             
             java.util.Map<String, Object> result = new java.util.HashMap<>();
             result.put("success", true);
-            result.put("message", "Kullanıcı silindi");
+            result.put("message", "User deleted");
             result.put("userId", userId);
             
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             java.util.Map<String, String> error = new java.util.HashMap<>();
-            error.put("error", "Kullanıcı silinemedi: " + e.getMessage());
+            error.put("error", "Could not delete user: " + e.getMessage());
             return ResponseEntity.status(500).body(error);
         }
     }
@@ -383,7 +383,7 @@ public class UserController {
         
         if (userOpt.isPresent()) {
             User user = userOpt.get();
-            // Password'u response'a dahil etme (güvenlik)
+            // Don't include password in response (security)
             java.util.Map<String, Object> result = new java.util.HashMap<>();
             result.put("id", user.getId());
             result.put("email", user.getEmail());
@@ -399,7 +399,7 @@ public class UserController {
             return ResponseEntity.ok(result);
         } else {
             java.util.Map<String, String> error = new java.util.HashMap<>();
-            error.put("error", "Kullanıcı bulunamadı");
+            error.put("error", "User not found");
             return ResponseEntity.status(404).body(error);
         }
     }
@@ -430,14 +430,14 @@ public class UserController {
             
             if (email == null) {
                 java.util.Map<String, String> error = new java.util.HashMap<>();
-                error.put("error", "Email gereklidir");
+                error.put("error", "Email is required");
                 return ResponseEntity.badRequest().body(error);
             }
             
             Optional<User> userOpt = userService.findByEmail(email);
             if (!userOpt.isPresent()) {
                 java.util.Map<String, String> error = new java.util.HashMap<>();
-                error.put("error", "Kullanıcı bulunamadı");
+                error.put("error", "User not found");
                 return ResponseEntity.status(404).body(error);
             }
             
@@ -486,7 +486,7 @@ public class UserController {
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             java.util.Map<String, String> error = new java.util.HashMap<>();
-            error.put("error", "Profile güncellenemedi: " + e.getMessage());
+            error.put("error", "Could not update profile: " + e.getMessage());
             return ResponseEntity.status(500).body(error);
         }
     }
@@ -506,20 +506,20 @@ public class UserController {
             
             if (email == null || currentPassword == null || newPassword == null) {
                 java.util.Map<String, String> error = new java.util.HashMap<>();
-                error.put("error", "Email, current password ve new password gereklidir");
+                error.put("error", "Email, current password and new password are required");
                 return ResponseEntity.badRequest().body(error);
             }
             
             if (newPassword.length() < 6) {
                 java.util.Map<String, String> error = new java.util.HashMap<>();
-                error.put("error", "Şifre en az 6 karakter olmalıdır");
+                error.put("error", "Password must be at least 6 characters");
                 return ResponseEntity.badRequest().body(error);
             }
             
             Optional<User> userOpt = userService.findByEmail(email);
             if (!userOpt.isPresent()) {
                 java.util.Map<String, String> error = new java.util.HashMap<>();
-                error.put("error", "Kullanıcı bulunamadı");
+                error.put("error", "User not found");
                 return ResponseEntity.status(404).body(error);
             }
             
@@ -530,7 +530,7 @@ public class UserController {
                 plant_village.service.impl.UserServiceImpl impl = (plant_village.service.impl.UserServiceImpl) userService;
                 if (!impl.verifyPassword(currentPassword, user.getPasswordHash())) {
                     java.util.Map<String, String> error = new java.util.HashMap<>();
-                    error.put("error", "Mevcut şifre yanlış");
+                    error.put("error", "Current password is incorrect");
                     return ResponseEntity.status(401).body(error);
                 }
                 
@@ -541,18 +541,18 @@ public class UserController {
                 
                 java.util.Map<String, Object> result = new java.util.HashMap<>();
                 result.put("success", true);
-                result.put("message", "Şifre başarıyla güncellendi");
+                result.put("message", "Password updated successfully");
                 
                 return ResponseEntity.ok(result);
             }
             
             java.util.Map<String, String> error = new java.util.HashMap<>();
-            error.put("error", "Şifre güncellenemedi");
+            error.put("error", "Could not update password");
             return ResponseEntity.status(500).body(error);
             
         } catch (Exception e) {
             java.util.Map<String, String> error = new java.util.HashMap<>();
-            error.put("error", "Şifre güncellenemedi: " + e.getMessage());
+            error.put("error", "Could not update password: " + e.getMessage());
             return ResponseEntity.status(500).body(error);
         }
     }
@@ -569,7 +569,7 @@ public class UserController {
             Optional<User> userOpt = userService.findById(userId);
             if (!userOpt.isPresent()) {
                 java.util.Map<String, String> error = new java.util.HashMap<>();
-                error.put("error", "Kullanıcı bulunamadı");
+                error.put("error", "User not found");
                 return ResponseEntity.status(404).body(error);
             }
             
@@ -599,7 +599,7 @@ public class UserController {
             return ResponseEntity.ok(stats);
         } catch (Exception e) {
             java.util.Map<String, String> error = new java.util.HashMap<>();
-            error.put("error", "İstatistikler yüklenemedi: " + e.getMessage());
+            error.put("error", "Could not load statistics: " + e.getMessage());
             return ResponseEntity.status(500).body(error);
         }
     }
@@ -615,7 +615,7 @@ public class UserController {
             String base64Image = request.get("avatar");
             
             if (email == null || base64Image == null) {
-                return ResponseEntity.badRequest().body(java.util.Map.of("error", "Email ve avatar gerekli"));
+                return ResponseEntity.badRequest().body(java.util.Map.of("error", "Email and avatar are required"));
             }
             
             // Remove data:image/...;base64, prefix if exists
@@ -643,19 +643,19 @@ public class UserController {
             
             // Update user's avatar_url
             User user = userService.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
             
             user.setAvatarUrl("/uploads/avatars/" + fileName);
             userService.updateUser(user);
             
             java.util.Map<String, String> response = new java.util.HashMap<>();
-            response.put("message", "Avatar başarıyla yüklendi");
+            response.put("message", "Avatar uploaded successfully");
             response.put("avatarUrl", user.getAvatarUrl());
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
             java.util.Map<String, String> error = new java.util.HashMap<>();
-            error.put("error", "Avatar yüklenemedi: " + e.getMessage());
+            error.put("error", "Could not upload avatar: " + e.getMessage());
             return ResponseEntity.status(500).body(error);
         }
     }
@@ -712,7 +712,7 @@ public class UserController {
             
             return ResponseEntity.ok(exportData);
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(java.util.Map.of("error", "Veri dışa aktarılamadı: " + e.getMessage()));
+            return ResponseEntity.status(500).body(java.util.Map.of("error", "Could not export data: " + e.getMessage()));
         }
     }
 
@@ -727,7 +727,7 @@ public class UserController {
         try {
             Optional<User> userOpt = userService.findById(userId);
             if (userOpt.isEmpty()) {
-                return ResponseEntity.status(404).body(java.util.Map.of("error", "Kullanıcı bulunamadı"));
+                return ResponseEntity.status(404).body(java.util.Map.of("error", "User not found"));
             }
             
             // Delete all user predictions first (cascade)
@@ -739,12 +739,12 @@ public class UserController {
             
             java.util.Map<String, Object> result = new java.util.HashMap<>();
             result.put("success", true);
-            result.put("message", "Hesabınız ve tüm verileriniz başarıyla silindi");
+            result.put("message", "Your account and all data have been successfully deleted");
             result.put("deletedPredictions", predictions.size());
             
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(java.util.Map.of("error", "Hesap silinemedi: " + e.getMessage()));
+            return ResponseEntity.status(500).body(java.util.Map.of("error", "Could not delete account: " + e.getMessage()));
         }
     }
 }

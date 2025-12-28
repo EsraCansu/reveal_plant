@@ -8,34 +8,34 @@ from PIL.Image import Image
 import base64
 
 class PredictionResult(BaseModel):
-    """Tahmin sonucu"""
-    disease: str = Field(..., description="Sınıf adı (Java backend: disease field)")
-    confidence_score: float = Field(..., description="Güven skoru (0-1)")
-    confidence_percent: float = Field(..., description="Güven yüzdesi")
+    """Prediction result"""
+    disease: str = Field(..., description="Class name (Java backend: disease field)")
+    confidence_score: float = Field(..., description="Confidence score (0-1)")
+    confidence_percent: float = Field(..., description="Confidence percentage")
 
 
 class PredictionResponse(BaseModel):
-    """API tahmin yanıtı"""
-    success: bool = Field(..., description="İşlem başarılı mı")
-    image_name: Optional[str] = Field(None, description="Görsel adı")
-    top_prediction: Optional[PredictionResult] = Field(None, description="En yüksek tahmin")
-    all_predictions: Optional[List[PredictionResult]] = Field(None, description="Tüm tahminler")
-    error: Optional[str] = Field(None, description="Hata mesajı")
-    processing_time: float = Field(..., description="İşlem süresi (saniye)")
+    """API prediction response"""
+    success: bool = Field(..., description="Whether operation succeeded")
+    image_name: Optional[str] = Field(None, description="Image name")
+    top_prediction: Optional[PredictionResult] = Field(None, description="Highest prediction")
+    all_predictions: Optional[List[PredictionResult]] = Field(None, description="All predictions")
+    error: Optional[str] = Field(None, description="Error message")
+    processing_time: float = Field(..., description="Processing time (seconds)")
 
 
 class HealthResponse(BaseModel):
-    """Sağlık kontrol yanıtı"""
-    status: str = Field(..., description="Servis durumu")
-    model_loaded: bool = Field(..., description="Model yüklendi mi")
-    version: str = Field(..., description="API sürümü")
+    """Health check response"""
+    status: str = Field(..., description="Service status")
+    model_loaded: bool = Field(..., description="Whether model is loaded")
+    version: str = Field(..., description="API version")
 
 
 class FastAPIResponseFormat(BaseModel):
-    """Java Backend'in beklediği FastAPI response format"""
+    """FastAPI response format expected by Java Backend"""
     status: str = Field(..., description="Status (success/error)")
-    message: str = Field(..., description="Durum mesajı")
-    top_prediction: str = Field(..., description="En yüksek tahmin sınıfı")
-    top_confidence: float = Field(..., description="Güven skoru (0-1)")
-    recommended_action: Optional[str] = Field(None, description="Tavsiye edilen işlem")
-    predictions: List[PredictionResult] = Field(..., description="Tüm tahminler")
+    message: str = Field(..., description="Status message")
+    top_prediction: str = Field(..., description="Highest prediction class")
+    top_confidence: float = Field(..., description="Confidence score (0-1)")
+    recommended_action: Optional[str] = Field(None, description="Recommended action")
+    predictions: List[PredictionResult] = Field(..., description="All predictions")

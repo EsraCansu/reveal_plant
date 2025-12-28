@@ -8,14 +8,14 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 
-// Environment değişkenlerini yükle
+// Load environment variables
 dotenv.config();
 
-// __dirname ve __filename ES6 modules için
+// __dirname and __filename for ES6 modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Express uygulamasını oluştur
+// Create Express application
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JAVA_API_URL = process.env.JAVA_API_URL || 'http://localhost:8080';
@@ -26,18 +26,18 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Yüklenen dosyayı bellekte saklamak için ayar
+// Configuration to store uploaded file in memory
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// Statik dosyaları sunmak için
-app.use(express.static(path.join(__dirname)));  // Root klasöründeki tüm dosyaları sun
-app.use('/assets', express.static(path.join(__dirname, 'assets')));  // Assets klasörü
-app.use('/app', express.static(path.join(__dirname, 'app')));  // App klasörü
+// For serving static files
+app.use(express.static(path.join(__dirname)));  // Serve all files in root directory
+app.use('/assets', express.static(path.join(__dirname, 'assets')));  // Assets folder
+app.use('/app', express.static(path.join(__dirname, 'app')));  // App folder
 
 // ======================== ROUTES ========================
 
-// Ana sayfa
+// Home page
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
@@ -58,7 +58,7 @@ app.get('/api/health', (req, res) => {
 
 // ======================== PROXY ENDPOINTS ========================
 
-// Java API proxy'si - Kullanıcı işlemleri
+// Java API proxy - User operations
 /*app.post('/api/auth/register', async (req, res) => {
   try {
     const response = await axios.post(`${JAVA_API_URL}/api/users/register`, req.body);
@@ -68,19 +68,19 @@ app.get('/api/health', (req, res) => {
     res.status(error.response?.status || 500).json(error.response?.data || { error: 'Registration failed' });
   }
 });*/
-// Java API - Tahmin (Image Analysis)
-// upload.single('image') middleware'i, yüklenen dosyayı req.file objesine yerleştirir.
+// Java API - Prediction (Image Analysis)
+// upload.single('image') middleware places the uploaded file in req.file object.
 app.post('/api/predict', upload.single('image'), async (req, res) => {
   
   if (!req.file) {
-    return res.status(400).json({ error: 'Resim dosyası yüklenmedi. Lütfen bir resim yükleyin.' });
+    return res.status(400).json({ error: 'Image file not uploaded. Please upload an image.' });
   }
 
   try {
-    // 1. Yüklenen resmin Buffer'ını (bellekteki ikili verisini) Base64 string'e dönüştür
+    // 1. Convert the uploaded image Buffer (binary data in memory) to Base64 string
     const base64Image = req.file.buffer.toString('base64');
     
-    // 2. Java Backend'in beklediği payload yapısını oluştur
+    // 2. Create the payload structure expected by Java Backend
     const javaApiPayload = {
       imageBase64: base64Image,
       predictionType: req.body.mode || 'detect-disease',
@@ -90,7 +90,7 @@ app.post('/api/predict', upload.single('image'), async (req, res) => {
 
     console.log(`📤 Sending to Java Backend: ${JAVA_API_URL}/api/predictions/analyze`);
 
-    // 3. Java Backend'e isteği gönder
+    // 3. Send request to Java Backend
     const response = await axios.post(
       `${JAVA_API_URL}/api/predictions/analyze`, 
       javaApiPayload,
@@ -99,7 +99,7 @@ app.post('/api/predict', upload.single('image'), async (req, res) => {
     
     console.log('📥 Received from Java:', response.data);
     
-    // 4. Yanıtı istemciye döndür
+    // 4. Return response to client
     res.json(response.data);
 
   } catch (error) {
@@ -107,7 +107,7 @@ app.post('/api/predict', upload.single('image'), async (req, res) => {
     if (error.response) {
       console.error('Error response:', error.response.data);
     }
-    const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Tahmin işlemi başarısız oldu';
+    const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Prediction operation failed';
     res.status(error.response?.status || 500).json({ error: errorMessage });
   }
 });
@@ -162,7 +162,7 @@ app.get('/api/predictions/:id', async (req, res) => {
   }
 });
 
-// Kullanıcıya ait tahmin geçmişini al
+// Get prediction history for user
 app.get('/api/predictions/history/:userId', async (req, res) => {
   try {
     const { userId } = req.params;

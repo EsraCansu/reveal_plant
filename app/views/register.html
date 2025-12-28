@@ -146,40 +146,40 @@
             
             // ✅ Validation
             if (!fullname || fullname.length < 2) {
-                alert('Lütfen geçerli bir isim girin (en az 2 karakter)!');
+                alert('Please enter a valid name (at least 2 characters)!');
                 return;
             }
             
             if (!isValidEmail(email)) {
-                alert('Lütfen geçerli bir email adresi girin!');
+                alert('Please enter a valid email address!');
                 return;
             }
             
             if (!password || password.length < 6) {
-                alert('Şifre en az 6 karakter olmalı!');
+                alert('Password must be at least 6 characters!');
                 return;
             }
             
             if (password !== confirmPassword) {
-                alert('Şifreler eşleşmiyor!');
+                alert('Passwords do not match!');
                 return;
             }
             
             if (!termsChecked) {
-                alert('Devam etmek için şartları kabul etmelisiniz!');
+                alert('You must accept the terms to continue!');
                 return;
             }
             
             try {
                 console.log('🔐 Sending register request to backend...');
                 
-                // ✅ Backend'e kayıt isteği gönder
+                // ✅ Send registration request to backend
                 const response = await fetch('http://localhost:8080/api/users/register', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    credentials: 'include', // Cookie desteği
+                    credentials: 'include', // Cookie support
                     body: JSON.stringify({
                         userName: fullname,
                         email: email,
@@ -194,8 +194,8 @@
                     const data = await response.json();
                     console.log('✅ Registration successful:', data);
                     
-                    // Başarılı mesaj
-                    alert('Kayıt başarılı! Login sayfasına yönlendiriliyorsunuz...');
+                    // Success message
+                    alert('Registration successful! Redirecting to login page...');
                     
                     // Login sayfasına yönlendir
                     setTimeout(() => {
@@ -204,17 +204,17 @@
                 } else {
                     try {
                         const errorData = await response.json();
-                        const errorMsg = errorData.error || errorData.message || 'Bilinmeyen hata';
+                        const errorMsg = errorData.error || errorData.message || 'Unknown error';
                         console.error('❌ Registration failed:', errorMsg);
-                        alert('Kayıt başarısız: ' + errorMsg);
+                        alert('Registration failed: ' + errorMsg);
                     } catch (parseError) {
                         console.error('❌ Could not parse error response');
-                        alert('Kayıt başarısız! Lütfen bilgilerinizi kontrol edin.');
+                        alert('Registration failed! Please check your information.');
                     }
                 }
             } catch (error) {
                 console.error('❌ Registration network error:', error);
-                alert('Bağlantı hatası: ' + error.message + '\n\nBackend çalışıyor mu kontrol edin!');
+                alert('Connection error: ' + error.message + '\n\nPlease check if the backend is running!');
             }
         });
     </script>

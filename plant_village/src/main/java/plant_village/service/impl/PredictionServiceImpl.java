@@ -77,7 +77,7 @@ public class PredictionServiceImpl implements PredictionService {
         // Verify user exists
         if (prediction.getUser() == null || prediction.getUser().getId() == null) {
             log.warn("User not found for prediction");
-            throw new ResourceNotFoundException("Kullanıcı bulunamadı");
+            throw new ResourceNotFoundException("User not found");
         }
         
         // Set default values
@@ -107,7 +107,7 @@ public class PredictionServiceImpl implements PredictionService {
         if (!userRepository.existsById(userId)) {
             log.warn("User not found: {}", userId);
             throw new ResourceNotFoundException(
-                "Kullanıcı bulunamadı - ID: " + userId
+                "User not found - ID: " + userId
             );
         }
         
@@ -158,7 +158,7 @@ public class PredictionServiceImpl implements PredictionService {
         // Verify prediction exists
         Prediction existingPrediction = predictionRepository.findById(predictionId)
             .orElseThrow(() -> new ResourceNotFoundException(
-                "Tahmin bulunamadı - ID: " + predictionId
+                "Prediction not found - ID: " + predictionId
             ));
         
         // Update allowed fields
@@ -226,7 +226,7 @@ public class PredictionServiceImpl implements PredictionService {
                     });
             } else {
                 user = userRepository.findById(userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı - ID: " + userId));
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found - ID: " + userId));
             }
             
             // Call FastAPI ML service
@@ -236,7 +236,7 @@ public class PredictionServiceImpl implements PredictionService {
             if (mlResponse == null || "error".equals(mlResponse.getStatus())) {
                 String errorMsg = mlResponse != null ? mlResponse.getMessage() : "No response from ML service";
                 log.error("❌ FastAPI returned error: {}", errorMsg);
-                throw new RuntimeException("ML tahmin hatası: " + errorMsg);
+                throw new RuntimeException("ML prediction error: " + errorMsg);
             }
             
             log.info("✅ FastAPI prediction received: {} with confidence {}", 
@@ -349,7 +349,7 @@ public class PredictionServiceImpl implements PredictionService {
                 .build();
         } catch (Exception e) {
             log.error("Error processing plant disease prediction: {}", e.getMessage(), e);
-            throw new RuntimeException("Tahmin işleme hatası: " + e.getMessage());
+            throw new RuntimeException("Prediction processing error: " + e.getMessage());
         }
     }
     

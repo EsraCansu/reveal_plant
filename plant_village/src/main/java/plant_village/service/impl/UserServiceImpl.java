@@ -41,13 +41,13 @@ public class UserServiceImpl implements UserService {
         // Check if username already exists
         if (userRepository.findByUserName(user.getUserName()).isPresent()) {
             log.warn("Username already exists: {}", user.getUserName());
-            throw new RuntimeException("Kullanıcı adı zaten mevcut: " + user.getUserName());
+            throw new RuntimeException("Username already exists: " + user.getUserName());
         }
         
         // Check if email already exists
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
             log.warn("Email already exists: {}", user.getEmail());
-            throw new RuntimeException("E-mail zaten mevcut: " + user.getEmail());
+            throw new RuntimeException("Email already exists: " + user.getEmail());
         }
         
         // Encrypt password
@@ -114,7 +114,7 @@ public class UserServiceImpl implements UserService {
         // Check if user exists
         User existingUser = userRepository.findById(user.getId())
             .orElseThrow(() -> new ResourceNotFoundException(
-                "Kullanıcı bulunamadı - ID: " + user.getId()
+                "User not found - ID: " + user.getId()
             ));
         
         // Update only provided fields
@@ -154,7 +154,7 @@ public class UserServiceImpl implements UserService {
         // Check if user exists
         if (!userRepository.existsById(userId)) {
             log.warn("User not found for deletion: {}", userId);
-            throw new ResourceNotFoundException("Kullanıcı bulunamadı - ID: " + userId);
+            throw new ResourceNotFoundException("User not found - ID: " + userId);
         }
         
         userRepository.deleteById(userId);
