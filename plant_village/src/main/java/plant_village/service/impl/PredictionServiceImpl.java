@@ -190,7 +190,7 @@ public class PredictionServiceImpl implements PredictionService {
      */
     @Override
     public Prediction predictPlantDisease(Integer userId, Integer plantId, 
-                                          String imageBase64, String description) {
+                                          String imageBase64, String description, String predictionMode) {
         log.info("Processing plant disease prediction for user ID: {}, plant ID: {}", userId, plantId);
         
         try {

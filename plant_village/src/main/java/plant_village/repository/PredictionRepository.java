@@ -25,7 +25,7 @@ public interface PredictionRepository extends JpaRepository<Prediction, Integer>
      * @param userId The ID of the user
      * @return List of predictions belonging to the user
      */
-    List<Prediction> findByUserId(Integer userId);
+    List<Prediction> findByUser_Id(Integer userId);
 
     /**
      * Custom query method to fetch a specific user's predictions.

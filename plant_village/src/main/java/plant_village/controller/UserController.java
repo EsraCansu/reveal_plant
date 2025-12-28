@@ -576,7 +576,7 @@ public class UserController {
             User user = userOpt.get();
             
             // Get user's predictions from repository
-            List<Prediction> userPredictions = predictionRepository.findByUserId(userId);
+            List<Prediction> userPredictions = predictionRepository.findByUser_Id(userId);
             
             java.util.Map<String, Object> stats = new java.util.HashMap<>();
             stats.put("userId", user.getId());
