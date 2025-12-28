@@ -4,68 +4,72 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 import java.util.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-/**
- * Prediction Entity representing the 'Prediction' table in MSSQL.
- * This class acts as a Data Transfer Object and a Database Entity.
- */
 @Entity
 @Table(name = "Prediction")
-@Data // Generates Getters, Setters, toString, etc. via Lombok
-@NoArgsConstructor // Default constructor for JPA
-@AllArgsConstructor // Parameterized constructor for Builder pattern
-@Builder // Enables fluent API for object creation
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Prediction {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "prediction_id")
-    private Integer id; // Primary Key: Unique identifier for each prediction
+    private Integer id;
     
-    // Establishing a Many-to-One relationship with the User entity
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user; // Reference to the user who performed the prediction
+    @JsonIgnore  // Prevent circular reference with User
+    private User user;
     
     // Transient field for accepting userId from JSON
     @Transient
     private Integer userId;
 
     @Column(name = "prediction_type", length = 50)
-    private String predictionType; // Type of analysis (e.g., Plant or Disease)
+    private String predictionType;
     
     @Column(name = "confidence")
-    private Double confidence; // The accuracy score provided by ResNet-101
+    private Double confidence;
     
     @Column(name = "uploaded_image_url")
-    private String uploadedImageUrl; // Storage path of the analyzed image
+    private String uploadedImageUrl;
     
-    @Column(name = "created_at")
-    private LocalDateTime createdAt; // Timestamp of the transaction
+    @Column(name = "create_at")
+    private LocalDateTime createAt;
     
     @Column(name = "is_valid")
-    private Boolean isValid; // Flag to verify the success of the AI analysis
-
-    @Column(name = "top_prediction", length = 200)
-    private String topPrediction; // Top prediction class name from ML model
+    private Boolean isValid;
     
-    @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
-    private String description; // Optional description or analysis notes
+    @Column(name = "watering_frequency", length = 50)
+    private String wateringFrequency;
+    
+    @Column(name = "care_tips", columnDefinition = "NVARCHAR(MAX)")
+    private String careTips;
+    
+    @Column(name = "soil_type", length = 100)
+    private String soilType;
+    
+    @Column(name = "hardiness_zone", length = 50)
+    private String hardinessZone;
 
-    // --- Relationship Mapping ---
-    // One-to-Many connection: One prediction can yield multiple plant details
     @OneToMany(mappedBy = "prediction", cascade = CascadeType.ALL)
+    @JsonIgnore  // Prevent circular reference
     private List<PredictionPlant> plantDetails;
 
-    // One-to-Many connection: Linking analysis results to specific diseases
     @OneToMany(mappedBy = "prediction", cascade = CascadeType.ALL)
+    @JsonIgnore  // Prevent circular reference
     private List<PredictionDisease> diseaseDetails;
 
-    // One-to-Many connection: Keeping track of system logs for this prediction
     @OneToMany(mappedBy = "prediction", cascade = CascadeType.ALL)
+    @JsonIgnore  // Prevent circular reference
     private List<PredictionLog> logDetails;
     
-    // One-to-Many connection: User feedback on this prediction
     @OneToMany(mappedBy = "prediction", cascade = CascadeType.ALL)
+    @JsonIgnore  // Prevent circular reference
     private List<PredictionFeedback> feedbackDetails;
 }

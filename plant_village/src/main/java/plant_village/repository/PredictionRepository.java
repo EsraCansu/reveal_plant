@@ -20,13 +20,21 @@ import java.util.List;
 public interface PredictionRepository extends JpaRepository<Prediction, Integer> {
 
     /**
+     * Fetch all predictions for a specific user.
+     * 
+     * @param userId The ID of the user
+     * @return List of predictions belonging to the user
+     */
+    List<Prediction> findByUserId(Integer userId);
+
+    /**
      * Custom query method to fetch a specific user's predictions.
      * Results are sorted by creation date in descending order (Newest first - LIFO Stack).
      * 
      * @param userId The ID of the user
      * @return List of predictions belonging to the user in reverse chronological order
      */
-    List<Prediction> findByUser_IdOrderByCreatedAtDesc(Integer userId);
+    List<Prediction> findByUser_IdOrderByCreateAtDesc(Integer userId);
 
     /**
      * Fetch user predictions with limit (for pagination/stack view).
@@ -37,7 +45,7 @@ public interface PredictionRepository extends JpaRepository<Prediction, Integer>
      * @return Limited list of user's predictions
      */
     @Query(value = 
-        "SELECT TOP :limit * FROM Prediction WHERE user_id = :userId ORDER BY created_at DESC",
+        "SELECT TOP :limit * FROM Prediction WHERE user_id = :userId ORDER BY create_at DESC",
         nativeQuery = true)
     List<Prediction> findByUserIdWithLimit(
         @Param("userId") Integer userId,
@@ -51,7 +59,7 @@ public interface PredictionRepository extends JpaRepository<Prediction, Integer>
      * @param userId The ID of the user
      * @return List of valid predictions ordered by creation date (newest first)
      */
-    List<Prediction> findByUser_IdAndIsValidTrueOrderByCreatedAtDesc(Integer userId);
+    List<Prediction> findByUser_IdAndIsValidTrueOrderByCreateAtDesc(Integer userId);
 
     /**
      * Fetch only invalid predictions (confidence < 50%).
@@ -60,7 +68,7 @@ public interface PredictionRepository extends JpaRepository<Prediction, Integer>
      * @param userId The ID of the user
      * @return List of invalid predictions ordered by creation date (newest first)
      */
-    List<Prediction> findByUser_IdAndIsValidFalseOrderByCreatedAtDesc(Integer userId);
+    List<Prediction> findByUser_IdAndIsValidFalseOrderByCreateAtDesc(Integer userId);
 
     /**
      * Administrative query method.
@@ -73,4 +81,3 @@ public interface PredictionRepository extends JpaRepository<Prediction, Integer>
     // Note: Standard CRUD methods like save(), findById(), and delete() 
     // are automatically inherited from JpaRepository.
 }
-

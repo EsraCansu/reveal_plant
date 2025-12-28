@@ -19,47 +19,20 @@ public class Disease {
     @Column(name = "disease_id")
     private Integer id;
     
-    // Getter alias for ID consistency
-    public Integer getDiseaseId() {
-        return this.id;
-    }
+    @Column(name = "disease_name", length = 100, nullable = false)
+    private String diseaseName;
     
-    // Setter alias for ID consistency
-    public void setDiseaseId(Integer diseaseId) {
-        this.id = diseaseId;
-    }
-    
-    @Column(name = "disease_name", length = 50, nullable = false)
-    private String name;
-    
-    // Getter alias for consistency with database column name
-    public String getDiseaseName() {
-        return this.name;
-    }
-    
-    // Setter alias for consistency with database column name
-    public void setDiseaseName(String diseaseName) {
-        this.name = diseaseName;
-    }
-    
-    @Column(name = "symptom_description", columnDefinition = "VARCHAR(MAX)")
+    @Column(name = "symptom_description", columnDefinition = "NVARCHAR(MAX)")
     private String symptomDescription;
     
-    @Column(name = "cause", columnDefinition = "VARCHAR(MAX)")
+    @Column(name = "cause", columnDefinition = "NVARCHAR(MAX)")
     private String cause;
     
-    @Column(name = "example_image_url", columnDefinition = "VARCHAR(MAX)")
+    @Column(name = "example_image_url", columnDefinition = "NVARCHAR(MAX)")
     private String exampleImageUrl;
     
-    @Column(name = "treatment", columnDefinition = "VARCHAR(MAX)")
+    @Column(name = "treatment", columnDefinition = "NVARCHAR(MAX)")
     private String treatment;
-    
-        @Column(name = "recommended_medicines", columnDefinition = "VARCHAR(MAX)")
-        private String recommendedMedicines;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "plant_id", nullable = false)
-    private Plant plant;
     
     @OneToMany(mappedBy = "disease", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private java.util.List<PredictionDisease> predictions;

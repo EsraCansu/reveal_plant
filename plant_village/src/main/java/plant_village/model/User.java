@@ -31,17 +31,17 @@ public class User {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
     
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "created_at")
+    private LocalDateTime createAt;
     
-    @Column(name = "last_login", nullable = false)
+    @Column(name = "last_login")
     private LocalDateTime lastLogin;
     
-    @Column(name = "role", nullable = false, length = 10)
+    @Column(name = "role", length = 10)
     private String role;
     
-    @Column(name = "phone", length = 20)
-    private String phone;
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
     
     @Column(name = "location", length = 100)
     private String location;
@@ -49,15 +49,29 @@ public class User {
     @Column(name = "bio", columnDefinition = "TEXT")
     private String bio;
     
-    @Column(name = "avatar_url", length = 500)
-    private String avatarUrl;
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private java.util.List<Prediction> predictions;
+    @Column(name = "is_active")
+    private Boolean isActive;
     
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private java.util.List<PredictionFeedback> feedbacks;
+    @Column(name = "phone", length = 20)
+    private String phone;
     
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private java.util.List<PredictionLog> logs;
+    /**
+     * Set default values before persisting
+     * This ensures all required fields have values even if not sent from frontend
+     */
+    @PrePersist
+    public void prePersist() {
+        if (this.createAt == null) {
+            this.createAt = LocalDateTime.now();
+        }
+        if (this.lastLogin == null) {
+            this.lastLogin = LocalDateTime.now();
+        }
+        if (this.role == null) {
+            this.role = "USER";
+        }
+        if (this.isActive == null) {
+            this.isActive = true;
+        }
+    }
 }

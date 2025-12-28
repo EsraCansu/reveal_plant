@@ -19,33 +19,38 @@ public class Plant {
     @Column(name = "plant_id")
     private Integer id;
     
-    // Getter alias for ID consistency
-    public Integer getPlantId() {
-        return this.id;
-    }
-    
-    // Setter alias for ID consistency
-    public void setPlantId(Integer plantId) {
-        this.id = plantId;
-    }
-    
-    @Column(name = "plant_name", length = 50, nullable = false)
+    @Column(name = "plant_name", length = 100, nullable = false)
     private String plantName;
     
-    @Column(name = "scientific_name", length = 50)
+    @Column(name = "scientific_name", length = 100)
     private String scientificName;
     
-    @Column(name = "image_url", columnDefinition = "VARCHAR(MAX)")
+    @Column(name = "image_url", columnDefinition = "NVARCHAR(MAX)")
     private String imageUrl;
     
-    @Column(name = "description", columnDefinition = "VARCHAR(MAX)")
+    @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
     private String description;
     
-    @Column(name = "valid_classification", nullable = false)
+    @Column(name = "care_tips", columnDefinition = "NVARCHAR(MAX)")
+    private String careTips;
+    
+    @Column(name = "watering_frequency", length = 50)
+    private String wateringFrequency;
+    
+    @Column(name = "sunlight_requirement", length = 100)
+    private String sunlightRequirement;
+    
+    @Column(name = "soil_type", length = 100)
+    private String soilType;
+    
+    @Column(name = "hardiness_zone", length = 50)
+    private String hardinessZone;
+    
+    @Column(name = "valid_classification")
     private Boolean validClassification;
     
-    @OneToMany(mappedBy = "plant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private java.util.List<Disease> diseases;
+    @Column(name = "created_at")
+    private java.time.LocalDateTime createdAt;
     
     @OneToMany(mappedBy = "plant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private java.util.List<PredictionPlant> predictions;

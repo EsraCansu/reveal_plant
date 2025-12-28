@@ -215,6 +215,7 @@
     <script src="../../app/routes/routes.js"></script>
     <script src="../../app/routes/api.routes.js"></script>
     <script>
+        const BACKEND_URL = 'http://localhost:8080';
         let allDiagnoses = [];
         let currentFilter = 'all';
         let detailModal = null;
@@ -235,9 +236,76 @@
             loadDiagnoses();
         }
 
-        function loadDiagnoses() {
-            allDiagnoses = JSON.parse(localStorage.getItem('diagnoses') || '[]');
-            displayDiagnoses(allDiagnoses);
+        async function loadDiagnoses() {
+            const user = getCurrentUser();
+            
+            // Debug: Tüm kaynakları kontrol et
+            const userIdFromAuth = user.id;
+            const userIdFromSession = sessionStorage.getItem('userId');
+            const userIdFromLocal = localStorage.getItem('user_id');
+            const userIdFromCookie = getCookie('userId');
+            
+            console.log('[DIAGNOSES] Debug - All sources:');
+            console.log('  - getCurrentUser().id:', userIdFromAuth);
+            console.log('  - sessionStorage.userId:', userIdFromSession);
+            console.log('  - localStorage.user_id:', userIdFromLocal);
+            console.log('  - cookie.userId:', userIdFromCookie);
+            
+            // Try multiple sources for userId
+            let userId = userIdFromAuth || 
+                         parseInt(userIdFromSession) || 
+                         parseInt(userIdFromLocal) ||
+                         parseInt(userIdFromCookie);
+            
+            console.log('[DIAGNOSES] Final UserId:', userId);
+            
+            if (!userId || isNaN(userId)) {
+                console.error('User ID not found - please login again');
+                displayDiagnoses([]);
+                return;
+            }
+            
+            try {
+                // Fetch from backend API using prediction history endpoint
+                const response = await fetch(`${BACKEND_URL}/api/predictions/history/${userId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load diagnoses');
+                }
+                
+                const predictions = await response.json();
+                
+                // Transform backend data to display format
+                allDiagnoses = predictions.map(p => ({
+                    id: p.id,
+                    name: formatPredictionName(p.predictionType),
+                    result: p.predictionType || 'Unknown',
+                    confidence: p.confidence ? Math.round(p.confidence * 100) : 0,
+                    date: p.createAt,
+                    mode: p.predictionType?.toLowerCase().includes('healthy') ? 'identify' : 'disease',
+                    image: p.uploadedImageUrl,
+                    details: p.careTips || 'No additional details',
+                    isValid: p.isValid
+                }));
+                
+                displayDiagnoses(allDiagnoses);
+            } catch (error) {
+                console.error('Error loading diagnoses:', error);
+                // Fallback to localStorage if backend fails
+                allDiagnoses = JSON.parse(localStorage.getItem('diagnoses') || '[]');
+                displayDiagnoses(allDiagnoses);
+            }
+        }
+        
+        function formatPredictionName(predictionType) {
+            if (!predictionType) return 'Unknown';
+            // Convert "Tomato___Leaf_Mold" to "Tomato - Leaf Mold"
+            return predictionType.replace(/___/g, ' - ').replace(/__/g, ' - ').replace(/_/g, ' ');
         }
 
         function displayDiagnoses(diagnoses) {

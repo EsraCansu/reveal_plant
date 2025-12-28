@@ -10,4 +10,7 @@ public interface PredictionDiseaseRepository extends JpaRepository<PredictionDis
     
     // display prediction results - get disease results for specific prediction
     List<PredictionDisease> findByPrediction_Id(Integer predictionId);
+    
+    // Get all predictions linked to a disease
+    List<PredictionDisease> findByDisease_Id(Integer diseaseId);
 }

@@ -63,7 +63,7 @@ public class PlantDiseaseCacheManager {
             
             // Load all diseases into cache
             diseaseRepository.findAll().forEach(disease -> {
-                diseaseCache.put(disease.getName(), disease);
+                diseaseCache.put(disease.getDiseaseName(), disease);
                 diseaseIdCache.put(disease.getId(), disease);
             });
             
@@ -169,7 +169,7 @@ public class PlantDiseaseCacheManager {
         // If not in cache, fetch from database and cache it
         if (disease == null) {
             log.debug("📍 Cache miss for disease: '{}'. Fetching from database...", parsedName);
-            Optional<Disease> dbDisease = diseaseRepository.findByNameIgnoreCase(parsedName);
+            Optional<Disease> dbDisease = diseaseRepository.findByDiseaseNameIgnoreCase(parsedName);
             if (dbDisease.isPresent()) {
                 disease = dbDisease.get();
                 // Store in both caches (using parsed name)
@@ -234,7 +234,7 @@ public class PlantDiseaseCacheManager {
             Optional<Disease> dbDisease = diseaseRepository.findById(id);
             if (dbDisease.isPresent()) {
                 disease = dbDisease.get();
-                diseaseCache.put(disease.getName(), disease);
+                diseaseCache.put(disease.getDiseaseName(), disease);
                 diseaseIdCache.put(id, disease);
                 log.debug("✅ Disease ID {} cached after DB fetch", id);
             } else {

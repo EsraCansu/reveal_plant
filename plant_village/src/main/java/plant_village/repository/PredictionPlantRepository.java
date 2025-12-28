@@ -10,4 +10,7 @@ public interface PredictionPlantRepository extends JpaRepository<PredictionPlant
     
     // Result display - get plant relations for specific prediction
     List<PredictionPlant> findByPrediction_Id(Integer predictionId);
+    
+    // Get all predictions linked to a plant
+    List<PredictionPlant> findByPlant_Id(Integer plantId);
 }

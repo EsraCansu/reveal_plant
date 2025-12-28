@@ -58,7 +58,7 @@ public class WebSocketPredictionController {
                     .plantName("Unknown")
                     .diseaseName("Unknown")
                     .confidence(prediction.getConfidence().doubleValue())
-                    .predictedAt(prediction.getCreatedAt())
+                    .predictedAt(prediction.getCreateAt())
                     .status("SUCCESS")
                     .message("Prediction completed successfully")
                     .build();

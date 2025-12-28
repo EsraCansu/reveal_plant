@@ -93,6 +93,9 @@ DATABASE_MODEL_UPDATES.md
 plant_village/src/main/resources/application.properties
 plant_village/target/classes/application-local.properties
 
+# Database migration files (use COMPLETE_DATABASE_SETUP.sql instead)
+plant_village/src/main/resources/db/
+
 # ML Models (too large for git)
 ml-api/model/PlantVillage_Resnet101_FineTuning.keras
 ml-api/model/*.keras
@@ -110,3 +113,11 @@ ADD_RECOMMENDED_MEDICINES.sql
 API_DISEASE_TREATMENT_GUIDE.md
 UPDATE_PLANT_DESCRIPTIONS.sql
 plant_village/src/main/resources/db/
+API_ENDPOINTS.md
+API_FLOW_AND_MAPPING.md
+COMPLETION_REPORT.md
+DOCUMENTATION_GUIDE.md
+ENDPOINT_SUMMARY.md
+IMPLEMENTATION_SUMMARY.md
+SYSTEM_WORKFLOW.md
+WORKFLOW_COMPLETION.md

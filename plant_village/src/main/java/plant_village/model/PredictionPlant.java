@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "Prediction_plant")
+@Table(name = "Prediction_Plant")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,14 +20,13 @@ public class PredictionPlant {
     private Integer id;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "prediction_id", nullable = false)
-    private Prediction prediction; // main processing record 
+    @JoinColumn(name = "plant_id", nullable = false)
+    private Plant plant;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "plant_id", nullable = false)
-    private Plant plant; // connection with Plant Table
-
-    @Column(name = "confidence")
-    private Double confidence; // Prediction confidence score (0-1)
-
+    @JoinColumn(name = "prediction_id", nullable = false)
+    private Prediction prediction;
+    
+    @Column(name = "match_confidence")
+    private Double matchConfidence;
 }

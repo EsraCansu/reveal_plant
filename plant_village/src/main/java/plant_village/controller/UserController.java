@@ -1,6 +1,8 @@
 package plant_village.controller;
 
 import plant_village.model.User;
+import plant_village.model.Prediction;
+import plant_village.repository.PredictionRepository;
 import plant_village.service.UserService;
 import plant_village.util.JwtUtil;
 import plant_village.util.XssProtection;
@@ -14,6 +16,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/users") 
@@ -22,12 +25,14 @@ public class UserController {
     private final UserService userService;
     private final JwtUtil jwtUtil;
     private final XssProtection xssProtection;
+    private final PredictionRepository predictionRepository;
     
     @Autowired
-    public UserController(UserService userService, JwtUtil jwtUtil, XssProtection xssProtection) {
+    public UserController(UserService userService, JwtUtil jwtUtil, XssProtection xssProtection, PredictionRepository predictionRepository) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
         this.xssProtection = xssProtection;
+        this.predictionRepository = predictionRepository;
     }
 
     /**
@@ -58,8 +63,8 @@ public class UserController {
         
         return userService.findByEmail(email)
                 .map(user -> {
-                    if (userService instanceof plant_village.service.UserServiceImpl) {
-                        plant_village.service.UserServiceImpl impl = (plant_village.service.UserServiceImpl) userService;
+                    if (userService instanceof plant_village.service.impl.UserServiceImpl) {
+                        plant_village.service.impl.UserServiceImpl impl = (plant_village.service.impl.UserServiceImpl) userService;
                         if (impl.verifyPassword(password, user.getPasswordHash())) {
                             
                             // ✅ JWT Token oluştur
@@ -83,6 +88,12 @@ public class UserController {
                             userEmailCookie.setPath("/");
                             userEmailCookie.setMaxAge(24 * 60 * 60);
                             response.addCookie(userEmailCookie);
+                            
+                            // ✅ User ID cookie'si ekle
+                            Cookie userIdCookie = new Cookie("userId", String.valueOf(user.getId()));
+                            userIdCookie.setPath("/");
+                            userIdCookie.setMaxAge(24 * 60 * 60);
+                            response.addCookie(userIdCookie);
                             
                             Cookie userNameCookie = new Cookie("userName", encodedName);
                             userNameCookie.setPath("/");
@@ -163,7 +174,7 @@ public class UserController {
             userData.put("location", user.getLocation());
             userData.put("bio", user.getBio());
             userData.put("avatarUrl", user.getAvatarUrl());
-            userData.put("createdAt", user.getCreatedAt());
+            userData.put("createdAt", user.getCreateAt());
             userData.put("lastLogin", user.getLastLogin());
             
             return ResponseEntity.ok(userData);
@@ -202,6 +213,12 @@ public class UserController {
         roleCookie.setPath("/");
         roleCookie.setMaxAge(0);
         response.addCookie(roleCookie);
+        
+        // userId cookie'sini sil
+        Cookie userIdCookie = new Cookie("userId", null);
+        userIdCookie.setPath("/");
+        userIdCookie.setMaxAge(0);
+        response.addCookie(userIdCookie);
         
         java.util.Map<String, String> result = new java.util.HashMap<>();
         result.put("message", "Logout successful");
@@ -271,7 +288,7 @@ public class UserController {
                     userMap.put("userName", user.getUserName());
                     userMap.put("email", user.getEmail());
                     userMap.put("role", user.getRole());
-                    userMap.put("createdAt", user.getCreatedAt());
+                    userMap.put("createdAt", user.getCreateAt());
                     userMap.put("lastLogin", user.getLastLogin());
                     return userMap;
                 })
@@ -372,7 +389,7 @@ public class UserController {
             result.put("email", user.getEmail());
             result.put("userName", user.getUserName());
             result.put("role", user.getRole());
-            result.put("createdAt", user.getCreatedAt());
+            result.put("createdAt", user.getCreateAt());
             result.put("lastLogin", user.getLastLogin());
             // Profile fields
             result.put("phone", user.getPhone());
@@ -463,7 +480,7 @@ public class UserController {
                 "bio", updatedUser.getBio() != null ? updatedUser.getBio() : "",
                 "avatarUrl", updatedUser.getAvatarUrl() != null ? updatedUser.getAvatarUrl() : "",
                 "role", updatedUser.getRole(),
-                "createdAt", updatedUser.getCreatedAt()
+                "createdAt", updatedUser.getCreateAt()
             ));
             
             return ResponseEntity.ok(result);
@@ -509,8 +526,8 @@ public class UserController {
             User user = userOpt.get();
             
             // Verify current password
-            if (userService instanceof plant_village.service.UserServiceImpl) {
-                plant_village.service.UserServiceImpl impl = (plant_village.service.UserServiceImpl) userService;
+            if (userService instanceof plant_village.service.impl.UserServiceImpl) {
+                plant_village.service.impl.UserServiceImpl impl = (plant_village.service.impl.UserServiceImpl) userService;
                 if (!impl.verifyPassword(currentPassword, user.getPasswordHash())) {
                     java.util.Map<String, String> error = new java.util.HashMap<>();
                     error.put("error", "Mevcut şifre yanlış");
@@ -558,16 +575,19 @@ public class UserController {
             
             User user = userOpt.get();
             
+            // Get user's predictions from repository
+            List<Prediction> userPredictions = predictionRepository.findByUserId(userId);
+            
             java.util.Map<String, Object> stats = new java.util.HashMap<>();
             stats.put("userId", user.getId());
-            stats.put("memberSince", user.getCreatedAt());
+            stats.put("memberSince", user.getCreateAt());
             stats.put("lastLogin", user.getLastLogin());
-            stats.put("totalDiagnoses", user.getPredictions() != null ? user.getPredictions().size() : 0);
+            stats.put("totalDiagnoses", userPredictions.size());
             
             // Get last diagnosis date if exists
-            if (user.getPredictions() != null && !user.getPredictions().isEmpty()) {
-                java.time.LocalDateTime lastDiagnosisDate = user.getPredictions().stream()
-                    .map(p -> p.getCreatedAt())
+            if (!userPredictions.isEmpty()) {
+                java.time.LocalDateTime lastDiagnosisDate = userPredictions.stream()
+                    .map(p -> p.getCreateAt())
                     .filter(date -> date != null)
                     .max(java.time.LocalDateTime::compareTo)
                     .orElse(null);

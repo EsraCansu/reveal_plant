@@ -24,10 +24,6 @@ public class PredictionLog {
     @JoinColumn(name = "prediction_id", nullable = false)
     private Prediction prediction;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
-    
     @Column(name = "action_type", length = 50)
     private String actionType;
     
@@ -47,3 +43,4 @@ public class PredictionLog {
         }
     }
 }
+

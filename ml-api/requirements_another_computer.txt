@@ -1,0 +1,147 @@
+# ===================================================================
+# Reveal Plant API - Environment Setup for Another Computer
+# ===================================================================
+# Bu dosya, başka bir bilgisayarda myenv conda environment'unu 
+# kurmak için tüm gerekli paketleri içerir.
+#
+# Kurulum Adımları:
+# 1. Anaconda/Miniconda yüklü olduğundan emin ol
+# 2. Terminal'i aç ve şu komutları çalıştır:
+#
+#    conda create -n myenv python=3.10
+#    conda activate myenv
+#    pip install -r requirements_another_computer.txt
+#
+# ===================================================================
+
+# ===================================================================
+# CORE WEB FRAMEWORK
+# ===================================================================
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+pydantic>=2.0.0
+
+# ===================================================================
+# MACHINE LEARNING & DEEP LEARNING
+# ===================================================================
+tensorflow>=2.10.0
+keras>=2.10.0
+numpy>=1.24.0
+opencv-python>=4.8.0
+scikit-learn>=1.3.0
+Pillow>=10.0.0
+
+# ===================================================================
+# DATA PROCESSING & UTILITIES
+# ===================================================================
+pandas>=2.0.0
+python-dotenv==1.0.0
+requests>=2.31.0
+
+# ===================================================================
+# DEVELOPMENT & TESTING TOOLS (Optional)
+# ===================================================================
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+httpx>=0.25.0
+pytest-cov>=4.1.0
+
+# ===================================================================
+# LOGGING & MONITORING (Optional)
+# ===================================================================
+python-json-logger>=2.0.7
+
+# ===================================================================
+# PYTHON VERSION REQUIREMENT
+# ===================================================================
+# Python 3.10 or higher required
+# tensorflow 2.10+ supports Python 3.10, 3.11, 3.12
+
+# ===================================================================
+# BAŞKA BİLGİSAYARDA KURULUM TALIMATLARI
+# ===================================================================
+#
+# WINDOWS:
+# --------
+# 1. Anaconda Prompt aç
+# 2. Proje klasörüne git:
+#    cd C:\path\to\reveal_plant\ml-api
+#
+# 3. Conda environment oluştur:
+#    conda create -n myenv python=3.10 -y
+#
+# 4. Aktifleştir:
+#    conda activate myenv
+#
+# 5. Tüm paketleri yükle:
+#    pip install -r requirements_another_computer.txt
+#
+# 6. FastAPI sunucusunu başlat:
+#    python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+#
+# 7. Kontrol et:
+#    curl http://localhost:8000/health
+#
+# ========================================================================
+#
+# LINUX / MACOS:
+# ---------------
+# 1. Terminal aç
+# 2. Proje klasörüne git:
+#    cd /path/to/reveal_plant/ml-api
+#
+# 3. Conda environment oluştur:
+#    conda create -n myenv python=3.10 -y
+#
+# 4. Aktifleştir:
+#    conda activate myenv
+#
+# 5. Tüm paketleri yükle:
+#    pip install -r requirements_another_computer.txt
+#
+# 6. FastAPI sunucusunu başlat:
+#    python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+#
+# 7. Kontrol et:
+#    curl http://localhost:8000/health
+#
+# ========================================================================
+#
+# MODEL DOSYASINI EKLE:
+# ---------------------
+# ml-api/model/ klasörüne şu dosya olması gerekir:
+# - PlantVillage_Resnet101_FineTuning.keras
+#
+# Eğer model dosyası yoksa, başka bir yerden kopyala veya model eğitim scriptini çalıştır.
+#
+# ========================================================================
+#
+# DOCKER'DA ÇALIŞTIRACAKSAN:
+# --------------------------
+# Docker desktop yüklü olmalı, sonra:
+#
+# 1. Docker compose up:
+#    docker-compose up -d ml-api
+#
+# 2. API test et:
+#    curl http://localhost:8000/health
+#
+# ========================================================================
+#
+# TROUBLESHOOTING:
+# ----------------
+#
+# 1. "ModuleNotFoundError: No module named 'tensorflow'"
+#    → pip install --upgrade tensorflow keras
+#
+# 2. "CUDA not found" (GPU kullanacaksan)
+#    → tensorflow-gpu yükle: pip install tensorflow-gpu
+#
+# 3. "Model bulunamadı"
+#    → model/PlantVillage_Resnet101_FineTuning.keras dosyasını kontrol et
+#
+# 4. "Port 8000 zaten kullanılıyor"
+#    → Farklı port kullan: --port 8001
+#
+# ========================================================================

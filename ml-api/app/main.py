@@ -14,7 +14,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-from tensorflow.keras.applications.resnet import preprocess_input
+from tensorflow.keras.applications.resnet import preprocess_input as resnet_preprocess_input
 
 from .schema import PredictionResponse, PredictionResult, HealthResponse, FastAPIResponseFormat
 
@@ -106,35 +106,52 @@ def load_model():
 
 def preprocess_image(image_path: str, target_size: tuple = (224, 224)) -> Optional[np.ndarray]:
     """
-    Görseli modele uygun şekilde ön işle
-    - Resize: 224x224
-    - BGR -> RGB dönüşümü
-    - ResNet ImageNet preprocessing (CRITICAL for ResNet models!)
+    Görseli ResNet101 modeline uygun şekilde ön işle
+    
+    Model eğitim normalizasyonu: (image / 127.5) - 1.0 [-1, 1] range
+    - Resize: 224x224 (ResNet101 input size)
+    - BGR -> RGB dönüşümü (OpenCV BGR, model RGB)
+    - Normalizasyon: (pixel / 127.5) - 1.0 (ImageNet ResNet normalization)
+    - Batch dimension ekleme
+    
+    ResNet101 specifications (plant_village_optimized.ipynb):
+    - Input size: 224x224x3 (RGB)
+    - Output: 38 plant disease classes
+    - Normalization: [-1, 1] range: (image / 127.5) - 1.0
+    - CELL 4'te kullanılan normalizasyon
     """
     try:
-        # Görseli oku
+        # 1. Görseli oku (OpenCV -> BGR format)
         img = cv2.imread(image_path)
         if img is None:
             raise ValueError(f"Görsel okunamadı: {image_path}")
         
-        # Resize
+        logger.debug(f"Orijinal görsel boyutu: {img.shape}")
+        
+        # 2. Resize to 224x224 (ResNet101 standart input size)
         img = cv2.resize(img, target_size)
         
-        # BGR -> RGB (CRITICAL!)
+        # 3. BGR -> RGB dönüşümü (OpenCV BGR formatında okuyor, model RGB beklıyor)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         
-        # -1 to 1 Normalization - CRITICAL! Model bu şekilde eğitilmiş!
-        # Notebook: (image / 127.5) - 1.0
+        # 4. Float32'ye dönüştür
         img = img.astype('float32')
+        
+        # 5. ResNet101 normalizasyonu: [-1, 1] range
+        # plant_village_optimized.ipynb CELL 4 - Data Preprocessing
+        # Model bu normalizasyon ile eğitilmiştir: (image / 127.5) - 1.0
         img = (img / 127.5) - 1.0
         
-        # Batch dimension ekle
+        # Değer aralığını kontrol et (debugging için)
+        logger.debug(f"Normalizasyon sonrası - Min: {img.min():.4f}, Max: {img.max():.4f}, "
+                    f"Mean: {img.mean():.4f}, Std: {img.std():.4f}")
+        
+        # 6. Batch dimension ekle (model batch input bekler)
         img = np.expand_dims(img, axis=0)
         
-        logger.debug(f"Görsel ön işlendi: shape={img.shape}, min={img.min():.2f}, max={img.max():.2f}")
-        
-        logger.debug(f"Görsel ön işlendi: shape={img.shape}, min={img.min():.2f}, max={img.max():.2f}")
+        logger.debug(f"Final shape: {img.shape} (batch, height, width, channels)")
         return img
+        
     except Exception as e:
         logger.error(f"Ön işleme hatası: {e}")
         return None
@@ -381,14 +398,18 @@ async def predict(file: UploadFile = File(...)):
         # Tahmin yap
         predictions = MODEL.predict(processed_img, verbose=0)
         
+        # Softmax uygulanmış olabilir, değilse uygula
+        # Model output zaten softmax ile normalize edilmiştir (categorical output)
+        predictions = predictions[0]  # Batch dimension kaldır
+        
         # Top 5 tahmini al
-        top_5_idx = np.argsort(predictions[0])[::-1][:5]
+        top_5_idx = np.argsort(predictions)[::-1][:5]
         
         predictions_list = [
             PredictionResult(
                 disease=CLASS_NAMES[idx],
-                confidence_score=float(predictions[0][idx]),
-                confidence_percent=float(predictions[0][idx] * 100)
+                confidence_score=float(predictions[idx]),
+                confidence_percent=float(predictions[idx] * 100)
             )
             for idx in top_5_idx
         ]
@@ -498,14 +519,17 @@ async def predict_base64(image_data: dict):
         # Tahmin yap
         predictions = MODEL.predict(processed_img, verbose=0)
         
+        # Softmax output'u al ve normalize et
+        predictions = predictions[0]  # Batch dimension kaldır
+        
         # Top 5 tahmini al
-        top_5_idx = np.argsort(predictions[0])[::-1][:5]
+        top_5_idx = np.argsort(predictions)[::-1][:5]
         
         predictions_list = [
             PredictionResult(
                 disease=CLASS_NAMES[idx],
-                confidence_score=float(predictions[0][idx]),
-                confidence_percent=float(predictions[0][idx] * 100)
+                confidence_score=float(predictions[idx]),
+                confidence_percent=float(predictions[idx] * 100)
             )
             for idx in top_5_idx
         ]

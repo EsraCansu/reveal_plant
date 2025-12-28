@@ -1,211 +1,151 @@
 package plant_village.controller;
 
-import plant_village.model.User;
-import plant_village.service.UserService;
-import plant_village.util.JwtUtil;
-import plant_village.util.XssProtection;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import plant_village.dto.ApiResponse;
+import plant_village.dto.LoginRequest;
+import plant_village.dto.LoginResponse;
+import plant_village.model.User;
+import plant_village.service.AuthService;
+import plant_village.service.UserService;
 
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpServletRequest;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Optional;
+import jakarta.validation.Valid;
 
 /**
  * Authentication Controller
  * Handles /api/auth/* endpoints for authentication operations
+ * 
+ * STEP 1: Authentication - Login and registration
  */
 @RestController
 @RequestMapping("/api/auth")
+@Validated
+@Slf4j
 public class AuthController {
 
-    private final UserService userService;
-    private final JwtUtil jwtUtil;
-    private final XssProtection xssProtection;
+    @Autowired
+    private AuthService authService;
     
     @Autowired
-    public AuthController(UserService userService, JwtUtil jwtUtil, XssProtection xssProtection) {
-        this.userService = userService;
-        this.jwtUtil = jwtUtil;
-        this.xssProtection = xssProtection;
-    }
-
+    private UserService userService;
+    
     /**
      * Login endpoint
      * POST /api/auth/login
+     * STEP 1: Authentication - User login
      */
     @PostMapping("/login")
-    public ResponseEntity<?> login(
-            @RequestBody java.util.Map<String, String> loginRequest,
-            HttpServletResponse response) {
-        
-        String email = loginRequest.get("email");
-        String password = loginRequest.get("password");
-        
-        // XSS protection
-        if (xssProtection.isDangerous(email) || xssProtection.isDangerous(password)) {
-            return ResponseEntity.badRequest().body("Invalid input detected");
-        }
-        
-        // Validation
-        if (email == null || password == null) {
-            return ResponseEntity.badRequest().body("Email ve şifre gereklidir.");
-        }
-        
-        if (!xssProtection.isValidEmail(email)) {
-            return ResponseEntity.badRequest().body("Geçersiz email formatı.");
-        }
-        
-        return userService.findByEmail(email)
-                .map(user -> {
-                    if (userService instanceof plant_village.service.UserServiceImpl) {
-                        plant_village.service.UserServiceImpl impl = (plant_village.service.UserServiceImpl) userService;
-                        if (impl.verifyPassword(password, user.getPasswordHash())) {
-                            
-                            // Generate JWT Token
-                            String token = jwtUtil.generateToken(user.getEmail(), user.getRole(), user.getId());
-                            
-                            // Set secure cookies
-                            Cookie jwtCookie = new Cookie("jwt_token", token);
-                            jwtCookie.setHttpOnly(true);
-                            jwtCookie.setSecure(false);  // Set to true in production (HTTPS)
-                            jwtCookie.setPath("/");
-                            jwtCookie.setMaxAge(24 * 60 * 60); // 24 hours
-                            response.addCookie(jwtCookie);
-                            
-                            // User info cookies (readable by frontend)
-                            String encodedEmail = URLEncoder.encode(user.getEmail(), StandardCharsets.UTF_8);
-                            String encodedName = URLEncoder.encode(user.getUserName(), StandardCharsets.UTF_8);
-                            String encodedRole = URLEncoder.encode(user.getRole(), StandardCharsets.UTF_8);
-                            
-                            Cookie userEmailCookie = new Cookie("userEmail", encodedEmail);
-                            userEmailCookie.setPath("/");
-                            userEmailCookie.setMaxAge(24 * 60 * 60);
-                            response.addCookie(userEmailCookie);
-                            
-                            Cookie userNameCookie = new Cookie("userName", encodedName);
-                            userNameCookie.setPath("/");
-                            userNameCookie.setMaxAge(24 * 60 * 60);
-                            response.addCookie(userNameCookie);
-                            
-                            Cookie roleCookie = new Cookie("userRole", encodedRole);
-                            roleCookie.setPath("/");
-                            roleCookie.setMaxAge(24 * 60 * 60);
-                            response.addCookie(roleCookie);
-                            
-                            // Response JSON
-                            java.util.Map<String, Object> result = new java.util.HashMap<>();
-                            result.put("id", user.getId());
-                            result.put("email", user.getEmail());
-                            result.put("role", user.getRole());
-                            result.put("name", user.getUserName());
-                            result.put("token", token);
-                            result.put("message", "Login successful");
-                            
-                            return ResponseEntity.ok(result);
-                        }
-                    }
-                    java.util.Map<String, String> error = new java.util.HashMap<>();
-                    error.put("error", "Geçersiz şifre");
-                    return ResponseEntity.status(401).body(error);
-                })
-                .orElseGet(() -> {
-                    java.util.Map<String, String> error = new java.util.HashMap<>();
-                    error.put("error", "Kullanıcı bulunamadı");
-                    return ResponseEntity.status(404).body(error);
-                });
-    }
-
-    /**
-     * Get current user from JWT token
-     * GET /api/auth/me
-     */
-    @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(
-            @CookieValue(value = "jwt_token", required = false) String jwtToken) {
-        
+    public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest loginRequest) {
         try {
-            if (jwtToken == null || jwtToken.isEmpty()) {
-                java.util.Map<String, String> error = new java.util.HashMap<>();
-                error.put("error", "Token bulunamadı");
-                return ResponseEntity.status(401).body(error);
-            }
+            log.info("Login request for email: {}", loginRequest.getEmail());
             
-            String email = jwtUtil.extractEmail(jwtToken);
+            LoginResponse response = authService.login(loginRequest);
             
-            if (email == null || email.isEmpty()) {
-                java.util.Map<String, String> error = new java.util.HashMap<>();
-                error.put("error", "Geçersiz token");
-                return ResponseEntity.status(401).body(error);
-            }
-            
-            Optional<User> userOpt = userService.findByEmail(email);
-            
-            if (!userOpt.isPresent()) {
-                java.util.Map<String, String> error = new java.util.HashMap<>();
-                error.put("error", "Kullanıcı bulunamadı");
-                return ResponseEntity.status(404).body(error);
-            }
-            
-            User user = userOpt.get();
-            
-            // User DTO (without password hash)
-            java.util.Map<String, Object> userData = new java.util.HashMap<>();
-            userData.put("id", user.getId());
-            userData.put("name", user.getUserName());
-            userData.put("email", user.getEmail());
-            userData.put("role", user.getRole());
-            userData.put("phone", user.getPhone());
-            userData.put("location", user.getLocation());
-            userData.put("bio", user.getBio());
-            userData.put("avatarUrl", user.getAvatarUrl());
-            userData.put("createdAt", user.getCreatedAt());
-            userData.put("lastLogin", user.getLastLogin());
-            
-            return ResponseEntity.ok(userData);
-            
+            log.info("Login successful for email: {}", loginRequest.getEmail());
+            return ResponseEntity.ok(ApiResponse.success(response, "Giriş başarılı"));
         } catch (Exception e) {
-            java.util.Map<String, String> error = new java.util.HashMap<>();
-            error.put("error", "Token doğrulanamadı: " + e.getMessage());
-            return ResponseEntity.status(401).body(error);
+            log.error("Login failed: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error(HttpStatus.UNAUTHORIZED.value(), e.getMessage()));
         }
     }
-
+    
     /**
-     * Logout endpoint
-     * POST /api/auth/logout
+     * Register endpoint
+     * POST /api/auth/register
+     * STEP 1: Authentication - New user registration
      */
-    @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletResponse response) {
-        // Clear JWT cookie
-        Cookie jwtCookie = new Cookie("jwt_token", null);
-        jwtCookie.setHttpOnly(true);
-        jwtCookie.setPath("/");
-        jwtCookie.setMaxAge(0);
-        response.addCookie(jwtCookie);
-        
-        // Clear other cookies
-        Cookie userEmailCookie = new Cookie("userEmail", null);
-        userEmailCookie.setPath("/");
-        userEmailCookie.setMaxAge(0);
-        response.addCookie(userEmailCookie);
-        
-        Cookie userNameCookie = new Cookie("userName", null);
-        userNameCookie.setPath("/");
-        userNameCookie.setMaxAge(0);
-        response.addCookie(userNameCookie);
-        
-        Cookie roleCookie = new Cookie("userRole", null);
-        roleCookie.setPath("/");
-        roleCookie.setMaxAge(0);
-        response.addCookie(roleCookie);
-        
-        java.util.Map<String, String> result = new java.util.HashMap<>();
-        result.put("message", "Logout successful");
-        return ResponseEntity.ok(result);
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse<LoginResponse>> register(@Valid @RequestBody LoginRequest registerRequest) {
+        try {
+            log.info("Registration request for email: {}", registerRequest.getEmail());
+            
+            User newUser = authService.register(registerRequest);
+            
+            // Generate login response
+            LoginResponse response = LoginResponse.builder()
+                .userId(newUser.getId())
+                .email(newUser.getEmail())
+                .userName(newUser.getUserName())
+                .role(newUser.getRole())
+                .token(authService.generateToken(newUser))
+                .build();
+            
+            log.info("Registration successful for email: {}", registerRequest.getEmail());
+            return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.created(response, "Kayıt başarılı"));
+        } catch (Exception e) {
+            log.error("Registration failed: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), e.getMessage()));
+        }
+    }
+    
+    /**
+     * Refresh token endpoint
+     * POST /api/auth/refresh
+     * STEP 1: Authentication - Refresh JWT token
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<LoginResponse>> refreshToken(
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            log.info("Token refresh request");
+            
+            // Extract token from "Bearer <token>"
+            String token = authHeader.replace("Bearer ", "");
+            
+            // Validate and refresh token
+            Integer userId = authService.validateToken(token);
+            User user = userService.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+            
+            String newToken = authService.generateToken(user);
+            
+            LoginResponse response = LoginResponse.builder()
+                .userId(user.getId())
+                .email(user.getEmail())
+                .userName(user.getUserName())
+                .role(user.getRole())
+                .token(newToken)
+                .build();
+            
+            log.info("Token refreshed successfully for user ID: {}", userId);
+            return ResponseEntity.ok(ApiResponse.success(response, "Token başarıyla yenilendi"));
+        } catch (Exception e) {
+            log.error("Token refresh failed: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error(HttpStatus.UNAUTHORIZED.value(), e.getMessage()));
+        }
+    }
+    
+    /**
+     * Validate token endpoint
+     * GET /api/auth/validate
+     * STEP 1: Authentication - Validate JWT token
+     */
+    @GetMapping("/validate")
+    public ResponseEntity<ApiResponse<Object>> validateToken(
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            log.info("Token validation request");
+            
+            // Extract token from "Bearer <token>"
+            String token = authHeader.replace("Bearer ", "");
+            
+            // Validate token
+            Integer userId = authService.validateToken(token);
+            
+            log.info("Token validation successful for user ID: {}", userId);
+            return ResponseEntity.ok(ApiResponse.success("Token is valid", "Token geçerli"));
+        } catch (Exception e) {
+            log.error("Token validation failed: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error(HttpStatus.UNAUTHORIZED.value(), "Geçersiz token"));
+        }
     }
 }

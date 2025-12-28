@@ -22,12 +22,7 @@ public interface PredictionFeedbackRepository extends JpaRepository<PredictionFe
     /**
      * Find feedback by prediction ID
      */
-    List<PredictionFeedback> findByPredictionId(Integer predictionId);
-    
-    /**
-     * Find feedback by user
-     */
-    List<PredictionFeedback> findByUser_Id(Integer userId);
+    List<PredictionFeedback> findByPrediction_Id(Integer predictionId);
     
     /**
      * Find correct predictions
@@ -47,13 +42,12 @@ public interface PredictionFeedbackRepository extends JpaRepository<PredictionFe
     /**
      * Get feedback statistics using native query
      */
-    @Query(value = "SELECT prediction_type, " +
+    @Query(value = "SELECT " +
                    "COUNT(*) as total, " +
                    "SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as correct, " +
                    "SUM(CASE WHEN is_correct = 0 THEN 1 ELSE 0 END) as incorrect, " +
                    "CAST(SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS DECIMAL(5,2)) as accuracy " +
-                   "FROM Prediction_Feedback " +
-                   "GROUP BY prediction_type", 
+                   "FROM Prediction_Feedback", 
            nativeQuery = true)
     List<Object[]> getFeedbackStatistics();
 }

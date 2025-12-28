@@ -220,8 +220,21 @@
     <script src="../../assets/js/components.js"></script>
     <script src="../../assets/js/auth.js"></script>
     <script>
-        // ✅ BACKEND ENTEGRASYONUconst BACKEND_URL = 'http://localhost:8080';
+        // ✅ BACKEND ENTEGRASYONU
+        const BACKEND_URL = 'http://localhost:8080';
         let currentUser = null;
+
+        // ✅ Authenticated fetch helper
+        async function authenticatedFetch(url, options = {}) {
+            const defaultOptions = {
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                }
+            };
+            return fetch(url, { ...defaultOptions, ...options });
+        }
 
         // ✅ Kullanıcı bilgilerini cookie'den al
         function loadUserInfo() {
@@ -245,26 +258,28 @@
                 currentUser = loadUserInfo();
                 if (!currentUser) return;
                 
-                // ✅ Kullanıcı ID'sini backend'den al
-                const userEmailResponse = await authenticatedFetch(
-                    `${BACKEND_URL}/api/users/by-email?email=${encodeURIComponent(currentUser.email)}`
-                );
+                // ✅ Kullanıcı ID'sini önce getCurrentUser()'dan al (localStorage/sessionStorage/cookie)
+                let userId = currentUser.id;
                 
-                if (!userEmailResponse.ok) {
-                    console.error('User not found in backend');
-                    // Yine de cookie bilgisi ile devam et
-                    loadEmptyDashboard();
-                    return;
+                // Eğer yoksa backend'den email ile sorgula
+                if (!userId) {
+                    const userEmailResponse = await authenticatedFetch(
+                        `${BACKEND_URL}/api/users/by-email?email=${encodeURIComponent(currentUser.email)}`
+                    );
+                    
+                    if (userEmailResponse.ok) {
+                        const userData = await userEmailResponse.json();
+                        userId = userData.id || userData.userId;
+                    }
                 }
-                
-                const userData = await userEmailResponse.json();
-                const userId = userData.id || userData.userId;
                 
                 if (!userId) {
                     console.error('Could not get user ID');
                     loadEmptyDashboard();
                     return;
                 }
+                
+                console.log('✅ Dashboard loading for userId:', userId);
                 
                 // ✅ Prediction geçmişini backend'den al
                 const response = await authenticatedFetch(
@@ -296,16 +311,24 @@
         function updateStatistics(predictions) {
             const totalDiagnoses = predictions.length;
             
-            // Hastalık tespit sayısı (isValid === false olanlar)
-            const diseasesFound = predictions.filter(p => p.isValid === false).length;
+            // Hastalık tespit sayısı - predictionType'da "healthy" içermeyenler
+            const diseasesFound = predictions.filter(p => {
+                const type = (p.predictionType || '').toLowerCase();
+                return type && !type.includes('healthy') && type !== 'null' && type !== 'plant_prediction';
+            }).length;
             
-            // Sağlıklı bitki sayısı (isValid === true olanlar)
-            const plantsIdentified = predictions.filter(p => p.isValid === true).length;
+            // Sağlıklı bitki sayısı - predictionType'da "healthy" içerenler
+            const plantsIdentified = predictions.filter(p => {
+                const type = (p.predictionType || '').toLowerCase();
+                return type.includes('healthy');
+            }).length;
             
-            // Bu ay yapılan teşhis sayısı
+            // Bu ay yapılan teşhis sayısı - createAt alanını kullan
             const today = new Date();
             const thisMonth = predictions.filter(p => {
-                const pDate = new Date(p.predictedAt);
+                const dateStr = p.createAt || p.predictedAt || p.createdAt;
+                if (!dateStr) return false;
+                const pDate = new Date(dateStr);
                 return pDate.getMonth() === today.getMonth() && 
                        pDate.getFullYear() === today.getFullYear();
             }).length;
@@ -314,13 +337,15 @@
             document.getElementById('diseasesFound').textContent = diseasesFound;
             document.getElementById('plantsIdentified').textContent = plantsIdentified;
             document.getElementById('thisMonth').textContent = thisMonth;
+            
+            console.log('📊 Statistics:', { totalDiagnoses, diseasesFound, plantsIdentified, thisMonth });
         }
 
         // ✅ Son teşhisleri göster
         function displayRecentDiagnoses(predictions) {
             const recentList = document.getElementById('recentDiagnosesList');
             
-            if (predictions.length === 0) {
+            if (!predictions || predictions.length === 0) {
                 recentList.innerHTML = `
                     <p class="text-muted text-center py-4">
                         <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
@@ -330,20 +355,30 @@
                 return;
             }
             
-            // En son 5 teşhisi göster
+            // En son 5 teşhisi göster (en yeniler en üstte)
             const recent = predictions.slice(-5).reverse();
             
             recentList.innerHTML = recent.map(p => {
-                const date = new Date(p.predictedAt);
-                const isDisease = p.isValid === false;
-                const status = isDisease ? 'Hastalık Tespit' : 'Sağlıklı';
-                const badgeClass = isDisease ? 'warning' : 'success';
+                // createAt alanını kullan (backend'den gelen)
+                const dateStr = p.createAt || p.predictedAt || p.createdAt;
+                const date = dateStr ? new Date(dateStr) : new Date();
+                
+                // Hastalık kontrolü - predictionType'a göre
+                const predictionType = p.predictionType || 'Unknown';
+                const isHealthy = predictionType.toLowerCase().includes('healthy');
+                const isDisease = !isHealthy && predictionType !== 'Unknown' && predictionType !== 'PLANT_PREDICTION';
+                
+                const status = isHealthy ? 'Sağlıklı' : (isDisease ? 'Hastalık Tespit' : 'Analiz Edildi');
+                const badgeClass = isHealthy ? 'success' : (isDisease ? 'warning' : 'info');
+                
+                // Hastalık/bitki adını formatla
+                const displayName = formatPredictionName(predictionType);
                 
                 return `
                     <div class="recent-diagnosis">
                         <div class="d-flex justify-content-between align-items-start">
                             <div class="text-start">
-                                <h6 class="mb-1"><strong>Teşhis #${p.id}</strong></h6>
+                                <h6 class="mb-1"><strong>${displayName}</strong></h6>
                                 <small class="text-muted">
                                     <i class="fas fa-calendar me-1"></i>${date.toLocaleDateString('tr-TR')}
                                     <i class="fas fa-clock me-1 ms-2"></i>${date.toLocaleTimeString('tr-TR', {hour: '2-digit', minute: '2-digit'})}
@@ -353,11 +388,23 @@
                                 ${status}
                             </span>
                         </div>
-                        <p class="mb-2 mt-2 small">${p.notes || 'Açıklama yok'}</p>
+                        <p class="mb-2 mt-2 small">${p.careTips || p.notes || 'Detay için tıklayın'}</p>
                         <small class="text-muted">Güven: ${p.confidence ? (p.confidence * 100).toFixed(1) : 'N/A'}%</small>
                     </div>
                 `;
             }).join('');
+        }
+        
+        // Prediction type'ı okunabilir formata çevir
+        function formatPredictionName(predictionType) {
+            if (!predictionType || predictionType === 'Unknown' || predictionType === 'PLANT_PREDICTION') {
+                return 'Bitki Analizi';
+            }
+            // "Tomato___Late_blight" -> "Tomato - Late blight"
+            return predictionType
+                .replace(/___/g, ' - ')
+                .replace(/__/g, ' - ')
+                .replace(/_/g, ' ');
         }
 
         // ✅ Boş dashboard göster

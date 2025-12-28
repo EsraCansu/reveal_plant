@@ -9,21 +9,12 @@ import java.util.List;
 @Repository
 public interface DiseaseRepository extends JpaRepository<Disease, Integer> {
 
-    // 1. Bitki ID'sine göre hastalıkları bul (Doğru)
-    List<Disease> findByPlant_Id(Integer plantId);
-    
-    // 2. İsim ve Bitki ID'sine göre (GÜNCELLENDİ: DiseaseName -> Name)
-    List<Disease> findByNameAndPlant_Id(String name, Integer plantId);
+    // 1. Hastalık adına göre arama
+    Optional<Disease> findByDiseaseName(String diseaseName);
 
-    // 3. Büyük/Küçük harf duyarsız isimle arama (GÜNCELLENDİ: DiseaseName -> Name)
-    // Service katmanında çağırdığımız metot bu!
-    Optional<Disease> findByNameIgnoreCase(String name);
+    // 2. Büyük/Küçük harf duyarsız isimle arama
+    Optional<Disease> findByDiseaseNameIgnoreCase(String diseaseName);
     
-    // 4. For feedback system - find disease by exact name match
-    Optional<Disease> findByName(String diseaseName);
-    
-    // Alias method for consistency with Plant table naming
-    default Optional<Disease> findByDiseaseName(String diseaseName) {
-        return findByName(diseaseName);
-    }
+    // 3. For feedback system - find disease by exact name match
+    List<Disease> findByDiseaseNameContainingIgnoreCase(String keyword);
 }

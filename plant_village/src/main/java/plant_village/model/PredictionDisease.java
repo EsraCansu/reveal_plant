@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "Prediction_disease")
+@Table(name = "Prediction_Disease")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,14 +20,16 @@ public class PredictionDisease {
     private Integer id;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "prediction_id", nullable = false)
-    private Prediction prediction; // connection to Prediction Table 
+    @JoinColumn(name = "disease_id", nullable = false)
+    private Disease disease;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "disease_id", nullable = false)
-    private Disease disease;  // for Disease information in detail
+    @JoinColumn(name = "prediction_id", nullable = false)
+    private Prediction prediction;
     
-    @Builder.Default
-    @Column(name = "is_healthy", columnDefinition = "BIT DEFAULT 0")
-    private Boolean isHealthy = false; // to indicate if the plant is healthy or not
+    @Column(name = "is_healthy")
+    private Boolean isHealthy;
+    
+    @Column(name = "match_confidence")
+    private Double matchConfidence;
 }

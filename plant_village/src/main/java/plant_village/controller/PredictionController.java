@@ -138,8 +138,8 @@ public class PredictionController {
             PredictionFeedback feedback = PredictionFeedback.builder()
                 .prediction(prediction)
                 .isCorrect(isCorrect)
-                .feedbackText(feedbackText)
-                .isApproved(false)
+                .comment(feedbackText)
+                .isApprovedFromAdmin(false)
                 .createdAt(java.time.LocalDateTime.now())
                 .build();
             
@@ -176,11 +176,11 @@ public class PredictionController {
                 dto.put("feedbackId", fb.getFeedbackId());
                 dto.put("predictionId", fb.getPrediction() != null ? fb.getPrediction().getId() : null);
                 dto.put("isCorrect", fb.getIsCorrect());
-                dto.put("isApproved", fb.getIsApproved());
-                dto.put("feedbackText", fb.getFeedbackText());
-                dto.put("adminNotes", fb.getAdminNotes());
+                dto.put("isApprovedFromAdmin", fb.getIsApprovedFromAdmin());
+                dto.put("feedbackText", fb.getComment());
+                dto.put("adminNotes", fb.getComment());
                 dto.put("createdAt", fb.getCreatedAt() != null ? fb.getCreatedAt().toString() : null);
-                dto.put("updatedAt", fb.getUpdatedAt() != null ? fb.getUpdatedAt().toString() : null);
+                dto.put("updatedAt", fb.getCreatedAt() != null ? fb.getCreatedAt().toString() : null);
                 return dto;
             }).collect(java.util.stream.Collectors.toList());
             
@@ -295,8 +295,8 @@ public class PredictionController {
             // Build response matching frontend expectations
             Map<String, Object> response = new HashMap<>();
 
-            // Use topPrediction field which contains the actual ML result (e.g., "Tomato___Leaf_Mold")
-            String predictedClass = prediction.getTopPrediction() != null ? prediction.getTopPrediction() : "Unknown";
+            // Use predictionType field which contains the actual ML result (e.g., "Tomato___Leaf_Mold")
+            String predictedClass = prediction.getPredictionType() != null ? prediction.getPredictionType() : "Unknown";
             response.put("predicted_class", predictedClass);
             response.put("confidence", prediction.getConfidence() != null ? prediction.getConfidence() : 0.0);
             response.put("is_valid", prediction.getIsValid());
@@ -308,8 +308,8 @@ public class PredictionController {
             response.put("prediction_id", prediction.getId());
 
             // Get cache manager for both plant and disease lookups
-            plant_village.util.PlantDiseaseCacheManager cacheManager = predictionService instanceof plant_village.service.PredictionServiceImpl ? 
-                ((plant_village.service.PredictionServiceImpl)predictionService).getCacheManager() : null;
+            plant_village.util.PlantDiseaseCacheManager cacheManager = predictionService instanceof plant_village.service.impl.PredictionServiceImpl ? 
+                ((plant_village.service.impl.PredictionServiceImpl)predictionService).getCacheManager() : null;
 
             // Plant identification mode - add plant information
             if ("identify-plant".equals(predictionType)) {
@@ -333,7 +333,6 @@ public class PredictionController {
             // Disease detection mode - add disease info for main result (top1)
             String symptomDescription = "";
             String treatment = "";
-            String recommendedMedicines = "";
             if (!isHealthy && "detect-disease".equals(predictionType)) {
                 if (cacheManager != null) {
                     java.util.Optional<plant_village.model.Disease> diseaseOpt = cacheManager.getDiseaseByName(predictedClass);
@@ -341,74 +340,29 @@ public class PredictionController {
                         plant_village.model.Disease disease = diseaseOpt.get();
                         symptomDescription = disease.getSymptomDescription();
                         treatment = disease.getTreatment();
-                        recommendedMedicines = disease.getRecommendedMedicines();
                     }
                 }
             }
             response.put("symptom_description", symptomDescription);
             response.put("treatment", treatment);
-            response.put("recommended_medicines", recommendedMedicines);
+            response.put("recommended_medicines", "");
 
-            // Top 3 predictions from description field (stored as JSON) with full disease info
+            // Top 3 predictions from PredictionDisease relationships
             List<Map<String, Object>> topPredictions = new java.util.ArrayList<>();
-            String top3Json = prediction.getDescription();
             
-            if (top3Json != null && top3Json.startsWith("[")) {
-                try {
-                    // Parse JSON and enrich with disease information
-                    String cleaned = top3Json.replace("[", "").replace("]", "");
-                    String[] preds = cleaned.split("\\},\\{");
-                    
-                    for (String pred : preds) {
-                        pred = pred.replace("{", "").replace("}", "");
-                        String[] parts = pred.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"); // Split by comma but not inside quotes
-                        
-                        String diseaseName = "";
-                        Double confidence = 0.0;
-                        String symptoms = "";
-                        String treatmentInfo = "";
-                        String medicines = "";
-                        
-                        // Parse fields
-                        for (String part : parts) {
-                            if (part.contains("\"disease\"")) {
-                                diseaseName = part.split(":")[1].replace("\"", "").trim();
-                            } else if (part.contains("\"confidence\"")) {
-                                try {
-                                    confidence = Double.parseDouble(part.split(":")[1].trim());
-                                } catch (Exception ignored) {}
-                            } else if (part.contains("\"symptom_description\"")) {
-                                symptoms = part.substring(part.indexOf(":") + 1).replace("\"", "").trim();
-                            } else if (part.contains("\"treatment\"")) {
-                                treatmentInfo = part.substring(part.indexOf(":") + 1).replace("\"", "").trim();
-                            } else if (part.contains("\"recommended_medicines\"")) {
-                                medicines = part.substring(part.indexOf(":") + 1).replace("\"", "").trim();
-                            }
-                        }
-                        
-                        // If disease info not in JSON, try to get from cache
-                        if (cacheManager != null && (symptoms.isEmpty() || treatmentInfo.isEmpty() || medicines.isEmpty())) {
-                            java.util.Optional<plant_village.model.Disease> diseaseOpt = cacheManager.getDiseaseByName(diseaseName);
-                            if (diseaseOpt.isPresent()) {
-                                plant_village.model.Disease disease = diseaseOpt.get();
-                                if (symptoms.isEmpty()) symptoms = disease.getSymptomDescription() != null ? disease.getSymptomDescription() : "";
-                                if (treatmentInfo.isEmpty()) treatmentInfo = disease.getTreatment() != null ? disease.getTreatment() : "";
-                                if (medicines.isEmpty()) medicines = disease.getRecommendedMedicines() != null ? disease.getRecommendedMedicines() : "";
-                            }
-                        }
-                        
-                        // Build prediction object
-                        Map<String, Object> p = new HashMap<>();
-                        p.put("class_name", diseaseName);
-                        p.put("probability", confidence);
-                        p.put("symptom_description", symptoms);
-                        p.put("treatment", treatmentInfo);
-                        p.put("recommended_medicines", medicines);
-                        
+            // Get disease predictions from relationship table
+            if (prediction.getDiseaseDetails() != null && !prediction.getDiseaseDetails().isEmpty()) {
+                for (plant_village.model.PredictionDisease pd : prediction.getDiseaseDetails()) {
+                    Map<String, Object> p = new HashMap<>();
+                    plant_village.model.Disease disease = pd.getDisease();
+                    if (disease != null) {
+                        p.put("class_name", disease.getDiseaseName());
+                        p.put("probability", pd.getMatchConfidence() != null ? pd.getMatchConfidence() : 0.0);
+                        p.put("symptom_description", disease.getSymptomDescription() != null ? disease.getSymptomDescription() : "");
+                        p.put("treatment", disease.getTreatment() != null ? disease.getTreatment() : "");
+                        p.put("recommended_medicines", "");
                         topPredictions.add(p);
                     }
-                } catch (Exception e) {
-                    log.warn("Failed to parse top predictions: {}", e.getMessage());
                 }
             }
             response.put("top_predictions", topPredictions);
@@ -496,8 +450,8 @@ public class PredictionController {
             PredictionFeedback feedback = PredictionFeedback.builder()
                 .prediction(prediction)
                 .isCorrect(isCorrect)
-                .feedbackText(feedbackText != null ? feedbackText : "")
-                .isApproved(false) // Requires admin approval
+                .comment(feedbackText != null ? feedbackText : "")
+                .isApprovedFromAdmin(false) // Requires admin approval
                 .createdAt(java.time.LocalDateTime.now())
                 .build();
 
@@ -533,33 +487,28 @@ public class PredictionController {
             List<PredictionLog> logs = logRepository.findAll();
             
             // Convert to DTOs to avoid JSON serialization issues
-            List<Map<String, Object>> logDTOs = logs.stream().map(log -> {
+            List<Map<String, Object>> logDTOs = logs.stream().map(logEntry -> {
                 Map<String, Object> dto = new HashMap<>();
-                dto.put("id", log.getId());
-                dto.put("predictionId", log.getPrediction() != null ? log.getPrediction().getId() : null);
-                dto.put("adminUserId", log.getUser() != null ? log.getUser().getId() : null);
-                dto.put("adminUserName", log.getUser() != null ? log.getUser().getUserName() : "System");
-                dto.put("actionType", log.getActionType());
-                dto.put("timestamp", log.getTimestamp() != null ? log.getTimestamp().toString() : null);
-                dto.put("oldValue", log.getOldValue());
-                dto.put("newValue", log.getNewValue());
+                dto.put("id", logEntry.getId());
+                dto.put("predictionId", logEntry.getPrediction() != null ? logEntry.getPrediction().getId() : null);
+                dto.put("adminUserId", null);
+                dto.put("adminUserName", "System");
+                dto.put("actionType", logEntry.getActionType());
+                dto.put("timestamp", logEntry.getTimestamp() != null ? logEntry.getTimestamp().toString() : null);
                 
                 // Determine log level based on action type
                 String level = "INFO";
-                if (log.getActionType() != null) {
-                    if (log.getActionType().contains("ERROR") || log.getActionType().contains("FAIL")) {
+                if (logEntry.getActionType() != null) {
+                    if (logEntry.getActionType().contains("ERROR") || logEntry.getActionType().contains("FAIL")) {
                         level = "ERROR";
-                    } else if (log.getActionType().contains("WARNING") || log.getActionType().contains("INVALID")) {
+                    } else if (logEntry.getActionType().contains("WARNING") || logEntry.getActionType().contains("INVALID")) {
                         level = "WARNING";
                     }
                 }
                 dto.put("level", level);
                 
-                // Create message from action and values
-                String message = log.getActionType() != null ? log.getActionType() : "Unknown action";
-                if (log.getOldValue() != null && log.getNewValue() != null) {
-                    message += ": " + log.getOldValue() + " → " + log.getNewValue();
-                }
+                // Create message from action type
+                String message = logEntry.getActionType() != null ? logEntry.getActionType() : "Unknown action";
                 dto.put("message", message);
                 
                 return dto;

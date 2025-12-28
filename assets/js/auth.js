@@ -47,11 +47,36 @@ function isLoggedIn() {
 }
 
 /**
- * Get current user info from cookie
+ * Get current user info from cookie, sessionStorage, or localStorage
  */
 function getCurrentUser() {
+    // Try to get userId from multiple sources (cookie may not work cross-origin)
+    let userId = null;
+    
+    // 1. Try cookie first
+    const cookieUserId = getCookie('userId');
+    if (cookieUserId) {
+        userId = parseInt(cookieUserId);
+    }
+    
+    // 2. If cookie failed, try sessionStorage
+    if (!userId) {
+        const sessionUserId = sessionStorage.getItem('userId');
+        if (sessionUserId) {
+            userId = parseInt(sessionUserId);
+        }
+    }
+    
+    // 3. If sessionStorage failed, try localStorage
+    if (!userId) {
+        const localUserId = localStorage.getItem('user_id');
+        if (localUserId) {
+            userId = parseInt(localUserId);
+        }
+    }
+    
     return {
-        id: getCurrentUserId(),
+        id: userId,
         email: getCookie('userEmail'),
         name: getCookie('userName'),
         role: getCookie('userRole')
@@ -87,6 +112,7 @@ async function logout() {
     deleteCookie('userEmail');
     deleteCookie('userName');
     deleteCookie('userRole');
+    deleteCookie('userId');  // ✅ userId cookie'sini de temizle
     deleteCookie('jwt_token');
     deleteCookie('remember_me');
     
@@ -95,8 +121,10 @@ async function logout() {
     localStorage.removeItem('user_email');
     localStorage.removeItem('user_role');
     localStorage.removeItem('user_remember');
-    localStorage.removeItem('user_id');
-    sessionStorage.removeItem('userId');
+    localStorage.removeItem('user_id');  // ✅ user_id'yi de temizle
+    
+    // sessionStorage'ı da temizle
+    sessionStorage.removeItem('userId');  // ✅ sessionStorage userId'yi de temizle
     
     // Login sayfasına yönlendir
     window.location.href = '/app/views/login.html';
