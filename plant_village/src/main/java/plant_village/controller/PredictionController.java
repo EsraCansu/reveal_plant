@@ -318,6 +318,11 @@ public class PredictionController {
                 String plantName = parsePlantNameFromMLFormat(predictedClass);
                 String plantDescription = "";
                 String scientificName = "";
+                String careTips = "";
+                String wateringFrequency = "";
+                String sunlightRequirement = "";
+                String soilType = "";
+                String hardinessZone = "";
                 
                 if (cacheManager != null) {
                     java.util.Optional<plant_village.model.Plant> plantOpt = cacheManager.getPlantByName(plantName);
@@ -325,16 +330,27 @@ public class PredictionController {
                         plant_village.model.Plant plant = plantOpt.get();
                         plantDescription = plant.getDescription() != null ? plant.getDescription() : "";
                         scientificName = plant.getScientificName() != null ? plant.getScientificName() : "";
+                        careTips = plant.getCareTips() != null ? plant.getCareTips() : "";
+                        wateringFrequency = plant.getWateringFrequency() != null ? plant.getWateringFrequency() : "";
+                        sunlightRequirement = plant.getSunlightRequirement() != null ? plant.getSunlightRequirement() : "";
+                        soilType = plant.getSoilType() != null ? plant.getSoilType() : "";
+                        hardinessZone = plant.getHardinessZone() != null ? plant.getHardinessZone() : "";
                     }
                 }
                 
                 response.put("plant_description", plantDescription);
                 response.put("scientific_name", scientificName);
+                response.put("care_tips", careTips);
+                response.put("watering_frequency", wateringFrequency);
+                response.put("sunlight_requirement", sunlightRequirement);
+                response.put("soil_type", soilType);
+                response.put("hardiness_zone", hardinessZone);
             }
 
             // Disease detection mode - add disease info for main result (top1)
             String symptomDescription = "";
             String treatment = "";
+            String recommendedMedicines = "";
             if (!isHealthy && "detect-disease".equals(predictionType)) {
                 if (cacheManager != null) {
                     java.util.Optional<plant_village.model.Disease> diseaseOpt = cacheManager.getDiseaseByName(predictedClass);
@@ -342,12 +358,13 @@ public class PredictionController {
                         plant_village.model.Disease disease = diseaseOpt.get();
                         symptomDescription = disease.getSymptomDescription();
                         treatment = disease.getTreatment();
+                        recommendedMedicines = disease.getRecommendedMedicines() != null ? disease.getRecommendedMedicines() : "";
                     }
                 }
             }
             response.put("symptom_description", symptomDescription);
             response.put("treatment", treatment);
-            response.put("recommended_medicines", "");
+            response.put("recommended_medicines", recommendedMedicines);
 
             // Build "Other Possibilities" from ALL ML predictions (not just DB saved ones)
             List<Map<String, Object>> topPredictions = new java.util.ArrayList<>();
@@ -370,18 +387,20 @@ public class PredictionController {
                     // Try to get disease info from cache
                     String altSymptoms = "";
                     String altTreatment = "";
+                    String altMedicines = "";
                     if (cacheManager != null && "detect-disease".equals(predictionType)) {
                         java.util.Optional<plant_village.model.Disease> altDiseaseOpt = cacheManager.getDiseaseByName(dp.getDisease());
                         if (altDiseaseOpt.isPresent()) {
                             plant_village.model.Disease altDisease = altDiseaseOpt.get();
                             altSymptoms = altDisease.getSymptomDescription() != null ? altDisease.getSymptomDescription() : "";
                             altTreatment = altDisease.getTreatment() != null ? altDisease.getTreatment() : "";
+                            altMedicines = altDisease.getRecommendedMedicines() != null ? altDisease.getRecommendedMedicines() : "";
                         }
                     }
                     
                     p.put("symptom_description", altSymptoms);
                     p.put("treatment", altTreatment);
-                    p.put("recommended_medicines", "");
+                    p.put("recommended_medicines", altMedicines);
                     topPredictions.add(p);
                 }
             }

@@ -157,30 +157,24 @@ public class PlantDiseaseCacheManager {
             return Optional.empty();
         }
         
-        // Parse ML format to extract disease name
-        // Format: "Tomato___Leaf_Mold" or "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot"
-        String parsedName = parseDiseaseNameFromMLFormat(name);
+        log.debug("🔍 Searching for disease - Original: '{}'", name);
         
-        log.debug("🔍 Searching for disease - Original: '{}', Parsed: '{}'", name, parsedName);
+        // First, try exact match with original ML format name (e.g., "Tomato___Septoria_leaf_spot")
+        Disease disease = diseaseCache.get(name);
         
-        // Try to get from cache first (O(1))
-        Disease disease = diseaseCache.get(parsedName);
-        
-        // If not in cache, fetch from database and cache it
         if (disease == null) {
-            log.debug("📍 Cache miss for disease: '{}'. Fetching from database...", parsedName);
-            Optional<Disease> dbDisease = diseaseRepository.findByDiseaseNameIgnoreCase(parsedName);
+            // Try fetching by original name from database
+            log.debug("📍 Cache miss for disease (original): '{}'. Fetching from database...", name);
+            Optional<Disease> dbDisease = diseaseRepository.findByDiseaseNameIgnoreCase(name);
             if (dbDisease.isPresent()) {
                 disease = dbDisease.get();
-                // Store in both caches (using parsed name)
-                diseaseCache.put(parsedName, disease);
+                // Store in cache using original name
+                diseaseCache.put(name, disease);
                 diseaseIdCache.put(disease.getId(), disease);
-                log.debug("✅ Disease '{}' cached after DB fetch", parsedName);
-            } else {
-                log.warn("⚠️ Disease '{}' not found in database", parsedName);
+                log.debug("✅ Disease '{}' cached after DB fetch (original format)", name);
             }
         } else {
-            log.debug("✅ Cache hit for disease: '{}'", parsedName);
+            log.debug("✅ Cache hit for disease: '{}'", name);
         }
         
         return Optional.ofNullable(disease);

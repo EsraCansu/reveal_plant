@@ -263,16 +263,65 @@ class DiagnosticsController {
                             <p class="mb-1">${result.plant_description}</p>
                         </div>
                     ` : ''}
-                    ${result.top_predictions && result.top_predictions.length > 1 ? `
-                        <div class="text-start">
-                            <h6><i class="fas fa-list"></i> Other Possibilities:</h6>
-                            <ul>
-                                ${result.top_predictions.slice(1, 4).map(p => 
-                                    `<li>${this.parsePlantName(p.class_name)}: ${(p.probability * 100).toFixed(1)}%</li>`
-                                ).join('')}
-                            </ul>
+                    ${(result.care_tips || result.watering_frequency || result.sunlight_requirement || result.soil_type) ? `
+                        <div class="text-start mb-3">
+                            <h6><i class="fas fa-seedling"></i> Care Guide:</h6>
+                            <div class="row">
+                                ${result.watering_frequency ? `
+                                    <div class="col-md-6 mb-2">
+                                        <strong><i class="fas fa-tint text-primary"></i> Watering:</strong>
+                                        <p class="mb-0 small">${result.watering_frequency}</p>
+                                    </div>
+                                ` : ''}
+                                ${result.sunlight_requirement ? `
+                                    <div class="col-md-6 mb-2">
+                                        <strong><i class="fas fa-sun text-warning"></i> Sunlight:</strong>
+                                        <p class="mb-0 small">${result.sunlight_requirement}</p>
+                                    </div>
+                                ` : ''}
+                                ${result.soil_type ? `
+                                    <div class="col-md-6 mb-2">
+                                        <strong><i class="fas fa-mountain text-secondary"></i> Soil:</strong>
+                                        <p class="mb-0 small">${result.soil_type}</p>
+                                    </div>
+                                ` : ''}
+                                ${result.hardiness_zone ? `
+                                    <div class="col-md-6 mb-2">
+                                        <strong><i class="fas fa-thermometer-half text-danger"></i> Hardiness:</strong>
+                                        <p class="mb-0 small">${result.hardiness_zone}</p>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            ${result.care_tips ? `
+                                <div class="mt-2">
+                                    <strong><i class="fas fa-lightbulb text-success"></i> Care Tips:</strong>
+                                    <p class="mb-0 small">${result.care_tips}</p>
+                                </div>
+                            ` : ''}
                         </div>
                     ` : ''}
+                    ${(() => {
+                        // Filter out predictions with the same plant name as the main result
+                        const mainPlantName = predictedClass.toLowerCase();
+                        const filteredPredictions = (result.top_predictions || []).filter(p => {
+                            const altPlantName = this.parsePlantName(p.class_name).toLowerCase();
+                            return altPlantName !== mainPlantName;
+                        });
+                        
+                        if (filteredPredictions.length > 0) {
+                            return `
+                                <div class="text-start">
+                                    <h6><i class="fas fa-list"></i> Other Possibilities:</h6>
+                                    <ul>
+                                        ${filteredPredictions.slice(0, 3).map(p => 
+                                            `<li>${this.parsePlantName(p.class_name)}: ${(p.probability * 100).toFixed(1)}%</li>`
+                                        ).join('')}
+                                    </ul>
+                                </div>
+                            `;
+                        }
+                        return '';
+                    })()}
                 </div>
                 ${isLoggedIn && predictionId ? `
                     <div class="feedback-section mt-3" id="feedback-section-${predictionId}">

@@ -34,6 +34,9 @@ public class Disease {
     @Column(name = "treatment", columnDefinition = "NVARCHAR(MAX)")
     private String treatment;
     
+    @Column(name = "recommended_medicines", columnDefinition = "NVARCHAR(MAX)")
+    private String recommendedMedicines;
+    
     @OneToMany(mappedBy = "disease", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private java.util.List<PredictionDisease> predictions;
 }
