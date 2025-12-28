@@ -37,6 +37,13 @@ public interface PredictionFeedbackService {
     Map<String, Object> getFeedbackStatistics();
     
     /**
+     * Approve feedback by admin
+     * @param feedbackId The feedback ID to approve
+     * @return Updated feedback with isApprovedFromAdmin = true
+     */
+    PredictionFeedback approveFeedback(Integer feedbackId);
+    
+    /**
      * Process pending feedback (add images that weren't added yet)
      */
     void processPendingFeedback();

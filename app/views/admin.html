@@ -189,8 +189,15 @@
                 <!-- Prediction Feedback Section -->
                 <div id="feedback-section" style="display:none;">
                     <div class="d-flex justify-content-between mb-4">
-                        <h4><i class="fas fa-thumbs-up me-2"></i>Prediction Feedback Analytics</h4>
-                        <button class="btn btn-success" onclick="loadFeedback()"><i class="fas fa-sync-alt me-1"></i>Refresh</button>
+                        <h4><i class="fas fa-thumbs-up me-2"></i>Prediction Feedback Management</h4>
+                        <div>
+                            <select class="form-select d-inline-block me-2" id="feedbackStatusFilter" style="width: auto;" onchange="filterFeedback()">
+                                <option value="all">All Feedback</option>
+                                <option value="pending">Pending Approval</option>
+                                <option value="approved">Approved</option>
+                            </select>
+                            <button class="btn btn-success" onclick="loadFeedback()"><i class="fas fa-sync-alt me-1"></i>Refresh</button>
+                        </div>
                     </div>
 
                     <div class="row mb-4">
@@ -210,16 +217,16 @@
                         </div>
                         <div class="col-md-3">
                             <div class="stat-card">
-                                <i class="fas fa-thumbs-down" style="color: #f44336;"></i>
-                                <h3 id="feedbackIncorrect">0</h3>
-                                <p>Incorrect Predictions</p>
+                                <i class="fas fa-clock" style="color: #ff9800;"></i>
+                                <h3 id="feedbackPending">0</h3>
+                                <p>Pending Approval</p>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="stat-card">
-                                <i class="fas fa-percentage" style="color: #2196f3;"></i>
-                                <h3 id="feedbackAccuracy">0%</h3>
-                                <p>Accuracy Rate</p>
+                                <i class="fas fa-check-circle" style="color: #2196f3;"></i>
+                                <h3 id="feedbackApproved">0</h3>
+                                <p>Approved</p>
                             </div>
                         </div>
                     </div>
@@ -228,7 +235,7 @@
                         <div class="col-md-6">
                             <div class="card">
                                 <div class="card-header bg-light">
-                                    <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Accuracy Chart</h6>
+                                    <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Feedback Accuracy</h6>
                                 </div>
                                 <div class="card-body">
                                     <canvas id="feedbackChart" height="250"></canvas>
@@ -238,24 +245,22 @@
                         <div class="col-md-6">
                             <div class="card">
                                 <div class="card-header bg-light">
-                                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>How Feedback Works</h6>
+                                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Feedback System</h6>
                                 </div>
                                 <div class="card-body">
-                                    <p><strong>User Feedback System:</strong></p>
-                                    <ul>
-                                        <li>Users can rate predictions after diagnosis</li>
-                                        <li><i class="fas fa-thumbs-up text-success"></i> = Prediction was correct</li>
-                                        <li><i class="fas fa-thumbs-down text-danger"></i> = Prediction was incorrect</li>
-                                        <li>Hover over result image to see feedback buttons</li>
-                                        <li>Only logged-in users can submit feedback</li>
-                                        <li>This data helps improve ML model accuracy</li>
+                                    <p><strong>How it works:</strong></p>
+                                    <ul style="font-size: 0.9rem; margin-bottom: 0;">
+                                        <li>Users submit feedback after predictions</li>
+                                        <li><i class="fas fa-thumbs-up text-success"></i> = Correct prediction</li>
+                                        <li><i class="fas fa-thumbs-down text-danger"></i> = Incorrect prediction</li>
+                                        <li>Admin can approve feedback for ML training</li>
+                                        <li>Approved feedback improves model accuracy</li>
                                     </ul>
-                                    <p class="mt-3 mb-0"><small class="text-muted">
-                                        <strong>Backend Implementation:</strong><br>
-                                        • Table: <code>prediction_feedback</code><br>
-                                        • Controller: <code>PredictionController.java</code><br>
-                                        • Endpoint: <code>POST /api/predictions/{id}/feedback</code><br>
-                                        • Auto-save: Positive feedback images → plant/disease tables
+                                    <hr>
+                                    <p class="mb-0"><small class="text-muted">
+                                        <strong>Backend:</strong> PredictionFeedbackController<br>
+                                        <strong>Endpoint:</strong> /api/predictions/feedback<br>
+                                        <strong>Database:</strong> prediction_feedback table
                                     </small></p>
                                 </div>
                             </div>
@@ -263,12 +268,27 @@
                     </div>
 
                     <div class="card">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0"><i class="fas fa-list me-2"></i>Recent Feedback</h6>
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0"><i class="fas fa-list me-2"></i>Feedback List (Click to view details)</h6>
                         </div>
-                        <div class="card-body">
-                            <div id="feedbackContainer">
-                                <div class="alert alert-info">Loading feedback...</div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0" id="feedbackTable">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>User</th>
+                                            <th>Prediction</th>
+                                            <th>Result</th>
+                                            <th>Status</th>
+                                            <th>Date</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="feedbackTableBody">
+                                        <tr><td colspan="7" class="text-center">Loading...</td></tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -320,13 +340,95 @@
         </div>
     </div>
 
+    <!-- Feedback Detail Modal -->
+    <div class="modal fade" id="feedbackDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title"><i class="fas fa-info-circle me-2"></i>Prediction Feedback Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Left: Image -->
+                        <div class="col-md-5 text-center">
+                            <div class="border rounded p-2 mb-3" style="background: #f8f9fa;">
+                                <img id="modalPredictionImage" src="" alt="Prediction Image" 
+                                     class="img-fluid rounded" style="max-height: 300px; object-fit: contain;">
+                            </div>
+                            <p class="text-muted small">Uploaded Image</p>
+                        </div>
+                        <!-- Right: Details -->
+                        <div class="col-md-7">
+                            <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-user me-2"></i>User Information</h6>
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td class="text-muted" style="width: 100px;">Name:</td>
+                                    <td><strong id="modalUserName">-</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Email:</td>
+                                    <td><span id="modalUserEmail">-</span></td>
+                                </tr>
+                            </table>
+
+                            <h6 class="border-bottom pb-2 mb-3 mt-4"><i class="fas fa-stethoscope me-2"></i>Prediction Result</h6>
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td class="text-muted" style="width: 100px;">Type:</td>
+                                    <td><span id="modalPredictionType" class="badge bg-primary">-</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Result:</td>
+                                    <td><strong id="modalPredictedName">-</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Confidence:</td>
+                                    <td><span id="modalConfidence" class="badge bg-info">-</span></td>
+                                </tr>
+                            </table>
+
+                            <h6 class="border-bottom pb-2 mb-3 mt-4"><i class="fas fa-thumbs-up me-2"></i>Feedback Information</h6>
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td class="text-muted" style="width: 100px;">Feedback:</td>
+                                    <td id="modalIsCorrect">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Comment:</td>
+                                    <td><em id="modalComment">-</em></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Status:</td>
+                                    <td id="modalApprovalStatus">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Date:</td>
+                                    <td id="modalFeedbackDate">-</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <input type="hidden" id="modalFeedbackId" value="">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" id="approveBtn" onclick="approveFeedback()">
+                        <i class="fas fa-check-circle me-1"></i>Approve Feedback
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const BACKEND_URL = 'http://localhost:8080';
         let allUsers = [];
         let selectedUserId = null;
-        let changeRoleModal, deleteUserModal;
-        let feedbackChart = null;
+        let changeRoleModal, deleteUserModal, feedbackDetailModal;
+        let allFeedback = [];
+        let feedbackChartInstance = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             const admin = getCurrentUser();
@@ -334,6 +436,7 @@
             
             changeRoleModal = new bootstrap.Modal(document.getElementById('changeRoleModal'));
             deleteUserModal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
+            feedbackDetailModal = new bootstrap.Modal(document.getElementById('feedbackDetailModal'));
             loadUsers();
         });
 
@@ -517,33 +620,54 @@
 
         async function loadFeedback() {
             try {
-                // Load real feedback from backend
-                const [feedbackRes, statsRes] = await Promise.all([
-                    authenticatedFetch(`${BACKEND_URL}/api/predictions/feedback/all`),
-                    authenticatedFetch(`${BACKEND_URL}/api/predictions/feedback/stats`)
-                ]);
+                const feedbackRes = await authenticatedFetch(`${BACKEND_URL}/api/predictions/feedback/all`);
                 
-                if (!feedbackRes.ok || !statsRes.ok) {
+                if (!feedbackRes.ok) {
                     throw new Error('Failed to load feedback');
                 }
                 
-                const feedbackData = await feedbackRes.json();
-                const stats = await statsRes.json();
+                allFeedback = await feedbackRes.json();
+                
+                // Calculate stats from feedback
+                const total = allFeedback.length;
+                const correct = allFeedback.filter(fb => fb.isCorrect).length;
+                const approved = allFeedback.filter(fb => fb.isApprovedFromAdmin).length;
+                const pending = total - approved;
                 
                 // Update statistics
-                document.getElementById('feedbackTotal').textContent = stats.total || 0;
-                document.getElementById('feedbackCorrect').textContent = stats.correct || 0;
-                document.getElementById('feedbackIncorrect').textContent = stats.incorrect || 0;
-                document.getElementById('feedbackAccuracy').textContent = (stats.accuracy || 0) + '%';
+                document.getElementById('feedbackTotal').textContent = total;
+                document.getElementById('feedbackCorrect').textContent = correct;
+                document.getElementById('feedbackPending').textContent = pending;
+                document.getElementById('feedbackApproved').textContent = approved;
 
-                // Pie Chart
+                // Update Chart
+                updateFeedbackChart(correct, total - correct);
+
+                // Display feedback table
+                displayFeedbackTable(allFeedback);
+                
+            } catch (error) {
+                console.error('Error loading feedback:', error);
+                document.getElementById('feedbackTableBody').innerHTML = 
+                    `<tr><td colspan="7" class="text-center text-danger">Error loading feedback: ${error.message}</td></tr>`;
+            }
+        }
+
+        function updateFeedbackChart(correct, incorrect) {
+            try {
                 const ctx = document.getElementById('feedbackChart');
-                if (feedbackChart) feedbackChart.destroy();
+                if (!ctx) {
+                    console.warn('feedbackChart element not found');
+                    return;
+                }
                 
-                const correct = stats.correct || 0;
-                const incorrect = stats.incorrect || 0;
+                // Destroy existing chart if it exists and is a Chart instance
+                if (feedbackChartInstance && typeof feedbackChartInstance.destroy === 'function') {
+                    feedbackChartInstance.destroy();
+                }
                 
-                feedbackChart = new Chart(ctx, {
+                // Create new chart
+                feedbackChartInstance = new Chart(ctx, {
                     type: 'pie',
                     data: {
                         labels: ['Correct', 'Incorrect'],
@@ -556,6 +680,7 @@
                     },
                     options: {
                         responsive: true,
+                        maintainAspectRatio: true,
                         plugins: {
                             legend: { position: 'bottom' },
                             tooltip: {
@@ -572,37 +697,169 @@
                         }
                     }
                 });
+            } catch (error) {
+                console.error('Error creating feedback chart:', error);
+            }
+        }
 
-                // Feedback List
-                if (feedbackData.length === 0) {
-                    document.getElementById('feedbackContainer').innerHTML = 
-                        '<div class="alert alert-info">No feedback submitted yet.</div>';
-                    return;
+        function displayFeedbackTable(feedbackData) {
+            if (feedbackData.length === 0) {
+                document.getElementById('feedbackTableBody').innerHTML = 
+                    '<tr><td colspan="7" class="text-center text-muted">No feedback submitted yet.</td></tr>';
+                return;
+            }
+            
+            const tableHTML = feedbackData.map(fb => `
+                <tr style="cursor: pointer;" onclick="openFeedbackDetail(${fb.feedbackId})">
+                    <td><strong>#${fb.feedbackId}</strong></td>
+                    <td>
+                        <div><strong>${(fb.user && fb.user.userName) || 'Anonymous'}</strong></div>
+                        <small class="text-muted">${(fb.user && fb.user.email) || 'N/A'}</small>
+                    </td>
+                    <td>
+                        <span class="badge ${fb.predictionType && fb.predictionType.includes('___') ? 'bg-danger' : 'bg-success'}">
+                            ${fb.predictionType ? formatPredictionType(fb.predictionType) : 'N/A'}
+                        </span>
+                    </td>
+                    <td>
+                        ${fb.isCorrect 
+                            ? '<span class="badge bg-success"><i class="fas fa-thumbs-up me-1"></i>Correct</span>' 
+                            : '<span class="badge bg-danger"><i class="fas fa-thumbs-down me-1"></i>Incorrect</span>'}
+                    </td>
+                    <td>
+                        ${fb.isApprovedFromAdmin 
+                            ? '<span class="badge bg-primary"><i class="fas fa-check me-1"></i>Approved</span>' 
+                            : '<span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Pending</span>'}
+                    </td>
+                    <td><small>${new Date(fb.createdAt).toLocaleDateString('tr-TR')}</small></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-info" onclick="event.stopPropagation(); openFeedbackDetail(${fb.feedbackId})">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        ${!fb.isApprovedFromAdmin ? `
+                        <button class="btn btn-sm btn-outline-success ms-1" onclick="event.stopPropagation(); quickApprove(${fb.feedbackId})">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        ` : ''}
+                    </td>
+                </tr>
+            `).join('');
+            document.getElementById('feedbackTableBody').innerHTML = tableHTML;
+        }
+
+        function formatPredictionType(predType) {
+            if (!predType) return 'Unknown';
+            // Convert "Tomato___Leaf_Mold" to "Tomato - Leaf Mold"
+            return predType.replace(/___/g, ' - ').replace(/__/g, ' - ').replace(/_/g, ' ');
+        }
+
+        function filterFeedback() {
+            const filter = document.getElementById('feedbackStatusFilter').value;
+            let filtered = allFeedback;
+            
+            if (filter === 'pending') {
+                filtered = allFeedback.filter(fb => !fb.isApprovedFromAdmin);
+            } else if (filter === 'approved') {
+                filtered = allFeedback.filter(fb => fb.isApprovedFromAdmin);
+            }
+            
+            displayFeedbackTable(filtered);
+        }
+
+        function openFeedbackDetail(feedbackId) {
+            const fb = allFeedback.find(f => f.feedbackId === feedbackId);
+            if (!fb) {
+                alert('Feedback not found');
+                return;
+            }
+            
+            // Set modal data
+            document.getElementById('modalFeedbackId').value = feedbackId;
+            
+            // User info - now from API
+            const user = fb.user || {};
+            document.getElementById('modalUserName').textContent = user.userName || 'Anonymous';
+            document.getElementById('modalUserEmail').textContent = user.email || 'N/A';
+            
+            // Prediction info - now from API with formatted name
+            document.getElementById('modalPredictionType').textContent = fb.predictionType ? formatPredictionType(fb.predictionType) : 'Analysis';
+            document.getElementById('modalPredictionType').className = fb.predictionType && fb.predictionType.includes('___') ? 'badge bg-danger' : 'badge bg-success';
+            document.getElementById('modalPredictedName').textContent = fb.predictionType ? formatPredictionType(fb.predictionType) : 'Unknown';
+            document.getElementById('modalConfidence').textContent = fb.confidence ? `${(fb.confidence * 100).toFixed(1)}%` : 'N/A';
+            
+            // Image - from prediction uploadedImageUrl (same as my-diagnosis page)
+            const imageUrl = fb.uploadedImageUrl;
+            const imgElement = document.getElementById('modalPredictionImage');
+            if (imageUrl) {
+                // Handle both relative and absolute URLs
+                imgElement.src = imageUrl.startsWith('http') ? imageUrl : `${BACKEND_URL}${imageUrl}`;
+                imgElement.alt = 'Prediction Image';
+                imgElement.onerror = function() {
+                    this.src = 'https://via.placeholder.com/300x300?text=Image+Not+Found';
+                };
+            } else {
+                imgElement.src = 'https://via.placeholder.com/300x300?text=No+Image';
+            }
+            
+            // Feedback info
+            document.getElementById('modalIsCorrect').innerHTML = fb.isCorrect 
+                ? '<span class="badge bg-success"><i class="fas fa-thumbs-up me-1"></i>Correct</span>'
+                : '<span class="badge bg-danger"><i class="fas fa-thumbs-down me-1"></i>Incorrect</span>';
+            document.getElementById('modalComment').textContent = fb.comment || fb.feedbackText || 'No comment provided';
+            document.getElementById('modalApprovalStatus').innerHTML = fb.isApprovedFromAdmin 
+                ? '<span class="badge bg-primary"><i class="fas fa-check me-1"></i>Approved</span>'
+                : '<span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Pending Approval</span>';
+            document.getElementById('modalFeedbackDate').textContent = new Date(fb.createdAt).toLocaleString('tr-TR');
+            
+            // Show/hide approve button
+            const approveBtn = document.getElementById('approveBtn');
+            if (fb.isApprovedFromAdmin) {
+                approveBtn.style.display = 'none';
+            } else {
+                approveBtn.style.display = 'inline-block';
+            }
+            
+            feedbackDetailModal.show();
+        }
+
+        async function approveFeedback() {
+            const feedbackId = document.getElementById('modalFeedbackId').value;
+            if (!feedbackId) return;
+            
+            try {
+                const res = await authenticatedFetch(`${BACKEND_URL}/api/predictions/feedback/${feedbackId}/approve`, {
+                    method: 'PUT'
+                });
+                
+                if (!res.ok) {
+                    throw new Error('Failed to approve feedback');
                 }
                 
-                const feedbackHTML = feedbackData.map(fb => `
-                    <div class="feedback-item ${fb.isCorrect ? 'correct' : 'incorrect'}">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="mb-1">
-                                    <i class="fas fa-thumbs-${fb.isCorrect ? 'up text-success' : 'down text-danger'} me-2"></i>
-                                    ${fb.user?.userName || 'User'}
-                                </h6>
-                                <small class="text-muted">${fb.user?.email || 'N/A'} • Prediction #${fb.predictionId} • ${fb.predictionType}</small>
-                                <div class="mt-1"><strong>${fb.predictedName}</strong></div>
-                            </div>
-                            <small class="text-muted">${new Date(fb.createdAt).toLocaleDateString('en-US')}</small>
-                        </div>
-                        ${fb.comment ? `<p class="mt-2 mb-0">"${fb.comment}"</p>` : ''}
-                        ${fb.imageAddedToDb ? '<span class="badge bg-success mt-2"><i class="fas fa-check"></i> Image Added to Database</span>' : ''}
-                    </div>
-                `).join('');
-                document.getElementById('feedbackContainer').innerHTML = feedbackHTML;
-                
+                alert('Feedback approved successfully!');
+                feedbackDetailModal.hide();
+                loadFeedback();
             } catch (error) {
-                console.error('Error loading feedback:', error);
-                document.getElementById('feedbackContainer').innerHTML = 
-                    '<div class="alert alert-danger">Error loading feedback: ' + error.message + '</div>';
+                console.error('Error approving feedback:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function quickApprove(feedbackId) {
+            if (!confirm('Are you sure you want to approve this feedback?')) return;
+            
+            try {
+                const res = await authenticatedFetch(`${BACKEND_URL}/api/predictions/feedback/${feedbackId}/approve`, {
+                    method: 'PUT'
+                });
+                
+                if (!res.ok) {
+                    throw new Error('Failed to approve feedback');
+                }
+                
+                loadFeedback();
+            } catch (error) {
+                console.error('Error approving feedback:', error);
+                alert('Error: ' + error.message);
             }
         }
     </script>

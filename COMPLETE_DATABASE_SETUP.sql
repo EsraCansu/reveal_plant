@@ -159,12 +159,15 @@ BEGIN
     CREATE TABLE prediction_feedback (
         feedback_id INT IDENTITY(1,1) PRIMARY KEY,
         prediction_id INT NOT NULL,
+        user_id INT NOT NULL DEFAULT 0,
         is_correct BIT NOT NULL DEFAULT 0,
         is_approved_from_admin BIT NOT NULL DEFAULT 0,
         image_added_to_db BIT NOT NULL DEFAULT 0,
-        comment VARCHAR(500) NULL,
+        comment NVARCHAR(500) NULL,
         created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
-        CONSTRAINT FK_prediction_feedback_prediction FOREIGN KEY (prediction_id) REFERENCES prediction(prediction_id)
+        updated_at DATETIME2 NULL,
+        CONSTRAINT FK_prediction_feedback_prediction FOREIGN KEY (prediction_id) REFERENCES prediction(prediction_id),
+        CONSTRAINT FK_prediction_feedback_user FOREIGN KEY (user_id) REFERENCES [user](user_id)
     );
     PRINT 'Prediction_Feedback table created successfully';
 END

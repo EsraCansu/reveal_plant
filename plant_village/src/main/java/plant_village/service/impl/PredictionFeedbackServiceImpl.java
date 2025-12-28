@@ -80,12 +80,12 @@ public class PredictionFeedbackServiceImpl implements PredictionFeedbackService 
      */
     @Override
     public List<PredictionFeedback> getAllFeedback() {
-        log.info("Fetching all feedback");
+        log.info("Fetching all feedback with user and prediction details");
         
-        List<PredictionFeedback> feedbackList = feedbackRepository.findAll();
-        feedbackList.sort((f1, f2) -> f2.getCreatedAt().compareTo(f1.getCreatedAt()));
+        // Use custom query with JOIN FETCH to eagerly load user and prediction
+        List<PredictionFeedback> feedbackList = feedbackRepository.findAllWithUserAndPrediction();
         
-        log.info("Retrieved {} feedback entries", feedbackList.size());
+        log.info("Retrieved {} feedback entries with joined relations", feedbackList.size());
         
         return feedbackList;
     }
@@ -172,6 +172,41 @@ public class PredictionFeedbackServiceImpl implements PredictionFeedbackService 
             totalFeedback, approvedFeedback, pendingFeedback);
         
         return statistics;
+    }
+    
+    /**
+     * Approve feedback by admin
+     * STEP 5: Feedback - Admin approval
+     * If isCorrect=true, save image to DB for ML training
+     */
+    @Override
+    public PredictionFeedback approveFeedback(Integer feedbackId) {
+        log.info("Approving feedback with ID: {}", feedbackId);
+        
+        return feedbackRepository.findById(feedbackId)
+            .map(feedback -> {
+                feedback.setIsApprovedFromAdmin(true);
+                feedback.setIsApproved(true);  // isApprovedFromAdmin 1 (true) oluyorsa isApproved da 1 (true) olsun
+                
+                // If feedback is correct, mark image as added to DB for ML training
+                if (Boolean.TRUE.equals(feedback.getIsCorrect())) {
+                    feedback.setImageAddedToDb(true);
+                    log.info("✅ Correct prediction approved - Image marked for ML training. Feedback ID: {}", feedbackId);
+                } else {
+                    // Incorrect predictions don't need to save image
+                    feedback.setImageAddedToDb(false);
+                    log.info("❌ Incorrect prediction approved - Image NOT added to training. Feedback ID: {}", feedbackId);
+                }
+                
+                PredictionFeedback approved = feedbackRepository.save(feedback);
+                log.info("Feedback approved successfully - ID: {}, isCorrect: {}, imageAddedToDb: {}", 
+                    feedbackId, feedback.getIsCorrect(), feedback.getImageAddedToDb());
+                return approved;
+            })
+            .orElseThrow(() -> {
+                log.error("Feedback not found with ID: {}", feedbackId);
+                return new RuntimeException("Feedback not found with ID: " + feedbackId);
+            });
     }
     
     /**

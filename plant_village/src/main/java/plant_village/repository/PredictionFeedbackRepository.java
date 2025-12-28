@@ -20,6 +20,15 @@ public interface PredictionFeedbackRepository extends JpaRepository<PredictionFe
     List<PredictionFeedback> findAllByOrderByCreatedAtDesc();
     
     /**
+     * Find all feedback with user and prediction joined - EAGER load
+     */
+    @Query("SELECT pf FROM PredictionFeedback pf " +
+           "LEFT JOIN FETCH pf.user u " +
+           "LEFT JOIN FETCH pf.prediction p " +
+           "ORDER BY pf.createdAt DESC")
+    List<PredictionFeedback> findAllWithUserAndPrediction();
+    
+    /**
      * Find feedback by prediction ID
      */
     List<PredictionFeedback> findByPrediction_Id(Integer predictionId);

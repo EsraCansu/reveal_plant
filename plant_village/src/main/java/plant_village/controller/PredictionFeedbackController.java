@@ -110,6 +110,22 @@ public class PredictionFeedbackController {
         }
         return ResponseEntity.notFound().build();
     }
+
+    /**
+     * PUT /api/feedbacks/{id}/approve
+     * Approve feedback by admin
+     */
+    @PutMapping("/{id}/approve")
+    public ResponseEntity<?> approveFeedback(@PathVariable Integer id) {
+        Optional<PredictionFeedback> feedback = feedbackRepository.findById(id);
+        if (feedback.isPresent()) {
+            PredictionFeedback existingFeedback = feedback.get();
+            existingFeedback.setIsApprovedFromAdmin(true);
+            PredictionFeedback updatedFeedback = feedbackRepository.save(existingFeedback);
+            return ResponseEntity.ok(updatedFeedback);
+        }
+        return ResponseEntity.notFound().build();
+    }
 }
 
 /**

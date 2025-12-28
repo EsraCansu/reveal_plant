@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDateTime;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -163,28 +164,71 @@ public class PredictionController {
     /**
      * Get all feedback (admin only)
      * GET /api/predictions/feedback/all
-     * @return List of all feedback
+     * @return List of all feedback with prediction and user details
      */
     @GetMapping("/feedback/all")
     public ResponseEntity<?> getAllFeedback() {
         try {
             List<PredictionFeedback> feedbacks = feedbackService.getAllFeedback();
             
-            // Convert to simple DTOs to avoid JSON serialization issues
+            // Convert to detailed DTOs with user and prediction info
             List<Map<String, Object>> feedbackDTOs = feedbacks.stream().map(fb -> {
                 Map<String, Object> dto = new HashMap<>();
                 dto.put("feedbackId", fb.getFeedbackId());
                 dto.put("predictionId", fb.getPrediction() != null ? fb.getPrediction().getId() : null);
                 dto.put("isCorrect", fb.getIsCorrect());
                 dto.put("isApprovedFromAdmin", fb.getIsApprovedFromAdmin());
+                // isApprovedFromAdmin true ise isApproved da true olsun
+                dto.put("isApproved", fb.getIsApprovedFromAdmin() != null ? fb.getIsApprovedFromAdmin() : false);
                 dto.put("feedbackText", fb.getComment());
-                dto.put("adminNotes", fb.getComment());
+                dto.put("comment", fb.getComment());
                 dto.put("createdAt", fb.getCreatedAt() != null ? fb.getCreatedAt().toString() : null);
-                dto.put("updatedAt", fb.getCreatedAt() != null ? fb.getCreatedAt().toString() : null);
+                
+                // Handle updatedAt safely
+                LocalDateTime updatedTime = fb.getUpdatedAt();
+                if (updatedTime == null) {
+                    updatedTime = fb.getCreatedAt();
+                }
+                dto.put("updatedAt", updatedTime != null ? updatedTime.toString() : null);
+                
+                // User Information
+                if (fb.getUser() != null) {
+                    Map<String, Object> userInfo = new HashMap<>();
+                    userInfo.put("userId", fb.getUser().getId());
+                    userInfo.put("userName", fb.getUser().getUserName());
+                    userInfo.put("email", fb.getUser().getEmail());
+                    userInfo.put("fullName", fb.getUser().getUserName());
+                    dto.put("user", userInfo);
+                } else {
+                    Map<String, Object> userInfo = new HashMap<>();
+                    userInfo.put("userId", 0);
+                    userInfo.put("userName", "Anonymous");
+                    userInfo.put("email", "anonymous@reveal-plant.com");
+                    userInfo.put("fullName", "Anonymous User");
+                    dto.put("user", userInfo);
+                }
+                
+                // Prediction Information
+                if (fb.getPrediction() != null) {
+                    Map<String, Object> predInfo = new HashMap<>();
+                    Prediction pred = fb.getPrediction();
+                    predInfo.put("id", pred.getId());
+                    predInfo.put("uploadedImageUrl", pred.getUploadedImageUrl());
+                    predInfo.put("predictionType", pred.getPredictionType());
+                    predInfo.put("confidence", pred.getConfidence());
+                    if (pred.getCareTips() != null) {
+                        predInfo.put("careTips", pred.getCareTips());
+                    }
+                    dto.put("prediction", predInfo);
+                    dto.put("uploadedImageUrl", pred.getUploadedImageUrl());
+                    dto.put("predictionType", pred.getPredictionType());
+                    dto.put("confidence", pred.getConfidence());
+                }
+                
                 return dto;
             }).collect(java.util.stream.Collectors.toList());
             
-            log.info("📋 Retrieved {} feedbacks", feedbackDTOs.size());
+            log.info("📋 Retrieved {} feedbacks with details", feedbackDTOs.size());
             return new ResponseEntity<>(feedbackDTOs, HttpStatus.OK);
         } catch (Exception e) {
             log.error("❌ Error getting feedbacks: {}", e.getMessage(), e);
@@ -227,6 +271,37 @@ public class PredictionController {
     public ResponseEntity<List<PredictionFeedback>> getFeedbackByUser(@PathVariable Integer userId) {
         List<PredictionFeedback> feedback = feedbackService.getFeedbackByUserId(userId);
         return new ResponseEntity<>(feedback, HttpStatus.OK);
+    }
+
+    /**
+     * Approve feedback by admin
+     * PUT /api/predictions/feedback/{feedbackId}/approve
+     * @param feedbackId The feedback ID to approve
+     * @return Updated feedback with isApprovedFromAdmin = true and isApproved = true
+     */
+    @PutMapping("/feedback/{feedbackId}/approve")
+    public ResponseEntity<?> approveFeedback(@PathVariable Integer feedbackId) {
+        try {
+            PredictionFeedback feedback = feedbackService.approveFeedback(feedbackId);
+            if (feedback != null) {
+                // Return simplified DTO to avoid circular reference serialization
+                Map<String, Object> response = new HashMap<>();
+                response.put("feedbackId", feedback.getFeedbackId());
+                response.put("isApprovedFromAdmin", feedback.getIsApprovedFromAdmin());
+                response.put("isApproved", feedback.getIsApproved());
+                response.put("message", "Feedback approved successfully");
+                
+                log.info("✅ Feedback ID {} approved - isApprovedFromAdmin: {}, isApproved: {}", 
+                    feedbackId, feedback.getIsApprovedFromAdmin(), feedback.getIsApproved());
+                
+                return new ResponseEntity<>(response, HttpStatus.OK);
+            }
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.error("Error approving feedback: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
     }
 
     /**
@@ -485,10 +560,14 @@ public class PredictionController {
             Prediction prediction = predictionService.findById(predictionId)
                 .orElseThrow(() -> new RuntimeException("Prediction not found"));
 
-            // Create feedback with userId (0 = anonymous)
+            // Get user - required for feedback
+            User user = userService.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Create feedback with user
             PredictionFeedback feedback = PredictionFeedback.builder()
                 .prediction(prediction)
-                .userId(userId != null ? userId : 0)  // 0 = anonymous user
+                .user(user)
                 .isCorrect(isCorrect)
                 .comment(feedbackText != null ? feedbackText : "")
                 .isApprovedFromAdmin(false) // Requires admin approval
