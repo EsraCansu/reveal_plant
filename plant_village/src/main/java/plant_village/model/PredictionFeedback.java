@@ -21,6 +21,9 @@ public class PredictionFeedback {
     @JoinColumn(name = "prediction_id", nullable = false)
     private Prediction prediction;
     
+    @Column(name = "user_id", nullable = false)
+    private Integer userId = 0;  // 0 = anonim kullanıcı
+    
     @Column(name = "is_correct", nullable = false)
     private Boolean isCorrect;
     

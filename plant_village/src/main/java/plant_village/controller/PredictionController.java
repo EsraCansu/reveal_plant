@@ -283,7 +283,7 @@ public class PredictionController {
             log.info("📸 Analyzing plant image for user: {}, type: {}", userId, predictionType);
             
             // Call the main prediction workflow (Tree + Stack + Hash Map logic inside)
-            Prediction prediction = predictionService.predictPlantDisease(
+            plant_village.model.dto.PredictionResult predictionResult = predictionService.predictPlantDisease(
                 userId,
                 null,
                 imageBase64,
@@ -291,6 +291,8 @@ public class PredictionController {
                 predictionType
             );
             
+            Prediction prediction = predictionResult.getPrediction();
+            java.util.List<plant_village.model.dto.DiseasePrediction> allMlPredictions = predictionResult.getAllPredictions();
 
             // Build response matching frontend expectations
             Map<String, Object> response = new HashMap<>();
@@ -347,28 +349,46 @@ public class PredictionController {
             response.put("treatment", treatment);
             response.put("recommended_medicines", "");
 
-            // Top 3 predictions from PredictionDisease relationships
+            // Build "Other Possibilities" from ALL ML predictions (not just DB saved ones)
             List<Map<String, Object>> topPredictions = new java.util.ArrayList<>();
             
-            // Get disease predictions from relationship table
-            if (prediction.getDiseaseDetails() != null && !prediction.getDiseaseDetails().isEmpty()) {
-                for (plant_village.model.PredictionDisease pd : prediction.getDiseaseDetails()) {
+            if (allMlPredictions != null && !allMlPredictions.isEmpty()) {
+                // Skip first one (already shown as main result), show rest as "Other Possibilities"
+                for (int i = 1; i < allMlPredictions.size() && i < 4; i++) {  // Top 3 alternatives
+                    plant_village.model.dto.DiseasePrediction dp = allMlPredictions.get(i);
                     Map<String, Object> p = new HashMap<>();
-                    plant_village.model.Disease disease = pd.getDisease();
-                    if (disease != null) {
-                        p.put("class_name", disease.getDiseaseName());
-                        p.put("probability", pd.getMatchConfidence() != null ? pd.getMatchConfidence() : 0.0);
-                        p.put("symptom_description", disease.getSymptomDescription() != null ? disease.getSymptomDescription() : "");
-                        p.put("treatment", disease.getTreatment() != null ? disease.getTreatment() : "");
-                        p.put("recommended_medicines", "");
-                        topPredictions.add(p);
+                    
+                    String className = dp.getDisease();
+                    // Normalize for display
+                    if ("identify-plant".equals(predictionType)) {
+                        className = parsePlantNameFromMLFormat(className);
                     }
+                    
+                    p.put("class_name", className);
+                    p.put("probability", dp.getConfidenceScore() != null ? dp.getConfidenceScore() : 0.0);
+                    
+                    // Try to get disease info from cache
+                    String altSymptoms = "";
+                    String altTreatment = "";
+                    if (cacheManager != null && "detect-disease".equals(predictionType)) {
+                        java.util.Optional<plant_village.model.Disease> altDiseaseOpt = cacheManager.getDiseaseByName(dp.getDisease());
+                        if (altDiseaseOpt.isPresent()) {
+                            plant_village.model.Disease altDisease = altDiseaseOpt.get();
+                            altSymptoms = altDisease.getSymptomDescription() != null ? altDisease.getSymptomDescription() : "";
+                            altTreatment = altDisease.getTreatment() != null ? altDisease.getTreatment() : "";
+                        }
+                    }
+                    
+                    p.put("symptom_description", altSymptoms);
+                    p.put("treatment", altTreatment);
+                    p.put("recommended_medicines", "");
+                    topPredictions.add(p);
                 }
             }
             response.put("top_predictions", topPredictions);
 
-            log.info("✅ Prediction successful: ID={}, isValid={}, isHealthy={}, confidence={}", 
-                prediction.getId(), prediction.getIsValid(), isHealthy, prediction.getConfidence());
+            log.info("✅ Prediction successful: ID={}, isValid={}, isHealthy={}, confidence={}, otherPossibilities={}", 
+                prediction.getId(), prediction.getIsValid(), isHealthy, prediction.getConfidence(), topPredictions.size());
 
             return new ResponseEntity<>(response, HttpStatus.OK);
             
@@ -446,9 +466,10 @@ public class PredictionController {
             Prediction prediction = predictionService.findById(predictionId)
                 .orElseThrow(() -> new RuntimeException("Prediction not found"));
 
-            // Create feedback
+            // Create feedback with userId (0 = anonim)
             PredictionFeedback feedback = PredictionFeedback.builder()
                 .prediction(prediction)
+                .userId(userId != null ? userId : 0)  // 0 = anonim kullanıcı
                 .isCorrect(isCorrect)
                 .comment(feedbackText != null ? feedbackText : "")
                 .isApprovedFromAdmin(false) // Requires admin approval

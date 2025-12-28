@@ -1,6 +1,7 @@
 package plant_village.service;
 
 import plant_village.model.*;
+import plant_village.model.dto.PredictionResult;
 import lombok.extern.slf4j.Slf4j;
 import java.util.*;
 
@@ -23,7 +24,8 @@ public interface PredictionService {
 
     /**
      * Real-time prediction API
-     * Processes plant disease prediction with image and sends result via WebSocket
+     * Processes plant disease prediction with image
+     * @return PredictionResult containing saved prediction and all ML predictions for "Other Possibilities"
      */
-    Prediction predictPlantDisease(Integer userId, Integer plantId, String imageBase64, String description, String predictionMode);
+    PredictionResult predictPlantDisease(Integer userId, Integer plantId, String imageBase64, String description, String predictionMode);
 }

@@ -11,11 +11,14 @@ import plant_village.model.Disease;
 import plant_village.repository.PredictionRepository;
 import plant_village.repository.UserRepository;
 import plant_village.repository.DiseaseRepository;
+import plant_village.repository.PlantRepository;
 import plant_village.service.PredictionService;
 import plant_village.service.FastAPIClientService;
 import plant_village.model.dto.FastAPIResponse;
 import plant_village.model.dto.DiseasePrediction;
+import plant_village.model.dto.PredictionResult;
 import plant_village.model.PredictionLog;
+import plant_village.model.Plant;
 import plant_village.repository.PredictionLogRepository;
 
 import java.time.LocalDateTime;
@@ -42,6 +45,9 @@ public class PredictionServiceImpl implements PredictionService {
     
     @Autowired
     private DiseaseRepository diseaseRepository;
+    
+    @Autowired
+    private PlantRepository plantRepository;
     
     @Autowired
     private FastAPIClientService fastAPIClientService;
@@ -187,9 +193,10 @@ public class PredictionServiceImpl implements PredictionService {
      * Real-time prediction API
      * Processes plant disease prediction with image
      * STEP 3: Main Prediction - Create prediction with ML model
+     * @return PredictionResult containing saved prediction and all ML predictions
      */
     @Override
-    public Prediction predictPlantDisease(Integer userId, Integer plantId, 
+    public PredictionResult predictPlantDisease(Integer userId, Integer plantId, 
                                           String imageBase64, String description, String predictionMode) {
         log.info("Processing plant disease prediction for user ID: {}, plant ID: {}", userId, plantId);
         
@@ -211,12 +218,26 @@ public class PredictionServiceImpl implements PredictionService {
             log.info("✅ FastAPI prediction received: {} with confidence {}", 
                 mlResponse.getTopPrediction(), mlResponse.getTopConfidence());
             
+            // Process based on prediction mode
+            boolean isPlantMode = "identify-plant".equals(predictionMode);
+            log.info("🎯 Prediction mode: {} (isPlantMode={})", predictionMode, isPlantMode);
+            
+            // Determine prediction type based on mode
+            String predictionTypeValue;
+            if (isPlantMode) {
+                // For plant identification: extract just the plant name (e.g., "Grape")
+                predictionTypeValue = extractPlantName(mlResponse.getTopPrediction());
+            } else {
+                // For disease detection: use normalized disease name (e.g., "Grape___Leaf_blight")
+                predictionTypeValue = normalizeDiseaseName(mlResponse.getTopPrediction());
+            }
+            
             // Create new prediction record
             Prediction prediction = new Prediction();
             prediction.setUser(user);
             prediction.setUploadedImageUrl(imageBase64);  // Store base64 image
             prediction.setCareTips(description);
-            prediction.setPredictionType(mlResponse.getTopPrediction());  // ML result (e.g., "Tomato___Leaf_Mold")
+            prediction.setPredictionType(predictionTypeValue);  // Plant name or Disease name based on mode
             prediction.setConfidence(mlResponse.getTopConfidence());      // Overall confidence
             
             // Set validity based on 50% threshold
@@ -224,17 +245,45 @@ public class PredictionServiceImpl implements PredictionService {
             prediction.setIsValid(isValid);
             prediction.setCreateAt(LocalDateTime.now());
             
-            // Initialize disease details list
-            List<PredictionDisease> diseaseDetails = new ArrayList<>();
-            
-            // Process top predictions and create PredictionDisease relationships
-            if (mlResponse.getPredictions() != null && !mlResponse.getPredictions().isEmpty()) {
-                int rank = 0;
-                for (DiseasePrediction dp : mlResponse.getPredictions()) {
-                    if (rank >= 3) break;  // Top 3 only
+            if (isPlantMode) {
+                // PLANT IDENTIFICATION MODE - Save to prediction_plant table (TOP 1 only)
+                List<PredictionPlant> plantDetails = new ArrayList<>();
+                
+                if (mlResponse.getPredictions() != null && !mlResponse.getPredictions().isEmpty()) {
+                    // Only add the TOP 1 prediction with highest confidence
+                    DiseasePrediction topPrediction = mlResponse.getPredictions().get(0);
                     
-                    // Try to find disease in database by name (with normalization)
-                    String diseaseName = dp.getDisease();
+                    String fullName = topPrediction.getDisease();
+                    String plantName = extractPlantName(fullName);
+                    
+                    Optional<Plant> plantOpt = findPlantByName(plantName);
+                    
+                    if (plantOpt.isPresent()) {
+                        Plant plant = plantOpt.get();
+                        
+                        PredictionPlant pp = new PredictionPlant();
+                        pp.setPrediction(prediction);
+                        pp.setPlant(plant);
+                        pp.setMatchConfidence(topPrediction.getConfidenceScore());
+                        
+                        plantDetails.add(pp);
+                        log.info("🌱 Added plant match: {} (id={}) with confidence {}", plant.getPlantName(), plant.getId(), topPrediction.getConfidenceScore());
+                    } else {
+                        log.warn("⚠️ Plant not found in DB: {}", plantName);
+                    }
+                }
+                
+                prediction.setPlantDetails(plantDetails);
+                
+            } else {
+                // DISEASE DETECTION MODE - Save to prediction_disease table
+                List<PredictionDisease> diseaseDetails = new ArrayList<>();
+                
+                if (mlResponse.getPredictions() != null && !mlResponse.getPredictions().isEmpty()) {
+                    // Only add the TOP 1 prediction with highest confidence
+                    DiseasePrediction topPrediction = mlResponse.getPredictions().get(0);
+                    
+                    String diseaseName = topPrediction.getDisease();
                     Optional<Disease> diseaseOpt = findDiseaseByNormalizedName(diseaseName);
                     
                     if (diseaseOpt.isPresent()) {
@@ -243,18 +292,17 @@ public class PredictionServiceImpl implements PredictionService {
                         PredictionDisease pd = new PredictionDisease();
                         pd.setPrediction(prediction);
                         pd.setDisease(disease);
-                        pd.setMatchConfidence(dp.getConfidenceScore());
+                        pd.setMatchConfidence(topPrediction.getConfidenceScore());
                         
                         diseaseDetails.add(pd);
-                        log.info("📍 Added disease match: {} with confidence {}", disease.getDiseaseName(), dp.getConfidenceScore());
+                        log.info("🦠 Added disease match: {} (id={}) with confidence {}", disease.getDiseaseName(), disease.getId(), topPrediction.getConfidenceScore());
                     } else {
                         log.warn("⚠️ Disease not found in DB: {}", diseaseName);
                     }
-                    rank++;
                 }
+                
+                prediction.setDiseaseDetails(diseaseDetails);
             }
-            
-            prediction.setDiseaseDetails(diseaseDetails);
             
             // Save prediction with relationships
             Prediction savedPrediction = predictionRepository.save(prediction);
@@ -270,7 +318,11 @@ public class PredictionServiceImpl implements PredictionService {
             log.info("✅ Plant disease prediction processed - Prediction ID: {}, Type: {}, Confidence: {}", 
                 savedPrediction.getId(), savedPrediction.getPredictionType(), savedPrediction.getConfidence());
             
-            return savedPrediction;
+            // Return PredictionResult with saved prediction AND all ML predictions for "Other Possibilities"
+            return PredictionResult.builder()
+                .prediction(savedPrediction)
+                .allPredictions(mlResponse.getPredictions())
+                .build();
         } catch (Exception e) {
             log.error("Error processing plant disease prediction: {}", e.getMessage(), e);
             throw new RuntimeException("Tahmin işleme hatası: " + e.getMessage());
@@ -278,44 +330,158 @@ public class PredictionServiceImpl implements PredictionService {
     }
     
     /**
+     * Normalize ML disease name to DB format
+     * Handles all PlantVillage ML model format differences:
+     * - Corn_(maize)___... → Corn___...
+     * - Cherry_(including_sour)___... → Cherry___...
+     * - Pepper,_bell___... → Pepper__bell___...
+     */
+    private String normalizeDiseaseName(String mlName) {
+        if (mlName == null) return "";
+        
+        String normalized = mlName;
+        
+        // 1. Handle Pepper,_bell → Pepper__bell (comma to double underscore)
+        normalized = normalized.replace("Pepper,_bell", "Pepper__bell");
+        
+        // 2. Remove parenthetical suffixes like (maize), (including_sour)
+        // Cherry_(including_sour)___... → Cherry___...
+        // Corn_(maize)___... → Corn___...
+        normalized = normalized.replaceAll("_?\\([^)]+\\)", "");
+        
+        return normalized.trim();
+    }
+    
+    /**
      * Find disease by normalized name
-     * Handles format differences between ML model (___) and database (__)
-     * e.g., "Tomato___Leaf_Mold" from ML vs "Tomato__Leaf_Mold" in DB
+     * Handles format differences between ML model and database
+     * e.g., "Corn_(maize)___Cercospora_leaf_spot" from ML vs "Corn___Cercospora_leaf_spot" in DB
      */
     private Optional<Disease> findDiseaseByNormalizedName(String mlDiseaseName) {
         if (mlDiseaseName == null || mlDiseaseName.isEmpty()) {
             return Optional.empty();
         }
         
-        // Try exact match first
-        Optional<Disease> exact = diseaseRepository.findByDiseaseNameIgnoreCase(mlDiseaseName);
+        // Normalize ML name to DB format (remove parenthetical like (maize))
+        String normalizedName = normalizeDiseaseName(mlDiseaseName);
+        log.debug("Searching disease: ML='{}' → Normalized='{}'", mlDiseaseName, normalizedName);
+        
+        // Try exact match first with normalized name
+        Optional<Disease> exact = diseaseRepository.findByDiseaseNameIgnoreCase(normalizedName);
+        if (exact.isPresent()) {
+            log.debug("Found disease with normalized name: {}", normalizedName);
+            return exact;
+        }
+        
+        // Try original ML name
+        exact = diseaseRepository.findByDiseaseNameIgnoreCase(mlDiseaseName);
         if (exact.isPresent()) {
             return exact;
         }
         
-        // Try with ___ → __ conversion (ML format → DB format)
-        String normalizedName = mlDiseaseName.replace("___", "__");
-        Optional<Disease> normalized = diseaseRepository.findByDiseaseNameIgnoreCase(normalizedName);
+        // Try with ___ → __ conversion
+        String convertedName = normalizedName.replace("___", "__");
+        Optional<Disease> normalized = diseaseRepository.findByDiseaseNameIgnoreCase(convertedName);
         if (normalized.isPresent()) {
-            log.debug("Found disease with normalized name: {} → {}", mlDiseaseName, normalizedName);
-            return normalized;
-        }
-        
-        // Try with __ → ___ conversion (DB format → ML format, reverse)
-        normalizedName = mlDiseaseName.replace("__", "___");
-        normalized = diseaseRepository.findByDiseaseNameIgnoreCase(normalizedName);
-        if (normalized.isPresent()) {
-            log.debug("Found disease with reverse normalized name: {} → {}", mlDiseaseName, normalizedName);
+            log.debug("Found disease with ___ → __ conversion: {}", convertedName);
             return normalized;
         }
         
         // Try partial match as last resort
         List<Disease> partialMatches = diseaseRepository.findByDiseaseNameContainingIgnoreCase(
-            mlDiseaseName.replace("___", "_").replace("__", "_")
+            normalizedName.replace("___", "_").replace("__", "_")
         );
         if (!partialMatches.isEmpty()) {
             log.debug("Found disease with partial match for: {}", mlDiseaseName);
             return Optional.of(partialMatches.get(0));
+        }
+        
+        return Optional.empty();
+    }
+    
+    /**
+     * Extract plant name from ML prediction format
+     * e.g., "Tomato___Leaf_Mold" → "Tomato"
+     * e.g., "Grape___healthy" → "Grape"
+     * e.g., "Corn_(maize)___..." → "Corn"
+     */
+    private String extractPlantName(String fullPrediction) {
+        if (fullPrediction == null || fullPrediction.isEmpty()) {
+            return "";
+        }
+        
+        // Split by ___ (ML format) or __ (DB format)
+        String[] parts = fullPrediction.split("___");
+        if (parts.length > 0) {
+            String plantName = parts[0];
+            // Normalize ML model plant names to DB format
+            plantName = normalizePlantName(plantName);
+            return plantName;
+        }
+        
+        parts = fullPrediction.split("__");
+        if (parts.length > 0) {
+            String plantName = parts[0];
+            plantName = normalizePlantName(plantName);
+            return plantName;
+        }
+        
+        return normalizePlantName(fullPrediction);
+    }
+    
+    /**
+     * Normalize ML model plant names to DB format
+     * Handles all PlantVillage ML model format differences:
+     * - Corn_(maize) → Corn
+     * - Cherry_(including_sour) → Cherry  
+     * - Pepper,_bell → Pepper
+     */
+    private String normalizePlantName(String name) {
+        if (name == null) return "";
+        
+        String normalized = name;
+        
+        // 1. Remove parenthetical suffixes like (maize), (including_sour)
+        // Corn_(maize) → Corn
+        // Cherry_(including_sour) → Cherry
+        normalized = normalized.replaceAll("_?\\([^)]+\\)", "");
+        
+        // 2. Handle comma cases: Pepper,_bell → Pepper
+        if (normalized.contains(",")) {
+            normalized = normalized.split(",")[0];
+        }
+        
+        // 3. Handle underscore prefix if any: _bell → remove leading underscore
+        normalized = normalized.replaceAll("^_+", "");
+        
+        return normalized.trim();
+    }
+    
+    /**
+     * Find plant by name with normalization
+     */
+    private Optional<Plant> findPlantByName(String plantName) {
+        if (plantName == null || plantName.isEmpty()) {
+            return Optional.empty();
+        }
+        
+        // Try exact match first
+        Optional<Plant> exact = plantRepository.findByPlantName(plantName);
+        if (exact.isPresent()) {
+            return exact;
+        }
+        
+        // Try case-insensitive search
+        List<Plant> matches = plantRepository.findByPlantNameContainingIgnoreCase(plantName);
+        if (!matches.isEmpty()) {
+            // Return exact case-insensitive match if exists
+            for (Plant p : matches) {
+                if (p.getPlantName().equalsIgnoreCase(plantName)) {
+                    return Optional.of(p);
+                }
+            }
+            // Otherwise return first partial match
+            return Optional.of(matches.get(0));
         }
         
         return Optional.empty();

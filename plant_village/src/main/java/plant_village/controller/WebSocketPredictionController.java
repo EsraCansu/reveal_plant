@@ -41,13 +41,15 @@ public class WebSocketPredictionController {
             sendStatusUpdate(userId, null, "ANALYZING", 30, "Analyzing plant image...");
 
             // Service metodunu çağırıyoruz
-                Prediction prediction = predictionService.predictPlantDisease(
-                    userId.intValue(), // Integer'a çevirdik (Modelimizle uyum için)
-                    request.getPlantId(),
-                    request.getImageBase64(),
-                    request.getDescription(),
-                    "detect-disease"
-                );
+            plant_village.model.dto.PredictionResult predictionResult = predictionService.predictPlantDisease(
+                userId.intValue(), // Integer'a çevirdik (Modelimizle uyum için)
+                request.getPlantId(),
+                request.getImageBase64(),
+                request.getDescription(),
+                "detect-disease"
+            );
+            
+            Prediction prediction = predictionResult.getPrediction();
 
             sendStatusUpdate(userId, prediction.getId(), "COMPLETE", 100, "Prediction completed successfully");
 
