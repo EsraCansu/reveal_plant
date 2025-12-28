@@ -44,7 +44,7 @@ public class PredictionPlantDiseaseServiceImpl implements PredictionPlantDisease
         PredictionPlant predictionPlant = PredictionPlant.builder()
             .prediction(prediction)
             .plant(plant)
-            .matchConfidence(confidence != null ? confidence.doubleValue() : null)
+            .confidence(confidence != null ? confidence.doubleValue() : null)
             .build();
         
         PredictionPlant saved = predictionPlantRepository.save(predictionPlant);
@@ -108,7 +108,7 @@ public class PredictionPlantDiseaseServiceImpl implements PredictionPlantDisease
             .prediction(prediction)
             .disease(disease)
             .isHealthy(isHealthy)
-            .matchConfidence(confidence != null ? confidence.doubleValue() : null)
+            .confidence(confidence != null ? confidence.doubleValue() : null)
             .build();
         
         PredictionDisease saved = predictionDiseaseRepository.save(predictionDisease);

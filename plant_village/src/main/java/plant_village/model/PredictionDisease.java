@@ -30,6 +30,6 @@ public class PredictionDisease {
     @Column(name = "is_healthy")
     private Boolean isHealthy;
     
-    @Column(name = "match_confidence")
-    private Double matchConfidence;
+    @Column(name = "confidence")
+    private Double confidence;
 }

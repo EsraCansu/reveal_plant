@@ -288,7 +288,7 @@ public class PredictionServiceImpl implements PredictionService {
                         PredictionPlant pp = new PredictionPlant();
                         pp.setPrediction(prediction);
                         pp.setPlant(plant);
-                        pp.setMatchConfidence(topPrediction.getConfidenceScore());
+                        pp.setConfidence(topPrediction.getConfidenceScore());
                         
                         plantDetails.add(pp);
                         log.info("🌱 Added plant match: {} (id={}) with confidence {}", plant.getPlantName(), plant.getId(), topPrediction.getConfidenceScore());
@@ -316,7 +316,7 @@ public class PredictionServiceImpl implements PredictionService {
                         PredictionDisease pd = new PredictionDisease();
                         pd.setPrediction(prediction);
                         pd.setDisease(disease);
-                        pd.setMatchConfidence(topPrediction.getConfidenceScore());
+                        pd.setConfidence(topPrediction.getConfidenceScore());
                         
                         diseaseDetails.add(pd);
                         log.info("🦠 Added disease match: {} (id={}) with confidence {}", disease.getDiseaseName(), disease.getId(), topPrediction.getConfidenceScore());

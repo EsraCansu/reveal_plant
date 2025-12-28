@@ -27,6 +27,6 @@ public class PredictionPlant {
     @JoinColumn(name = "prediction_id", nullable = false)
     private Prediction prediction;
     
-    @Column(name = "match_confidence")
-    private Double matchConfidence;
+    @Column(name = "confidence")
+    private Double confidence;
 }

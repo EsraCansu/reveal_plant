@@ -112,7 +112,7 @@ BEGIN
         id INT IDENTITY(1,1) PRIMARY KEY,
         prediction_id INT NOT NULL,
         plant_id INT NOT NULL,
-        match_confidence FLOAT NULL,
+        confidence FLOAT NULL,
         CONSTRAINT FK_prediction_plant_prediction FOREIGN KEY (prediction_id) REFERENCES prediction(prediction_id),
         CONSTRAINT FK_prediction_plant_plant FOREIGN KEY (plant_id) REFERENCES plant(plant_id)
     );
@@ -129,7 +129,7 @@ BEGIN
         id INT IDENTITY(1,1) PRIMARY KEY,
         prediction_id INT NOT NULL,
         disease_id INT NOT NULL,
-        match_confidence FLOAT NULL,
+        confidence FLOAT NULL,
         is_healthy BIT NULL,
         CONSTRAINT FK_prediction_disease_prediction FOREIGN KEY (prediction_id) REFERENCES prediction(prediction_id),
         CONSTRAINT FK_prediction_disease_disease FOREIGN KEY (disease_id) REFERENCES disease(disease_id)
