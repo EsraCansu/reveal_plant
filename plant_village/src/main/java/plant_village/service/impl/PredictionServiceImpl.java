@@ -318,8 +318,12 @@ public class PredictionServiceImpl implements PredictionService {
                         pd.setDisease(disease);
                         pd.setConfidence(topPrediction.getConfidenceScore());
                         
+                        // Set is_healthy flag: 1 if disease name contains "healthy", 0 otherwise (disease detected)
+                        boolean isHealthy = disease.getDiseaseName().toLowerCase().contains("healthy");
+                        pd.setIsHealthy(isHealthy);
+                        
                         diseaseDetails.add(pd);
-                        log.info("🦠 Added disease match: {} (id={}) with confidence {}", disease.getDiseaseName(), disease.getId(), topPrediction.getConfidenceScore());
+                        log.info("🦠 Added disease match: {} (id={}) with confidence {} - Healthy: {}", disease.getDiseaseName(), disease.getId(), topPrediction.getConfidenceScore(), isHealthy);
                     } else {
                         log.warn("⚠️ Disease not found in DB: {}", diseaseName);
                     }
