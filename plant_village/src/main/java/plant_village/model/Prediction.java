@@ -26,6 +26,10 @@ public class Prediction {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user; // Reference to the user who performed the prediction
+    
+    // Transient field for accepting userId from JSON
+    @Transient
+    private Integer userId;
 
     @Column(name = "prediction_type", length = 50)
     private String predictionType; // Type of analysis (e.g., Plant or Disease)

@@ -52,8 +52,17 @@ public class PredictionController {
      */
     @PostMapping
     public ResponseEntity<Prediction> createPrediction(@RequestBody Prediction prediction) {
-        // Not: Gerçekte, isteğin başlığından (header) gelen JWT ile kullanıcı kimlik doğrulaması yapılır.
-        // Şimdilik sadece kullanıcı nesnesinin Prediction içinde geldiğini varsayıyoruz.
+        // userId varsa, User nesnesini veritabanından al
+        if (prediction.getUser() == null) {
+            Integer userId = prediction.getUserId();
+            if (userId != null && userId > 0) {
+                User user = userService.findById(userId)
+                    .orElse(null);
+                if (user != null) {
+                    prediction.setUser(user);
+                }
+            }
+        }
         
         Prediction newPrediction = predictionService.createPrediction(prediction);
         return new ResponseEntity<>(newPrediction, HttpStatus.CREATED);

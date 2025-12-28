@@ -374,6 +374,11 @@ public class UserController {
             result.put("role", user.getRole());
             result.put("createdAt", user.getCreatedAt());
             result.put("lastLogin", user.getLastLogin());
+            // Profile fields
+            result.put("phone", user.getPhone());
+            result.put("location", user.getLocation());
+            result.put("bio", user.getBio());
+            result.put("avatarUrl", user.getAvatarUrl());
             return ResponseEntity.ok(result);
         } else {
             java.util.Map<String, String> error = new java.util.HashMap<>();
