@@ -183,7 +183,6 @@ public class PlantController {
             .sunlightRequirement(plant.getSunlightRequirement())
             .soilType(plant.getSoilType())
             .hardinessZone(plant.getHardinessZone())
-            .imageUrl(plant.getImageUrl())
             .build();
     }
 }

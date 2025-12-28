@@ -50,7 +50,6 @@ BEGIN
         plant_name VARCHAR(50) NOT NULL,
         scientific_name VARCHAR(50) NULL,
         description VARCHAR(MAX) NULL,
-        image_url VARCHAR(MAX) NULL,
         care_tips NVARCHAR(MAX) NULL,
         watering_frequency NVARCHAR(50) NULL,
         sunlight_requirement NVARCHAR(100) NULL,
@@ -73,8 +72,7 @@ BEGIN
         disease_name VARCHAR(50) NOT NULL,
         cause VARCHAR(MAX) NULL,
         symptom_description VARCHAR(MAX) NULL,
-        treatment VARCHAR(MAX) NULL,
-        example_image_url VARCHAR(MAX) NULL
+        treatment VARCHAR(MAX) NULL
     );
     PRINT 'Disease table created successfully';
 END
@@ -91,12 +89,9 @@ BEGIN
         prediction_type VARCHAR(50) NULL,
         confidence FLOAT NULL,
         uploaded_image_url NVARCHAR(MAX) NULL,
+        care_tips NVARCHAR(MAX) NULL,
         is_valid BIT DEFAULT 1,
         create_at DATETIME2 DEFAULT GETDATE(),
-        watering_frequency NVARCHAR(50) NULL,
-        care_tips NVARCHAR(MAX) NULL,
-        soil_type NVARCHAR(100) NULL,
-        hardiness_zone NVARCHAR(50) NULL,
         CONSTRAINT FK_prediction_user FOREIGN KEY (user_id) REFERENCES [user](user_id)
     );
     PRINT 'Prediction table created successfully';
@@ -146,9 +141,11 @@ BEGIN
     CREATE TABLE prediction_log (
         log_id INT IDENTITY(1,1) PRIMARY KEY,
         prediction_id INT NOT NULL,
+        user_id INT NULL,
         action_type VARCHAR(50) NOT NULL,
         timestamp DATETIME2 NOT NULL DEFAULT GETDATE(),
-        CONSTRAINT FK_prediction_log_prediction FOREIGN KEY (prediction_id) REFERENCES prediction(prediction_id)
+        CONSTRAINT FK_prediction_log_prediction FOREIGN KEY (prediction_id) REFERENCES prediction(prediction_id),
+        CONSTRAINT FK_prediction_log_user FOREIGN KEY (user_id) REFERENCES [user](user_id)
     );
     PRINT 'Prediction_Log table created successfully';
 END
@@ -248,6 +245,17 @@ GO
 -- ============================================================
 -- ÖRNEK KULLANICI (Test için)
 -- ============================================================
+IF NOT EXISTS (SELECT * FROM [user] WHERE email = 'anonymous@revealplant.com')
+BEGIN
+    -- Anonymous user for non-authenticated predictions (user_id = 0)
+    SET IDENTITY_INSERT [user] ON;
+    INSERT INTO [user] (user_id, user_name, email, password_hash, role)
+    VALUES (0, 'Anonymous', 'anonymous@revealplant.com', 'NO_LOGIN_ALLOWED', 'USER');
+    SET IDENTITY_INSERT [user] OFF;
+    PRINT 'Anonymous user created (user_id: 0)';
+END
+GO
+
 IF NOT EXISTS (SELECT * FROM [user] WHERE email = 'test@test.com')
 BEGIN
     -- Password: test123 (BCrypt hash)

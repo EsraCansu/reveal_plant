@@ -82,9 +82,6 @@ public class DiseaseServiceImpl implements DiseaseService {
         if (diseaseDetails.getTreatment() != null) {
             disease.setTreatment(diseaseDetails.getTreatment());
         }
-        if (diseaseDetails.getExampleImageUrl() != null) {
-            disease.setExampleImageUrl(diseaseDetails.getExampleImageUrl());
-        }
         
         return diseaseRepository.save(disease);
     }

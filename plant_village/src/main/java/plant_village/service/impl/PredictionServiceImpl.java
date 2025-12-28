@@ -168,9 +168,6 @@ public class PredictionServiceImpl implements PredictionService {
         if (updatedPrediction.getConfidence() != null) {
             existingPrediction.setConfidence(updatedPrediction.getConfidence());
         }
-        if (updatedPrediction.getCareTips() != null) {
-            existingPrediction.setCareTips(updatedPrediction.getCareTips());
-        }
         
         Prediction saved = predictionRepository.save(existingPrediction);
         log.info("Prediction updated successfully - ID: {}, Is Valid: {}", 
@@ -201,29 +198,18 @@ public class PredictionServiceImpl implements PredictionService {
         log.info("Processing plant disease prediction for user ID: {}, plant ID: {}", userId, plantId);
         
         try {
-            // Get user - for guest users (userId=0 or null), use the Guest user from DB
+            // Get user - for anonymous users (userId=0), use Anonymous user from DB
             plant_village.model.User user;
-            boolean isGuestUser = (userId == null || userId == 0);
+            boolean isAnonymousUser = (userId == null || userId == 0);
             
-            // Guest user ID in database (created in V2 migration)
-            final Integer GUEST_USER_ID = 1;
+            // Anonymous user ID in database (user_id = 0)
+            final Integer ANONYMOUS_USER_ID = 0;
             
-            if (isGuestUser) {
-                // Guest mode - get the Guest user from DB (user_id = 1)
-                log.info("👤 Guest user mode - using Guest user from DB (ID: {})", GUEST_USER_ID);
-                user = userRepository.findById(GUEST_USER_ID)
-                    .orElseGet(() -> {
-                        // If Guest user doesn't exist, create it dynamically
-                        log.warn("⚠️ Guest user not found in DB, creating dynamically...");
-                        plant_village.model.User guestUser = plant_village.model.User.builder()
-                            .userName("Guest")
-                            .email("guest@revealplant.com")
-                            .passwordHash("NO_LOGIN_ALLOWED")
-                            .role("USER")
-                            .isActive(true)
-                            .build();
-                        return userRepository.save(guestUser);
-                    });
+            if (isAnonymousUser) {
+                // Anonymous mode - get the Anonymous user from DB (user_id = 0)
+                log.info("👤 Anonymous user mode - using Anonymous user from DB (ID: {})", ANONYMOUS_USER_ID);
+                user = userRepository.findById(ANONYMOUS_USER_ID)
+                    .orElseThrow(() -> new ResourceNotFoundException("Anonymous user not found - ID: " + ANONYMOUS_USER_ID));
             } else {
                 user = userRepository.findById(userId)
                     .orElseThrow(() -> new ResourceNotFoundException("User not found - ID: " + userId));
@@ -260,9 +246,9 @@ public class PredictionServiceImpl implements PredictionService {
             Prediction prediction = new Prediction();
             prediction.setUser(user);
             prediction.setUploadedImageUrl(imageBase64);  // Store base64 image
-            prediction.setCareTips(description);
             prediction.setPredictionType(predictionTypeValue);  // Plant name or Disease name based on mode
             prediction.setConfidence(mlResponse.getTopConfidence());      // Overall confidence
+            prediction.setCareTips(description);  // Store description as care_tips
             
             // Set validity based on 50% threshold
             boolean isValid = mlResponse.getTopConfidence() != null && mlResponse.getTopConfidence() >= 0.5;
@@ -335,16 +321,17 @@ public class PredictionServiceImpl implements PredictionService {
             // Save prediction to database (guest users now have a valid DB user)
             Prediction savedPrediction = predictionRepository.save(prediction);
             
-            // Create PredictionLog entry
+            // Create PredictionLog entry with user information
             PredictionLog logEntry = PredictionLog.builder()
                 .prediction(savedPrediction)
+                .user(user)
                 .actionType("PREDICTION_CREATED")
                 .timestamp(LocalDateTime.now())
                 .build();
             predictionLogRepository.save(logEntry);
             
-            log.info("✅ Prediction saved - ID: {}, Type: {}, Confidence: {}, Guest: {}", 
-                savedPrediction.getId(), savedPrediction.getPredictionType(), savedPrediction.getConfidence(), isGuestUser);
+            log.info("✅ Prediction saved - ID: {}, Type: {}, Confidence: {}, Anonymous: {}", 
+                savedPrediction.getId(), savedPrediction.getPredictionType(), savedPrediction.getConfidence(), isAnonymousUser);
             
             // Return PredictionResult with saved prediction AND all ML predictions for "Other Possibilities"
             return PredictionResult.builder()

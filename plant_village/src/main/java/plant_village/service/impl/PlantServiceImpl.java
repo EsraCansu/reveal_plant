@@ -64,9 +64,6 @@ public class PlantServiceImpl implements PlantService {
         if (plantDetails.getCareTips() != null) {
             plant.setCareTips(plantDetails.getCareTips());
         }
-        if (plantDetails.getImageUrl() != null) {
-            plant.setImageUrl(plantDetails.getImageUrl());
-        }
         if (plantDetails.getWateringFrequency() != null) {
             plant.setWateringFrequency(plantDetails.getWateringFrequency());
         }

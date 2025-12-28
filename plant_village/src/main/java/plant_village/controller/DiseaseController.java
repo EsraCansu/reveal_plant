@@ -100,7 +100,6 @@ public class DiseaseController {
             if (diseaseDetails.getDiseaseName() != null) existingDisease.setDiseaseName(diseaseDetails.getDiseaseName());
             if (diseaseDetails.getSymptomDescription() != null) existingDisease.setSymptomDescription(diseaseDetails.getSymptomDescription());
             if (diseaseDetails.getCause() != null) existingDisease.setCause(diseaseDetails.getCause());
-            if (diseaseDetails.getExampleImageUrl() != null) existingDisease.setExampleImageUrl(diseaseDetails.getExampleImageUrl());
             if (diseaseDetails.getTreatment() != null) existingDisease.setTreatment(diseaseDetails.getTreatment());
             
             Disease updatedDisease = diseaseRepository.save(existingDisease);

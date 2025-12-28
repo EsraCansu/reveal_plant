@@ -28,9 +28,6 @@ public class Disease {
     @Column(name = "cause", columnDefinition = "NVARCHAR(MAX)")
     private String cause;
     
-    @Column(name = "example_image_url", columnDefinition = "NVARCHAR(MAX)")
-    private String exampleImageUrl;
-    
     @Column(name = "treatment", columnDefinition = "NVARCHAR(MAX)")
     private String treatment;
     

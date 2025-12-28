@@ -277,7 +277,7 @@ public class PredictionController {
         try {
             String imageBase64 = (String) request.get("imageBase64");
             String predictionType = (String) request.getOrDefault("predictionType", "detect-disease");
-            Integer userId = (Integer) request.getOrDefault("userId", 1);
+            Integer userId = (Integer) request.getOrDefault("userId", 0);
             String description = (String) request.getOrDefault("description", "Uploaded plant image");
             
             log.info("📸 Analyzing plant image for user: {}, type: {}", userId, predictionType);

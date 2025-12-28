@@ -25,9 +25,6 @@ public class Plant {
     @Column(name = "scientific_name", length = 100)
     private String scientificName;
     
-    @Column(name = "image_url", columnDefinition = "NVARCHAR(MAX)")
-    private String imageUrl;
-    
     @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
     private String description;
     

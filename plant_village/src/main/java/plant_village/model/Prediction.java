@@ -45,17 +45,8 @@ public class Prediction {
     @Column(name = "is_valid")
     private Boolean isValid;
     
-    @Column(name = "watering_frequency", length = 50)
-    private String wateringFrequency;
-    
     @Column(name = "care_tips", columnDefinition = "NVARCHAR(MAX)")
     private String careTips;
-    
-    @Column(name = "soil_type", length = 100)
-    private String soilType;
-    
-    @Column(name = "hardiness_zone", length = 50)
-    private String hardinessZone;
 
     @OneToMany(mappedBy = "prediction", cascade = CascadeType.ALL)
     @JsonIgnore  // Prevent circular reference
