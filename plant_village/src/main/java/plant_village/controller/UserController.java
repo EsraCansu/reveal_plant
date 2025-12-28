@@ -659,5 +659,93 @@ public class UserController {
             return ResponseEntity.status(500).body(error);
         }
     }
+
+    /**
+     * Export user data (profile + diagnoses/predictions)
+     * GET /api/users/{userId}/export
+     * @param userId User ID
+     * @return JSON with all user data
+     */
+    @GetMapping("/{userId}/export")
+    public ResponseEntity<?> exportUserData(@PathVariable Integer userId) {
+        try {
+            Optional<User> userOpt = userService.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(404).body(java.util.Map.of("error", "Kullanıcı bulunamadı"));
+            }
+            
+            User user = userOpt.get();
+            
+            // User predictions
+            List<Prediction> predictions = predictionRepository.findByUser_Id(userId);
+            
+            // Build export data
+            java.util.Map<String, Object> exportData = new java.util.HashMap<>();
+            
+            // Profile data (without sensitive info)
+            java.util.Map<String, Object> profile = new java.util.HashMap<>();
+            profile.put("userName", user.getUserName());
+            profile.put("email", user.getEmail());
+            profile.put("phone", user.getPhone());
+            profile.put("location", user.getLocation());
+            profile.put("bio", user.getBio());
+            profile.put("avatarUrl", user.getAvatarUrl());
+            profile.put("role", user.getRole());
+            profile.put("createdAt", user.getCreateAt());
+            profile.put("lastLogin", user.getLastLogin());
+            exportData.put("profile", profile);
+            
+            // Predictions/Diagnoses data
+            exportData.put("diagnoses", predictions.stream().map(p -> {
+                java.util.Map<String, Object> pred = new java.util.HashMap<>();
+                pred.put("id", p.getId());
+                pred.put("predictionType", p.getPredictionType());
+                pred.put("confidence", p.getConfidence());
+                pred.put("uploadedImageUrl", p.getUploadedImageUrl());
+                pred.put("createdAt", p.getCreateAt());
+                pred.put("isValid", p.getIsValid());
+                return pred;
+            }).toList());
+            
+            exportData.put("exportDate", java.time.LocalDateTime.now().toString());
+            exportData.put("totalDiagnoses", predictions.size());
+            
+            return ResponseEntity.ok(exportData);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(java.util.Map.of("error", "Veri dışa aktarılamadı: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Delete user account with all associated data
+     * DELETE /api/users/{userId}/account
+     * @param userId User ID
+     * @return success message
+     */
+    @DeleteMapping("/{userId}/account")
+    public ResponseEntity<?> deleteUserAccount(@PathVariable Integer userId) {
+        try {
+            Optional<User> userOpt = userService.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(404).body(java.util.Map.of("error", "Kullanıcı bulunamadı"));
+            }
+            
+            // Delete all user predictions first (cascade)
+            List<Prediction> predictions = predictionRepository.findByUser_Id(userId);
+            predictionRepository.deleteAll(predictions);
+            
+            // Delete user
+            userService.deleteUser(userId);
+            
+            java.util.Map<String, Object> result = new java.util.HashMap<>();
+            result.put("success", true);
+            result.put("message", "Hesabınız ve tüm verileriniz başarıyla silindi");
+            result.put("deletedPredictions", predictions.size());
+            
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(java.util.Map.of("error", "Hesap silinemedi: " + e.getMessage()));
+        }
+    }
 }
 

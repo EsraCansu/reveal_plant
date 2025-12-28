@@ -201,9 +201,33 @@ public class PredictionServiceImpl implements PredictionService {
         log.info("Processing plant disease prediction for user ID: {}, plant ID: {}", userId, plantId);
         
         try {
-            // Get user
-            plant_village.model.User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı - ID: " + userId));
+            // Get user - for guest users (userId=0 or null), use the Guest user from DB
+            plant_village.model.User user;
+            boolean isGuestUser = (userId == null || userId == 0);
+            
+            // Guest user ID in database (created in V2 migration)
+            final Integer GUEST_USER_ID = 1;
+            
+            if (isGuestUser) {
+                // Guest mode - get the Guest user from DB (user_id = 1)
+                log.info("👤 Guest user mode - using Guest user from DB (ID: {})", GUEST_USER_ID);
+                user = userRepository.findById(GUEST_USER_ID)
+                    .orElseGet(() -> {
+                        // If Guest user doesn't exist, create it dynamically
+                        log.warn("⚠️ Guest user not found in DB, creating dynamically...");
+                        plant_village.model.User guestUser = plant_village.model.User.builder()
+                            .userName("Guest")
+                            .email("guest@revealplant.com")
+                            .passwordHash("NO_LOGIN_ALLOWED")
+                            .role("USER")
+                            .isActive(true)
+                            .build();
+                        return userRepository.save(guestUser);
+                    });
+            } else {
+                user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı - ID: " + userId));
+            }
             
             // Call FastAPI ML service
             log.info("🔄 Calling FastAPI ML service for prediction...");
@@ -304,7 +328,7 @@ public class PredictionServiceImpl implements PredictionService {
                 prediction.setDiseaseDetails(diseaseDetails);
             }
             
-            // Save prediction with relationships
+            // Save prediction to database (guest users now have a valid DB user)
             Prediction savedPrediction = predictionRepository.save(prediction);
             
             // Create PredictionLog entry
@@ -315,8 +339,8 @@ public class PredictionServiceImpl implements PredictionService {
                 .build();
             predictionLogRepository.save(logEntry);
             
-            log.info("✅ Plant disease prediction processed - Prediction ID: {}, Type: {}, Confidence: {}", 
-                savedPrediction.getId(), savedPrediction.getPredictionType(), savedPrediction.getConfidence());
+            log.info("✅ Prediction saved - ID: {}, Type: {}, Confidence: {}, Guest: {}", 
+                savedPrediction.getId(), savedPrediction.getPredictionType(), savedPrediction.getConfidence(), isGuestUser);
             
             // Return PredictionResult with saved prediction AND all ML predictions for "Other Possibilities"
             return PredictionResult.builder()

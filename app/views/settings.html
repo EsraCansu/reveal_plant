@@ -318,6 +318,9 @@
     <script src="../../app/routes/routes.js"></script>
     <script src="../../app/routes/api.routes.js"></script>
     <script>
+        // Backend URL
+        const BACKEND_URL = 'http://localhost:8080';
+        
         function checkLogin() {
             // Check cookie-based authentication
             if (!isLoggedIn()) {
@@ -381,37 +384,118 @@
             }
         }
 
-        function exportData() {
-            const data = {
-                profile: JSON.parse(localStorage.getItem('profile') || '{}'),
-                diagnoses: JSON.parse(localStorage.getItem('diagnoses') || '[]'),
-                settings: JSON.parse(localStorage.getItem('settings') || '{}')
-            };
-            
-            const json = JSON.stringify(data, null, 2);
-            const blob = new Blob([json], { type: 'application/json' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `revelplant_data_${new Date().getTime()}.json`;
-            a.click();
+        async function exportData() {
+            try {
+                const user = getCurrentUser();
+                const userId = user.id || getCookie('userId');
+                
+                if (!userId) {
+                    alert('Kullanıcı bilgisi bulunamadı. Lütfen tekrar giriş yapın.');
+                    return;
+                }
+                
+                // Backend'den veri çek
+                const response = await fetch(`${BACKEND_URL}/api/users/${userId}/export`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Veri dışa aktarılamadı');
+                }
+                
+                const data = await response.json();
+                
+                // JSON dosyası olarak indir
+                const json = JSON.stringify(data, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `revelplant_data_${user.name || 'user'}_${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+                
+                alert('Verileriniz başarıyla dışa aktarıldı!');
+            } catch (error) {
+                console.error('Export error:', error);
+                alert('Veri dışa aktarılırken hata oluştu: ' + error.message);
+            }
         }
 
         function clearCache() {
-            if (confirm('Are you sure you want to clear all cache?')) {
+            if (confirm('Are you sure you want to clear all cache? You will be logged out.')) {
+                // Clear all local storage
                 localStorage.clear();
+                sessionStorage.clear();
+                
+                // Clear cookies
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                
                 alert('Cache cleared successfully! Redirecting to login...');
                 window.location.href = 'login.html';
             }
         }
 
-        function deleteAccount() {
-            if (confirm('⚠️ WARNING: This will permanently delete your account and all data. Are you sure?')) {
-                if (confirm('This action cannot be undone. Click OK to confirm deletion.')) {
-                    localStorage.clear();
-                    alert('Account deleted successfully!');
-                    window.location.href = '../../index.html';
+        async function deleteAccount() {
+            if (!confirm('⚠️ UYARI: Bu işlem hesabınızı ve tüm verilerinizi kalıcı olarak silecektir. Emin misiniz?')) {
+                return;
+            }
+            
+            if (!confirm('Bu işlem geri alınamaz! Silme işlemini onaylamak için OK\'a tıklayın.')) {
+                return;
+            }
+            
+            // Şifre doğrulama için prompt
+            const password = prompt('Güvenlik için şifrenizi girin:');
+            if (!password) {
+                alert('Hesap silme işlemi iptal edildi.');
+                return;
+            }
+            
+            try {
+                const user = getCurrentUser();
+                const userId = user.id || getCookie('userId');
+                
+                if (!userId) {
+                    alert('Kullanıcı bilgisi bulunamadı. Lütfen tekrar giriş yapın.');
+                    return;
                 }
+                
+                // Backend'e silme isteği gönder
+                const response = await fetch(`${BACKEND_URL}/api/users/${userId}/account`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Hesap silinemedi');
+                }
+                
+                const result = await response.json();
+                
+                // Local storage ve cookie'leri temizle
+                localStorage.clear();
+                sessionStorage.clear();
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                
+                alert(`Hesabınız başarıyla silindi! ${result.deletedPredictions || 0} tahmin kaydı da silindi.`);
+                window.location.href = '../../index.html';
+                
+            } catch (error) {
+                console.error('Delete account error:', error);
+                alert('Hesap silinirken hata oluştu: ' + error.message);
             }
         }
 

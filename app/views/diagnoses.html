@@ -64,7 +64,7 @@
             border-left: 4px solid #ffc107;
         }
         .diagnosis-card.plant {
-            border-left: 4px solid #17a2b8;
+            border-left: 4px solid #28a745;
         }
         .diagnosis-image {
             width: 80px;
@@ -328,7 +328,7 @@
             }
 
             diagnosesList.innerHTML = diagnoses.reverse().map((d, index) => `
-                <div class="diagnosis-card ${d.mode}" onclick="showDetail(${allDiagnoses.indexOf(d)})">
+                <div class="diagnosis-card ${d.mode === 'identify' ? 'plant' : d.mode}" onclick="showDetail(${allDiagnoses.indexOf(d)})">
                     <div class="row align-items-center">
                         <div class="col-md-2 text-center">
                             <img src="${d.image || 'https://via.placeholder.com/80'}" alt="diagnosis" class="diagnosis-image">
