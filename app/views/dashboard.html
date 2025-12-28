@@ -311,16 +311,16 @@
         function updateStatistics(predictions) {
             const totalDiagnoses = predictions.length;
             
-            // Hastalık tespit sayısı - predictionType'da "healthy" içermeyenler
-            const diseasesFound = predictions.filter(p => {
-                const type = (p.predictionType || '').toLowerCase();
-                return type && !type.includes('healthy') && type !== 'null' && type !== 'plant_prediction';
+            // Plants Identified - predictionType'da "___" OLMAYAN (Plant ID modunda yapılanlar: "Grape", "Blueberry", etc.)
+            const plantsIdentified = predictions.filter(p => {
+                const type = p.predictionType || '';
+                return type && !type.includes('___') && type !== 'Unknown' && type !== 'null';
             }).length;
             
-            // Sağlıklı bitki sayısı - predictionType'da "healthy" içerenler
-            const plantsIdentified = predictions.filter(p => {
+            // Diseases Found - predictionType'da "___" OLAN ve "healthy" İÇERMEYEN
+            const diseasesFound = predictions.filter(p => {
                 const type = (p.predictionType || '').toLowerCase();
-                return type.includes('healthy');
+                return type.includes('___') && !type.includes('healthy');
             }).length;
             
             // Bu ay yapılan teşhis sayısı - createAt alanını kullan
@@ -349,7 +349,7 @@
                 recentList.innerHTML = `
                     <p class="text-muted text-center py-4">
                         <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
-                        Henüz teşhis yok. Bitki görselinizi yükleyerek başlayın!
+                        No diagnoses yet. Start by uploading a plant image!
                     </p>
                 `;
                 return;
@@ -363,13 +363,23 @@
                 const dateStr = p.createAt || p.predictedAt || p.createdAt;
                 const date = dateStr ? new Date(dateStr) : new Date();
                 
-                // Hastalık kontrolü - predictionType'a göre
+                // Mode detection based on predictionType format
                 const predictionType = p.predictionType || 'Unknown';
+                // If predictionType contains "___" it's disease detection, otherwise plant identification
+                const isPlantIdentification = !predictionType.includes('___');
                 const isHealthy = predictionType.toLowerCase().includes('healthy');
-                const isDisease = !isHealthy && predictionType !== 'Unknown' && predictionType !== 'PLANT_PREDICTION';
                 
-                const status = isHealthy ? 'Sağlıklı' : (isDisease ? 'Hastalık Tespit' : 'Analiz Edildi');
-                const badgeClass = isHealthy ? 'success' : (isDisease ? 'warning' : 'info');
+                let status, badgeClass;
+                if (isPlantIdentification) {
+                    status = 'Plant ID';
+                    badgeClass = 'success';
+                } else if (isHealthy) {
+                    status = 'Healthy';
+                    badgeClass = 'success';
+                } else {
+                    status = 'Disease Detected';
+                    badgeClass = 'warning';
+                }
                 
                 // Hastalık/bitki adını formatla
                 const displayName = formatPredictionName(predictionType);
@@ -380,16 +390,16 @@
                             <div class="text-start">
                                 <h6 class="mb-1"><strong>${displayName}</strong></h6>
                                 <small class="text-muted">
-                                    <i class="fas fa-calendar me-1"></i>${date.toLocaleDateString('tr-TR')}
-                                    <i class="fas fa-clock me-1 ms-2"></i>${date.toLocaleTimeString('tr-TR', {hour: '2-digit', minute: '2-digit'})}
+                                    <i class="fas fa-calendar me-1"></i>${date.toLocaleDateString('en-US')}
+                                    <i class="fas fa-clock me-1 ms-2"></i>${date.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}
                                 </small>
                             </div>
                             <span class="badge diagnosis-badge bg-${badgeClass}">
                                 ${status}
                             </span>
                         </div>
-                        <p class="mb-2 mt-2 small">${p.careTips || p.notes || 'Detay için tıklayın'}</p>
-                        <small class="text-muted">Güven: ${p.confidence ? (p.confidence * 100).toFixed(1) : 'N/A'}%</small>
+                        <p class="mb-2 mt-2 small">${p.careTips || p.notes || 'Click for details'}</p>
+                        <small class="text-muted">Confidence: ${p.confidence ? (p.confidence * 100).toFixed(1) : 'N/A'}%</small>
                     </div>
                 `;
             }).join('');
@@ -398,7 +408,7 @@
         // Prediction type'ı okunabilir formata çevir
         function formatPredictionName(predictionType) {
             if (!predictionType || predictionType === 'Unknown' || predictionType === 'PLANT_PREDICTION') {
-                return 'Bitki Analizi';
+                return 'Plant Analysis';
             }
             // "Tomato___Late_blight" -> "Tomato - Late blight"
             return predictionType
@@ -417,7 +427,7 @@
             document.getElementById('recentDiagnosesList').innerHTML = `
                 <p class="text-muted text-center py-4">
                     <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
-                    Veri yüklenemedi veya henüz teşhis yok.
+                    Data could not be loaded or no diagnoses yet.
                 </p>
             `;
         }

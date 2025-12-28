@@ -281,17 +281,23 @@
                 const predictions = await response.json();
                 
                 // Transform backend data to display format
-                allDiagnoses = predictions.map(p => ({
-                    id: p.id,
-                    name: formatPredictionName(p.predictionType),
-                    result: p.predictionType || 'Unknown',
-                    confidence: p.confidence ? Math.round(p.confidence * 100) : 0,
-                    date: p.createAt,
-                    mode: p.predictionType?.toLowerCase().includes('healthy') ? 'identify' : 'disease',
-                    image: p.uploadedImageUrl,
-                    details: p.careTips || 'No additional details',
-                    isValid: p.isValid
-                }));
+                allDiagnoses = predictions.map(p => {
+                    const predType = p.predictionType || 'Unknown';
+                    // If predictionType contains "___" it's disease detection, otherwise plant identification
+                    const isPlantIdentification = !predType.includes('___');
+                    
+                    return {
+                        id: p.id,
+                        name: formatPredictionName(predType),
+                        result: predType,
+                        confidence: p.confidence ? Math.round(p.confidence * 100) : 0,
+                        date: p.createAt,
+                        mode: isPlantIdentification ? 'identify' : 'disease',
+                        image: p.uploadedImageUrl,
+                        details: p.careTips || 'No additional details',
+                        isValid: p.isValid
+                    };
+                });
                 
                 displayDiagnoses(allDiagnoses);
             } catch (error) {
