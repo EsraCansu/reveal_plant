@@ -28,10 +28,21 @@ public class CorsConfig {
         // Allowed HTTP methods
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         
-        // Allowed headers
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        // Allowed headers - explicit list for credentials mode
+        configuration.setAllowedHeaders(Arrays.asList(
+            "Content-Type", 
+            "Authorization", 
+            "X-Requested-With", 
+            "Accept", 
+            "Origin",
+            "Access-Control-Request-Method",
+            "Access-Control-Request-Headers"
+        ));
         
-        // Allow cookies (important for JWT)
+        // Expose headers to frontend
+        configuration.setExposedHeaders(Arrays.asList("Set-Cookie", "Authorization"));
+        
+        // Allow cookies (important for JWT) - only with explicit origins
         configuration.setAllowCredentials(true);
         
         // Apply CORS settings to all endpoints

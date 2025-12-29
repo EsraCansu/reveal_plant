@@ -1,16 +1,16 @@
-package plant_village.model.dto;
+package plant_village.model;
 
-import jakarta.persistence.Embeddable;
+import java.io.Serializable;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.io.Serializable;
 
-@Embeddable
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class PredictionDiseaseId implements Serializable {
-    private Integer disease;
-    private Integer prediction;
+    private Integer predictionId;
+    private Integer diseaseId;
 }

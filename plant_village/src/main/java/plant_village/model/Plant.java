@@ -50,5 +50,6 @@ public class Plant {
     private java.time.LocalDateTime createdAt;
     
     @OneToMany(mappedBy = "plant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private java.util.List<PredictionPlant> predictions;
 }

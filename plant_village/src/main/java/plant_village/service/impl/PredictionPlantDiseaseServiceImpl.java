@@ -42,25 +42,27 @@ public class PredictionPlantDiseaseServiceImpl implements PredictionPlantDisease
             .orElseThrow(() -> new ResourceNotFoundException("Bitki bulunamadı - ID: " + plantId));
         
         PredictionPlant predictionPlant = PredictionPlant.builder()
+            .predictionId(predictionId)
+            .plantId(plantId)
             .prediction(prediction)
             .plant(plant)
             .confidence(confidence != null ? confidence.doubleValue() : null)
             .build();
         
         PredictionPlant saved = predictionPlantRepository.save(predictionPlant);
-        log.info("Bitki tahmin'e bağlandı - PredictionPlant ID: {}", saved.getId());
+        log.info("Bitki tahmin'e bağlandı - Prediction: {}, Plant: {}", predictionId, plantId);
         
         return saved;
     }
     
     @Override
-    public Optional<PredictionPlant> getPredictionPlantById(Integer id) {
-        log.info("PredictionPlant getiriliyor - ID: {}", id);
-        Optional<PredictionPlant> predictionPlant = predictionPlantRepository.findById(id);
+    public Optional<PredictionPlant> getPredictionPlantByCompositeKey(Integer predictionId, Integer plantId) {
+        log.info("PredictionPlant getiriliyor - Prediction ID: {}, Plant ID: {}", predictionId, plantId);
+        Optional<PredictionPlant> predictionPlant = predictionPlantRepository.findByPredictionIdAndPlantId(predictionId, plantId);
         
         if (predictionPlant.isEmpty()) {
-            log.warn("PredictionPlant bulunamadı - ID: {}", id);
-            throw new ResourceNotFoundException("PredictionPlant bulunamadı - ID: " + id);
+            log.warn("PredictionPlant bulunamadı - Prediction: {}, Plant: {}", predictionId, plantId);
+            throw new ResourceNotFoundException("PredictionPlant bulunamadı - Prediction: " + predictionId + ", Plant: " + plantId);
         }
         
         return predictionPlant;
@@ -70,7 +72,7 @@ public class PredictionPlantDiseaseServiceImpl implements PredictionPlantDisease
     public List<PredictionPlant> getPredictionPlantsByPredictionId(Integer predictionId) {
         log.info("Tahmin'in bitkileri getiriliyor - Prediction ID: {}", predictionId);
         
-        List<PredictionPlant> plants = predictionPlantRepository.findByPrediction_Id(predictionId);
+        List<PredictionPlant> plants = predictionPlantRepository.findByPredictionId(predictionId);
         
         if (plants.isEmpty()) {
             log.warn("Bu tahmin için bitki bulunamadı - Prediction ID: {}", predictionId);
@@ -81,15 +83,20 @@ public class PredictionPlantDiseaseServiceImpl implements PredictionPlantDisease
     }
     
     @Override
-    public void deletePredictionPlant(Integer id) {
-        log.info("PredictionPlant siliniyor - ID: {}", id);
+    public void deletePredictionPlant(Integer predictionId, Integer plantId) {
+        log.info("PredictionPlant siliniyor - Prediction ID: {}, Plant ID: {}", predictionId, plantId);
+        
+        PredictionPlantId id = PredictionPlantId.builder()
+            .predictionId(predictionId)
+            .plantId(plantId)
+            .build();
         
         if (!predictionPlantRepository.existsById(id)) {
-            throw new ResourceNotFoundException("PredictionPlant bulunamadı - ID: " + id);
+            throw new ResourceNotFoundException("PredictionPlant bulunamadı - Prediction: " + predictionId + ", Plant: " + plantId);
         }
         
         predictionPlantRepository.deleteById(id);
-        log.info("PredictionPlant silindi - ID: {}", id);
+        log.info("PredictionPlant silindi - Prediction: {}, Plant: {}", predictionId, plantId);
     }
     
     // ===== DISEASE LINKING =====
@@ -105,6 +112,8 @@ public class PredictionPlantDiseaseServiceImpl implements PredictionPlantDisease
             .orElseThrow(() -> new ResourceNotFoundException("Hastalık bulunamadı - ID: " + diseaseId));
         
         PredictionDisease predictionDisease = PredictionDisease.builder()
+            .predictionId(predictionId)
+            .diseaseId(diseaseId)
             .prediction(prediction)
             .disease(disease)
             .isHealthy(isHealthy)
@@ -112,19 +121,19 @@ public class PredictionPlantDiseaseServiceImpl implements PredictionPlantDisease
             .build();
         
         PredictionDisease saved = predictionDiseaseRepository.save(predictionDisease);
-        log.info("Hastalık tahmin'e bağlandı - PredictionDisease ID: {}", saved.getId());
+        log.info("Hastalık tahmin'e bağlandı - Prediction: {}, Disease: {}", predictionId, diseaseId);
         
         return saved;
     }
     
     @Override
-    public Optional<PredictionDisease> getPredictionDiseaseById(Integer id) {
-        log.info("PredictionDisease getiriliyor - ID: {}", id);
-        Optional<PredictionDisease> predictionDisease = predictionDiseaseRepository.findById(id);
+    public Optional<PredictionDisease> getPredictionDiseaseByCompositeKey(Integer predictionId, Integer diseaseId) {
+        log.info("PredictionDisease getiriliyor - Prediction ID: {}, Disease ID: {}", predictionId, diseaseId);
+        Optional<PredictionDisease> predictionDisease = predictionDiseaseRepository.findByPredictionIdAndDiseaseId(predictionId, diseaseId);
         
         if (predictionDisease.isEmpty()) {
-            log.warn("PredictionDisease bulunamadı - ID: {}", id);
-            throw new ResourceNotFoundException("PredictionDisease bulunamadı - ID: " + id);
+            log.warn("PredictionDisease bulunamadı - Prediction: {}, Disease: {}", predictionId, diseaseId);
+            throw new ResourceNotFoundException("PredictionDisease bulunamadı - Prediction: " + predictionId + ", Disease: " + diseaseId);
         }
         
         return predictionDisease;
@@ -134,7 +143,7 @@ public class PredictionPlantDiseaseServiceImpl implements PredictionPlantDisease
     public List<PredictionDisease> getPredictionDiseasesByPredictionId(Integer predictionId) {
         log.info("Tahmin'in hastalıkları getiriliyor - Prediction ID: {}", predictionId);
         
-        List<PredictionDisease> diseases = predictionDiseaseRepository.findByPrediction_Id(predictionId);
+        List<PredictionDisease> diseases = predictionDiseaseRepository.findByPredictionId(predictionId);
         
         if (diseases.isEmpty()) {
             log.warn("Bu tahmin için hastalık bulunamadı - Prediction ID: {}", predictionId);
@@ -145,29 +154,34 @@ public class PredictionPlantDiseaseServiceImpl implements PredictionPlantDisease
     }
     
     @Override
-    public PredictionDisease updatePredictionDisease(Integer id, Boolean isHealthy) {
-        log.info("PredictionDisease güncelleniyor - ID: {}, Is Healthy: {}", id, isHealthy);
+    public PredictionDisease updatePredictionDisease(Integer predictionId, Integer diseaseId, Boolean isHealthy) {
+        log.info("PredictionDisease güncelleniyor - Prediction: {}, Disease: {}, Is Healthy: {}", predictionId, diseaseId, isHealthy);
         
-        PredictionDisease predictionDisease = predictionDiseaseRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("PredictionDisease bulunamadı - ID: " + id));
+        PredictionDisease predictionDisease = predictionDiseaseRepository.findByPredictionIdAndDiseaseId(predictionId, diseaseId)
+            .orElseThrow(() -> new ResourceNotFoundException("PredictionDisease bulunamadı - Prediction: " + predictionId + ", Disease: " + diseaseId));
         
         predictionDisease.setIsHealthy(isHealthy);
         
         PredictionDisease updated = predictionDiseaseRepository.save(predictionDisease);
-        log.info("PredictionDisease güncellendi - ID: {}", id);
+        log.info("PredictionDisease güncellendi - Prediction: {}, Disease: {}", predictionId, diseaseId);
         
         return updated;
     }
     
     @Override
-    public void deletePredictionDisease(Integer id) {
-        log.info("PredictionDisease siliniyor - ID: {}", id);
+    public void deletePredictionDisease(Integer predictionId, Integer diseaseId) {
+        log.info("PredictionDisease siliniyor - Prediction ID: {}, Disease ID: {}", predictionId, diseaseId);
+        
+        PredictionDiseaseId id = PredictionDiseaseId.builder()
+            .predictionId(predictionId)
+            .diseaseId(diseaseId)
+            .build();
         
         if (!predictionDiseaseRepository.existsById(id)) {
-            throw new ResourceNotFoundException("PredictionDisease bulunamadı - ID: " + id);
+            throw new ResourceNotFoundException("PredictionDisease bulunamadı - Prediction: " + predictionId + ", Disease: " + diseaseId);
         }
         
         predictionDiseaseRepository.deleteById(id);
-        log.info("PredictionDisease silindi - ID: {}", id);
+        log.info("PredictionDisease silindi - Prediction: {}, Disease: {}", predictionId, diseaseId);
     }
 }

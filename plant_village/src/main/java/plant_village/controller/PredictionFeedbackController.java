@@ -24,7 +24,6 @@ import java.util.Optional;
  */
 @RestController
 @RequestMapping("/api/feedbacks")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class PredictionFeedbackController {
 
     @Autowired
@@ -141,7 +140,6 @@ public class PredictionFeedbackController {
  */
 @RestController
 @RequestMapping("/api/logs")
-@CrossOrigin(origins = "*", maxAge = 3600)
 class PredictionLogController {
 
     @Autowired

@@ -255,6 +255,11 @@ public class PredictionServiceImpl implements PredictionService {
             prediction.setIsValid(isValid);
             prediction.setCreateAt(LocalDateTime.now());
             
+            // STEP 1: Save prediction FIRST to get the generated ID
+            Prediction savedPrediction = predictionRepository.save(prediction);
+            log.info("📝 Prediction saved with ID: {}", savedPrediction.getId());
+            
+            // STEP 2: Now create plant/disease details with the saved prediction ID
             if (isPlantMode) {
                 // PLANT IDENTIFICATION MODE - Save to prediction_plant table (TOP 1 only)
                 List<PredictionPlant> plantDetails = new ArrayList<>();
@@ -272,7 +277,9 @@ public class PredictionServiceImpl implements PredictionService {
                         Plant plant = plantOpt.get();
                         
                         PredictionPlant pp = new PredictionPlant();
-                        pp.setPrediction(prediction);
+                        pp.setPredictionId(savedPrediction.getId());  // Use savedPrediction.getId()
+                        pp.setPlantId(plant.getId());
+                        pp.setPrediction(savedPrediction);
                         pp.setPlant(plant);
                         pp.setConfidence(topPrediction.getConfidenceScore());
                         
@@ -283,7 +290,7 @@ public class PredictionServiceImpl implements PredictionService {
                     }
                 }
                 
-                prediction.setPlantDetails(plantDetails);
+                savedPrediction.setPlantDetails(plantDetails);
                 
             } else {
                 // DISEASE DETECTION MODE - Save to prediction_disease table
@@ -300,7 +307,9 @@ public class PredictionServiceImpl implements PredictionService {
                         Disease disease = diseaseOpt.get();
                         
                         PredictionDisease pd = new PredictionDisease();
-                        pd.setPrediction(prediction);
+                        pd.setPredictionId(savedPrediction.getId());  // Use savedPrediction.getId()
+                        pd.setDiseaseId(disease.getId());
+                        pd.setPrediction(savedPrediction);
                         pd.setDisease(disease);
                         pd.setConfidence(topPrediction.getConfidenceScore());
                         
@@ -315,11 +324,11 @@ public class PredictionServiceImpl implements PredictionService {
                     }
                 }
                 
-                prediction.setDiseaseDetails(diseaseDetails);
+                savedPrediction.setDiseaseDetails(diseaseDetails);
             }
             
-            // Save prediction to database (guest users now have a valid DB user)
-            Prediction savedPrediction = predictionRepository.save(prediction);
+            // STEP 3: Save again to persist the plant/disease relationships
+            savedPrediction = predictionRepository.save(savedPrediction);
             
             // Create PredictionLog entry with user information
             PredictionLog logEntry = PredictionLog.builder()

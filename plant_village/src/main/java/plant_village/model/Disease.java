@@ -35,5 +35,6 @@ public class Disease {
     private String recommendedMedicines;
     
     @OneToMany(mappedBy = "disease", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private java.util.List<PredictionDisease> predictions;
 }

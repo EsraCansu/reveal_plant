@@ -12,19 +12,23 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@IdClass(PredictionDiseaseId.class)
 public class PredictionDisease {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Integer id;
+    @Column(name = "prediction_id")
+    private Integer predictionId;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "disease_id", nullable = false)
+    @Id
+    @Column(name = "disease_id")
+    private Integer diseaseId;
+    
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "disease_id", nullable = false, insertable = false, updatable = false)
     private Disease disease;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "prediction_id", nullable = false)
+    @JoinColumn(name = "prediction_id", nullable = false, insertable = false, updatable = false)
     private Prediction prediction;
     
     @Column(name = "is_healthy")

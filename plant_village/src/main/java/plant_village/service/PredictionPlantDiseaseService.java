@@ -10,20 +10,20 @@ public interface PredictionPlantDiseaseService {
     // Plant linking
     PredictionPlant linkPlantToPrediction(Integer predictionId, Integer plantId, Float confidence);
     
-    Optional<PredictionPlant> getPredictionPlantById(Integer id);
+    Optional<PredictionPlant> getPredictionPlantByCompositeKey(Integer predictionId, Integer plantId);
     
     List<PredictionPlant> getPredictionPlantsByPredictionId(Integer predictionId);
     
-    void deletePredictionPlant(Integer id);
+    void deletePredictionPlant(Integer predictionId, Integer plantId);
     
     // Disease linking
     PredictionDisease linkDiseaseToPrediction(Integer predictionId, Integer diseaseId, Boolean isHealthy, Float confidence);
     
-    Optional<PredictionDisease> getPredictionDiseaseById(Integer id);
+    Optional<PredictionDisease> getPredictionDiseaseByCompositeKey(Integer predictionId, Integer diseaseId);
     
     List<PredictionDisease> getPredictionDiseasesByPredictionId(Integer predictionId);
     
-    PredictionDisease updatePredictionDisease(Integer id, Boolean isHealthy);
+    PredictionDisease updatePredictionDisease(Integer predictionId, Integer diseaseId, Boolean isHealthy);
     
-    void deletePredictionDisease(Integer id);
+    void deletePredictionDisease(Integer predictionId, Integer diseaseId);
 }

@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/plants")
 @Validated
 @Slf4j
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class PlantController {
 
     @Autowired
