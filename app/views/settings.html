@@ -44,6 +44,24 @@
             background: var(--brand-light);
             border-left-color: var(--brand-light);
         }
+        /* Mobile sidebar close button */
+        .sidebar-close {
+            display: none;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text);
+            z-index: 1001;
+        }
+        @media (max-width: 991px) {
+            .sidebar-close {
+                display: block;
+            }
+        }
         .settings-section {
             background: white;
             border: 1px solid #dee2e6;
@@ -109,10 +127,21 @@
     <!-- Main Content -->
     <main class="flex-grow-1">
         <div class="container-fluid py-4">
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle d-lg-none mb-3" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i> Menu
+            </button>
+            
+            <!-- Sidebar Overlay -->
+            <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+            
             <div class="row">
                 <!-- Sidebar -->
                 <div class="col-lg-3 mb-4">
-                    <div class="sidebar">
+                    <div class="sidebar" id="sidebar">
+                        <button class="sidebar-close" onclick="toggleSidebar()">
+                            <i class="fas fa-times"></i>
+                        </button>
                         <h6 class="px-3 mb-3 fw-bold">Menu</h6>
                         <ul class="nav flex-column px-3">
                             <li class="nav-item">
@@ -511,6 +540,26 @@
                     new bootstrap.Dropdown(el);
                 });
             }, 100);
+        });
+        
+        // ✅ Mobile Sidebar Toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+            document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+        }
+        
+        // Close sidebar on window resize to desktop
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 992) {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                if (sidebar) sidebar.classList.remove('active');
+                if (overlay) overlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
         });
     </script>
 </body>

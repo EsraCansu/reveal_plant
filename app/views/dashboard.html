@@ -53,6 +53,24 @@
             background: var(--brand-light);
             border-left-color: var(--brand-light);
         }
+        /* Mobile sidebar close button */
+        .sidebar-close {
+            display: none;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text);
+            z-index: 1001;
+        }
+        @media (max-width: 991px) {
+            .sidebar-close {
+                display: block;
+            }
+        }
         .stat-card {
             background: white;
             border: 1px solid #dee2e6;
@@ -109,6 +127,14 @@
     <!-- Main Content -->
     <main class="flex-grow-1">
         <div class="container-fluid py-4">
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle d-lg-none mb-3" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i> Menu
+            </button>
+            
+            <!-- Sidebar Overlay -->
+            <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+            
             <!-- Welcome Section -->
             <div class="welcome-section">
                 <h2 class="mb-2">Welcome back, <span id="userName">User</span>! 🌱</h2>
@@ -118,7 +144,10 @@
             <div class="row">
                 <!-- Sidebar -->
                 <div class="col-lg-3 mb-4">
-                    <div class="sidebar">
+                    <div class="sidebar" id="sidebar">
+                        <button class="sidebar-close" onclick="toggleSidebar()">
+                            <i class="fas fa-times"></i>
+                        </button>
                         <h6 class="px-3 mb-3 fw-bold">Menu</h6>
                         <ul class="nav flex-column px-3">
                             <li class="nav-item">
@@ -153,29 +182,29 @@
                 <!-- Main Content -->
                 <div class="col-lg-9">
                     <!-- Statistics -->
-                    <div class="row mb-4">
-                        <div class="col-md-6">
+                    <div class="row mb-4 stat-cards-row">
+                        <div class="col-sm-6 col-md-6 col-lg-3">
                             <div class="stat-card">
                                 <i class="fas fa-history"></i>
                                 <h5>Total Diagnoses</h5>
                                 <div class="number" id="totalDiagnoses">0</div>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-sm-6 col-md-6 col-lg-3">
                             <div class="stat-card">
                                 <i class="fas fa-bug"></i>
                                 <h5>Diseases Found</h5>
                                 <div class="number" id="diseasesFound">0</div>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-sm-6 col-md-6 col-lg-3">
                             <div class="stat-card">
                                 <i class="fas fa-leaf"></i>
                                 <h5>Plants Identified</h5>
                                 <div class="number" id="plantsIdentified">0</div>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-sm-6 col-md-6 col-lg-3">
                             <div class="stat-card">
                                 <i class="fas fa-calendar"></i>
                                 <h5>This Month</h5>
@@ -220,6 +249,26 @@
     <script src="../../assets/js/components.js"></script>
     <script src="../../assets/js/auth.js"></script>
     <script>
+        // ✅ Mobile Sidebar Toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+            document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+        }
+        
+        // Close sidebar on window resize to desktop
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 992) {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                if (sidebar) sidebar.classList.remove('active');
+                if (overlay) overlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+
         // ✅ BACKEND ENTEGRASYONU
         const BACKEND_URL = 'http://localhost:8080';
         let currentUser = null;

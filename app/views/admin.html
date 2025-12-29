@@ -76,6 +76,167 @@
         .feedback-item { border-left: 4px solid #e0e0e0; padding: 15px; margin-bottom: 15px; background: #f9f9f9; border-radius: 8px; }
         .feedback-item.correct { border-left-color: #4caf50; }
         .feedback-item.incorrect { border-left-color: #f44336; }
+        
+        /* Mobile menu toggle */
+        .mobile-menu-toggle {
+            display: none;
+            background: var(--admin-primary);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        /* Admin sidebar close button */
+        .admin-sidebar-close {
+            display: none;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #333;
+        }
+        
+        /* Sidebar overlay */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        .sidebar-overlay.active {
+            display: block;
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 991px) {
+            .mobile-menu-toggle {
+                display: inline-block;
+                margin-bottom: 15px;
+            }
+            
+            .admin-sidebar-close {
+                display: block;
+            }
+            
+            .admin-sidebar {
+                position: fixed;
+                top: 0;
+                left: -280px;
+                width: 280px;
+                height: 100vh;
+                z-index: 1000;
+                transition: left 0.3s ease;
+                overflow-y: auto;
+                padding-top: 50px;
+            }
+            
+            .admin-sidebar.active {
+                left: 0;
+            }
+            
+            .admin-header .d-flex {
+                flex-wrap: wrap;
+            }
+            
+            .admin-header img {
+                height: 60px !important;
+            }
+            
+            .admin-header h2 {
+                font-size: 1.3rem;
+            }
+            
+            .stat-card h3 {
+                font-size: 1.8rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .admin-header {
+                padding: 15px 0;
+            }
+            
+            .admin-header .d-flex {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .admin-header .d-flex > div:last-child {
+                margin-top: 15px;
+            }
+            
+            .admin-header img {
+                height: 50px !important;
+            }
+            
+            .admin-header h2 {
+                font-size: 1.1rem;
+            }
+            
+            .stat-card {
+                padding: 15px;
+            }
+            
+            .stat-card i {
+                font-size: 1.8rem;
+            }
+            
+            .stat-card h3 {
+                font-size: 1.5rem;
+            }
+            
+            /* Responsive table */
+            .table-responsive {
+                font-size: 0.85rem;
+            }
+            
+            .d-flex.justify-content-between {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .d-flex.justify-content-between > div {
+                width: 100%;
+            }
+            
+            .d-flex.justify-content-between select,
+            .d-flex.justify-content-between button {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .admin-header img {
+                height: 40px !important;
+            }
+            
+            .stat-card {
+                padding: 12px;
+            }
+            
+            .stat-card i {
+                font-size: 1.5rem;
+            }
+            
+            .stat-card h3 {
+                font-size: 1.25rem;
+            }
+            
+            .stat-card p {
+                font-size: 0.8rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -100,8 +261,19 @@
     </div>
 
     <div class="container-fluid">
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle d-lg-none mt-3" onclick="toggleAdminSidebar()">
+            <i class="fas fa-bars me-2"></i>Menu
+        </button>
+        
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleAdminSidebar()"></div>
+        
         <div class="row">
-            <nav class="col-md-2 admin-sidebar">
+            <nav class="col-md-2 admin-sidebar" id="adminSidebar">
+                <button class="admin-sidebar-close" onclick="toggleAdminSidebar()">
+                    <i class="fas fa-times"></i>
+                </button>
                 <ul class="nav flex-column">
                     <li class="nav-item">
                         <a class="nav-link active" href="#" onclick="showSection('users'); return false;">
@@ -891,6 +1063,26 @@
                 alert('Error: ' + error.message);
             }
         }
+        
+        // ✅ Mobile Sidebar Toggle
+        function toggleAdminSidebar() {
+            const sidebar = document.getElementById('adminSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+            document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+        }
+        
+        // Close sidebar on window resize to desktop
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 992) {
+                const sidebar = document.getElementById('adminSidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                if (sidebar) sidebar.classList.remove('active');
+                if (overlay) overlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
     </script>
 </body>
 </html>

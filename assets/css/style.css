@@ -564,11 +564,158 @@ footer a:hover {
 }
 
 /* ==================== RESPONSIVE ==================== */
+
+/* Mobile Menu Toggle */
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--brand-light);
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+/* Sidebar responsive */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+.sidebar-overlay.active {
+    display: block;
+}
+
+/* Large screens (992px and up) */
+@media (min-width: 992px) {
+    .sidebar {
+        position: sticky;
+        top: 0;
+    }
+}
+
+/* Tablets (768px - 991px) */
+@media (max-width: 991px) {
+    /* Sidebar transforms to mobile drawer */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        width: 280px;
+        height: 100vh;
+        z-index: 1000;
+        transition: left 0.3s ease;
+        overflow-y: auto;
+        padding-top: 60px;
+    }
+    
+    .sidebar.active {
+        left: 0;
+    }
+    
+    .sidebar-close {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--text);
+    }
+    
+    .mobile-menu-toggle {
+        display: block;
+    }
+    
+    /* Admin sidebar */
+    .admin-sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        width: 280px;
+        height: 100vh;
+        z-index: 1000;
+        transition: left 0.3s ease;
+        overflow-y: auto;
+        padding-top: 20px;
+    }
+    
+    .admin-sidebar.active {
+        left: 0;
+    }
+    
+    /* Welcome section */
+    .welcome-section {
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .welcome-section h2 {
+        font-size: 1.5rem;
+    }
+    
+    /* Stat cards grid */
+    .stat-cards-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    
+    /* Admin header */
+    .admin-header {
+        padding: 15px 0;
+    }
+    
+    .admin-header h2 {
+        font-size: 1.3rem;
+    }
+    
+    .admin-header img {
+        height: 60px !important;
+    }
+}
+
+/* Mobile (768px and below) */
 @media (max-width: 768px) {
+    /* Typography */
+    h1, .display-4 {
+        font-size: 1.75rem !important;
+    }
+    
+    h2 {
+        font-size: 1.5rem;
+    }
+    
+    h3, h4 {
+        font-size: 1.25rem;
+    }
+    
+    .lead {
+        font-size: 1rem;
+    }
+    
+    /* Mode selector */
     .mode-selector {
         grid-template-columns: 1fr;
+        gap: 1rem;
     }
-
+    
+    .mode-card {
+        padding: 1.5rem;
+    }
+    
+    .mode-card i {
+        font-size: 2.5rem;
+    }
+    
+    /* Progress indicator */
     .progress-indicator {
         gap: 0.5rem;
     }
@@ -579,31 +726,360 @@ footer a:hover {
         font-size: 0.9rem;
     }
 
+    /* Upload area */
     .upload-area {
         padding: 2rem 1rem;
     }
-
-    h1 {
-        font-size: 2rem !important;
+    
+    .upload-area h4 {
+        font-size: 1.1rem;
+    }
+    
+    /* Result section */
+    .result-section {
+        padding: 1.5rem;
+    }
+    
+    /* Navbar */
+    .navbar-brand img {
+        height: 60px !important;
+    }
+    
+    .navbar-nav {
+        padding: 1rem 0;
+    }
+    
+    .navbar-nav .nav-item {
+        margin: 0.25rem 0;
+    }
+    
+    .navbar-nav .btn {
+        width: 100%;
+        text-align: center;
+        margin: 0.25rem 0;
+    }
+    
+    /* Cards */
+    .feature-card {
+        padding: 1.5rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    /* Stat cards */
+    .stat-card {
+        padding: 15px;
+    }
+    
+    .stat-card .number {
+        font-size: 1.5rem;
+    }
+    
+    .stat-card i {
+        font-size: 1.5rem;
+    }
+    
+    .stat-cards-row {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Diagnosis cards */
+    .diagnosis-card {
+        padding: 15px;
+    }
+    
+    .diagnosis-image {
+        width: 60px;
+        height: 60px;
+    }
+    
+    /* Profile section */
+    .profile-section {
+        padding: 20px;
+    }
+    
+    .avatar-upload {
+        width: 100px;
+        height: 100px;
+    }
+    
+    /* Tables responsive */
+    .table-responsive-stack {
+        display: block;
+    }
+    
+    .table-responsive-stack thead {
+        display: none;
+    }
+    
+    .table-responsive-stack tbody tr {
+        display: block;
+        margin-bottom: 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+    
+    .table-responsive-stack tbody td {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border: none;
+    }
+    
+    .table-responsive-stack tbody td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        color: var(--muted);
+    }
+    
+    /* Modal adjustments */
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+    
+    .modal-body .row {
+        flex-direction: column;
+    }
+    
+    .modal-body .col-md-4,
+    .modal-body .col-md-8 {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    
+    /* Buttons */
+    .btn-group-responsive {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .btn-group-responsive .btn {
+        width: 100%;
+    }
+    
+    /* Filter buttons */
+    .filter-btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.85rem;
+        margin: 3px;
+    }
+    
+    /* Footer */
+    footer .row {
+        text-align: center !important;
+    }
+    
+    footer .col-md-6 {
+        margin-bottom: 1rem;
+    }
+    
+    /* Container padding */
+    .container, .container-fluid {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    
+    /* Admin main content */
+    .admin-main-content {
+        padding: 15px;
+    }
+    
+    /* Admin header mobile */
+    .admin-header .d-flex {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .admin-header .d-flex > div:last-child {
+        margin-top: 15px;
     }
 }
 
+/* Small Mobile (480px and below) */
 @media (max-width: 480px) {
+    /* Typography */
+    h1, .display-4 {
+        font-size: 1.5rem !important;
+    }
+    
+    h2 {
+        font-size: 1.25rem;
+    }
+    
+    .lead {
+        font-size: 0.9rem;
+    }
+    
+    /* Navbar */
     .navbar-brand img {
         height: 50px !important;
     }
-
+    
+    /* Progress */
     .progress-step {
         width: 30px;
         height: 30px;
         font-size: 0.8rem;
     }
 
+    /* Mode cards */
     .mode-card {
-        padding: 1.5rem 1rem;
+        padding: 1.25rem 1rem;
     }
 
     .mode-card i {
         font-size: 2rem;
+    }
+    
+    .mode-card h5 {
+        font-size: 1rem;
+    }
+    
+    /* Upload area */
+    .upload-area {
+        padding: 1.5rem 1rem;
+    }
+    
+    .upload-area i {
+        font-size: 2rem !important;
+    }
+    
+    /* Stat cards */
+    .stat-card {
+        padding: 12px;
+    }
+    
+    .stat-card .number {
+        font-size: 1.25rem;
+    }
+    
+    /* Forms */
+    .form-control, .form-select {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    /* Diagnosis cards */
+    .diagnosis-card {
+        padding: 12px;
+    }
+    
+    .diagnosis-image {
+        width: 50px;
+        height: 50px;
+    }
+    
+    /* Modal */
+    .modal-dialog {
+        margin: 0.25rem;
+    }
+    
+    #modalImage {
+        max-width: 150px !important;
+    }
+    
+    /* Buttons */
+    .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .btn-sm {
+        padding: 0.35rem 0.75rem;
+        font-size: 0.8rem;
+    }
+    
+    /* Welcome section */
+    .welcome-section {
+        padding: 15px;
+    }
+    
+    .welcome-section h2 {
+        font-size: 1.25rem;
+    }
+    
+    /* Profile */
+    .avatar-upload {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .avatar-overlay {
+        width: 30px;
+        height: 30px;
+    }
+    
+    /* Admin */
+    .admin-header img {
+        height: 50px !important;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .mode-card:hover,
+    .diagnosis-card:hover,
+    .feature-card:hover,
+    .upload-area:hover {
+        transform: none;
+    }
+    
+    .btn:hover {
+        transform: none;
+    }
+    
+    /* Larger touch targets */
+    .nav-link {
+        padding: 12px 15px;
+    }
+    
+    .filter-btn {
+        min-height: 44px;
+    }
+    
+    .btn {
+        min-height: 44px;
+    }
+}
+
+/* Landscape mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+    .sidebar {
+        padding-top: 10px;
+    }
+    
+    .sidebar .nav-link {
+        padding: 8px 15px;
+    }
+    
+    .welcome-section {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+}
+
+/* Print styles */
+@media print {
+    .sidebar,
+    .admin-sidebar,
+    .navbar,
+    footer,
+    .mobile-menu-toggle {
+        display: none !important;
+    }
+    
+    main {
+        margin: 0;
+        padding: 0;
+    }
+    
+    .col-lg-9,
+    .col-md-10 {
+        width: 100%;
+        max-width: 100%;
     }
 }
