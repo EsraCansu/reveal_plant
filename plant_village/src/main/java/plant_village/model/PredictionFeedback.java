@@ -25,20 +25,13 @@ public class PredictionFeedback {
     @JsonIgnoreProperties({"plantDetails", "diseaseDetails", "logDetails", "feedbackDetails"})
     private Prediction prediction;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnoreProperties({"passwordHash", "predictions"})
-    private User user;
+    // user_id removed - access via prediction.getUser()
     
-    @Column(name = "is_correct", nullable = false)
+    @Column(name = "is_correct")
     private Boolean isCorrect;
     
     @Column(name = "is_approved_from_admin", nullable = false)
     private Boolean isApprovedFromAdmin;
-
-    @Column(name = "is_approved", nullable = false)
-    @JsonIgnore  // Redundant - use isApprovedFromAdmin instead
-    private Boolean isApproved;
 
     @Column(name = "comment", columnDefinition = "NVARCHAR(500)")
     private String comment;
@@ -58,27 +51,28 @@ public class PredictionFeedback {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
-        if (isApprovedFromAdmin == null) {
-            isApprovedFromAdmin = false;
-        }
         if (isCorrect == null) {
             isCorrect = false;
         }
+        if (isApprovedFromAdmin == null) {
+            isApprovedFromAdmin = false;
+        }
         if (imageAddedToDb == null) {
             imageAddedToDb = false;
-        }
-        // Set isApproved based on isApprovedFromAdmin
-        if (isApproved == null) {
-            isApproved = isApprovedFromAdmin != null && isApprovedFromAdmin ? true : false;
         }
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
-        // Always sync isApproved with isApprovedFromAdmin on update
-        if (isApprovedFromAdmin != null) {
-            isApproved = isApprovedFromAdmin;
-        }
+    }
+    
+    /**
+     * Get user via prediction (user_id removed from this table)
+     * Note: Not serialized to avoid lazy loading issues
+     */
+    @JsonIgnore
+    public User getUser() {
+        return prediction != null ? prediction.getUser() : null;
     }
 }

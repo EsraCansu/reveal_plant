@@ -127,9 +127,10 @@ public class PredictionController {
             @RequestBody Map<String, Object> feedbackRequest) {
         try {
             // Extract data from request
-            Integer userId = (Integer) feedbackRequest.get("userId");
             String feedbackText = (String) feedbackRequest.getOrDefault("feedbackText", "");
-            Boolean isCorrect = (Boolean) feedbackRequest.get("isCorrect");
+            Boolean isCorrect = feedbackRequest.get("isCorrect") != null 
+                ? (Boolean) feedbackRequest.get("isCorrect") 
+                : false;
             
             // Get prediction
             Prediction prediction = predictionService.findById(predictionId)
@@ -138,8 +139,8 @@ public class PredictionController {
             // Create feedback entity
             PredictionFeedback feedback = PredictionFeedback.builder()
                 .prediction(prediction)
-                .isCorrect(isCorrect)
                 .comment(feedbackText)
+                .isCorrect(isCorrect)
                 .isApprovedFromAdmin(false)
                 .createdAt(java.time.LocalDateTime.now())
                 .build();
@@ -181,7 +182,7 @@ public class PredictionController {
                 dto.put("comment", fb.getComment());
                 dto.put("createdAt", fb.getCreatedAt() != null ? fb.getCreatedAt().toString() : null);
                 
-                // User Information
+                // User Information (via prediction.user)
                 if (fb.getUser() != null) {
                     Map<String, Object> userInfo = new HashMap<>();
                     userInfo.put("userId", fb.getUser().getId());
@@ -274,11 +275,10 @@ public class PredictionController {
                 Map<String, Object> response = new HashMap<>();
                 response.put("feedbackId", feedback.getFeedbackId());
                 response.put("isApprovedFromAdmin", feedback.getIsApprovedFromAdmin());
-                response.put("isApproved", feedback.getIsApproved());
                 response.put("message", "Feedback approved successfully");
                 
-                log.info("✅ Feedback ID {} approved - isApprovedFromAdmin: {}, isApproved: {}", 
-                    feedbackId, feedback.getIsApprovedFromAdmin(), feedback.getIsApproved());
+                log.info("✅ Feedback ID {} approved - isApprovedFromAdmin: {}", 
+                    feedbackId, feedback.getIsApprovedFromAdmin());
                 
                 return new ResponseEntity<>(response, HttpStatus.OK);
             }
@@ -516,29 +516,29 @@ public class PredictionController {
     /**
      * Submit feedback for a prediction
      * POST /api/predictions/feedback
-     * @param feedbackRequest Map containing predictionId, userId, isCorrect, feedbackText
+     * @param feedbackRequest Map containing predictionId, feedbackText
      * @return Feedback response with success/failure status
      */
     @Operation(
         summary = "Submit feedback for a prediction",
-        description = "Allows logged-in users to mark a prediction as correct or incorrect. " +
+        description = "Allows users to provide feedback on a prediction. " +
                       "Feedback is stored for admin review and model improvement."
     )
     @PostMapping("/feedback")
     public ResponseEntity<?> submitFeedback(@RequestBody Map<String, Object> feedbackRequest) {
         try {
             Integer predictionId = (Integer) feedbackRequest.get("predictionId");
-            Integer userId = (Integer) feedbackRequest.get("userId");
-            Boolean isCorrect = (Boolean) feedbackRequest.get("isCorrect");
             String feedbackText = (String) feedbackRequest.get("feedbackText");
+            Boolean isCorrect = feedbackRequest.get("isCorrect") != null 
+                ? (Boolean) feedbackRequest.get("isCorrect") 
+                : false;
 
-            log.info("📝 Feedback received: predictionId={}, userId={}, isCorrect={}", 
-                predictionId, userId, isCorrect);
+            log.info("📝 Feedback received: predictionId={}, isCorrect={}", predictionId, isCorrect);
 
             // Validate required fields
-            if (predictionId == null || userId == null || isCorrect == null) {
+            if (predictionId == null) {
                 Map<String, String> error = new HashMap<>();
-                error.put("error", "Missing required fields");
+                error.put("error", "Missing required fields: predictionId");
                 return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
             }
 
@@ -546,16 +546,11 @@ public class PredictionController {
             Prediction prediction = predictionService.findById(predictionId)
                 .orElseThrow(() -> new RuntimeException("Prediction not found"));
 
-            // Get user - required for feedback
-            User user = userService.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-            // Create feedback with user
+            // Create feedback (user accessed via prediction.getUser())
             PredictionFeedback feedback = PredictionFeedback.builder()
                 .prediction(prediction)
-                .user(user)
-                .isCorrect(isCorrect)
                 .comment(feedbackText != null ? feedbackText : "")
+                .isCorrect(isCorrect)
                 .isApprovedFromAdmin(false) // Requires admin approval
                 .createdAt(java.time.LocalDateTime.now())
                 .build();
@@ -563,8 +558,7 @@ public class PredictionController {
             // Save feedback
             feedback = feedbackService.submitFeedback(feedback);
 
-            log.info("✅ Feedback saved: ID={}, isCorrect={}", 
-                feedback.getFeedbackId(), isCorrect);
+            log.info("✅ Feedback saved: ID={}", feedback.getFeedbackId());
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);

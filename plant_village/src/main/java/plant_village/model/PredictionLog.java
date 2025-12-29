@@ -24,9 +24,7 @@ public class PredictionLog {
     @JoinColumn(name = "prediction_id", nullable = false)
     private Prediction prediction;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    // user_id removed - user info is accessed via prediction.user
     
     @Column(name = "action_type", length = 50)
     private String actionType;

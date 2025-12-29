@@ -177,7 +177,7 @@ public class PredictionFeedbackServiceImpl implements PredictionFeedbackService 
     /**
      * Approve feedback by admin
      * STEP 5: Feedback - Admin approval
-     * If isCorrect=true, save image to DB for ML training
+     * Mark image as added to DB for ML training when approved
      */
     @Override
     public PredictionFeedback approveFeedback(Integer feedbackId) {
@@ -186,21 +186,14 @@ public class PredictionFeedbackServiceImpl implements PredictionFeedbackService 
         return feedbackRepository.findById(feedbackId)
             .map(feedback -> {
                 feedback.setIsApprovedFromAdmin(true);
-                feedback.setIsApproved(true);  // isApprovedFromAdmin 1 (true) oluyorsa isApproved da 1 (true) olsun
                 
-                // If feedback is correct, mark image as added to DB for ML training
-                if (Boolean.TRUE.equals(feedback.getIsCorrect())) {
-                    feedback.setImageAddedToDb(true);
-                    log.info("✅ Correct prediction approved - Image marked for ML training. Feedback ID: {}", feedbackId);
-                } else {
-                    // Incorrect predictions don't need to save image
-                    feedback.setImageAddedToDb(false);
-                    log.info("❌ Incorrect prediction approved - Image NOT added to training. Feedback ID: {}", feedbackId);
-                }
+                // When approved, mark image as added to DB for ML training
+                feedback.setImageAddedToDb(true);
+                log.info("✅ Feedback approved - Image marked for ML training. Feedback ID: {}", feedbackId);
                 
                 PredictionFeedback approved = feedbackRepository.save(feedback);
-                log.info("Feedback approved successfully - ID: {}, isCorrect: {}, imageAddedToDb: {}", 
-                    feedbackId, feedback.getIsCorrect(), feedback.getImageAddedToDb());
+                log.info("Feedback approved successfully - ID: {}, imageAddedToDb: {}", 
+                    feedbackId, feedback.getImageAddedToDb());
                 return approved;
             })
             .orElseThrow(() -> {

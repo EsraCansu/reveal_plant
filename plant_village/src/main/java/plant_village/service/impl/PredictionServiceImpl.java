@@ -330,10 +330,9 @@ public class PredictionServiceImpl implements PredictionService {
             // STEP 3: Save again to persist the plant/disease relationships
             savedPrediction = predictionRepository.save(savedPrediction);
             
-            // Create PredictionLog entry with user information
+            // Create PredictionLog entry (user is accessed via prediction.user)
             PredictionLog logEntry = PredictionLog.builder()
                 .prediction(savedPrediction)
-                .user(user)
                 .actionType("PREDICTION_CREATED")
                 .timestamp(LocalDateTime.now())
                 .build();

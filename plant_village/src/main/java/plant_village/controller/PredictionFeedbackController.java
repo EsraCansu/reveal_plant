@@ -85,7 +85,6 @@ public class PredictionFeedbackController {
         Optional<PredictionFeedback> feedback = feedbackRepository.findById(id);
         if (feedback.isPresent()) {
             PredictionFeedback existingFeedback = feedback.get();
-            if (feedbackDetails.getIsCorrect() != null) existingFeedback.setIsCorrect(feedbackDetails.getIsCorrect());
             if (feedbackDetails.getIsApprovedFromAdmin() != null) existingFeedback.setIsApprovedFromAdmin(feedbackDetails.getIsApprovedFromAdmin());
             if (feedbackDetails.getComment() != null) existingFeedback.setComment(feedbackDetails.getComment());
             if (feedbackDetails.getImageAddedToDb() != null) existingFeedback.setImageAddedToDb(feedbackDetails.getImageAddedToDb());
