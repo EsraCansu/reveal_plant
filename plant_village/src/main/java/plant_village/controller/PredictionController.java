@@ -288,6 +288,33 @@ public class PredictionController {
     }
 
     /**
+     * Reject/Delete feedback by admin
+     * DELETE /api/predictions/feedback/{feedbackId}
+     * @param feedbackId The feedback ID to delete
+     * @return Success message or error
+     */
+    @DeleteMapping("/feedback/{feedbackId}")
+    public ResponseEntity<?> rejectFeedback(@PathVariable Integer feedbackId) {
+        try {
+            boolean deleted = feedbackService.deleteFeedback(feedbackId);
+            if (deleted) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("message", "Feedback rejected and deleted successfully");
+                
+                log.info("🗑️ Feedback ID {} rejected and deleted", feedbackId);
+                
+                return new ResponseEntity<>(response, HttpStatus.OK);
+            }
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.error("Error rejecting feedback: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
      * Analyze plant image using ML model (Frontend endpoint)
      * POST /api/predictions/analyze
      * Workflow: Image → FastAPI → %50 Rule → Tree + Stack + Hash Map → Response

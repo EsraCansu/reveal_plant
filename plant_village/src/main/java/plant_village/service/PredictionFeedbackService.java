@@ -44,6 +44,13 @@ public interface PredictionFeedbackService {
     PredictionFeedback approveFeedback(Integer feedbackId);
     
     /**
+     * Delete/Reject feedback by admin
+     * @param feedbackId The feedback ID to delete
+     * @return true if deleted successfully, false if not found
+     */
+    boolean deleteFeedback(Integer feedbackId);
+    
+    /**
      * Process pending feedback (add images that weren't added yet)
      */
     void processPendingFeedback();

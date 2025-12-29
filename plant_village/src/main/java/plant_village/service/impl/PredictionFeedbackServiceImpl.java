@@ -224,6 +224,26 @@ public class PredictionFeedbackServiceImpl implements PredictionFeedbackService 
     }
     
     /**
+     * Delete/Reject feedback by admin
+     * STEP 5: Feedback - Admin rejection
+     * @param feedbackId The feedback ID to delete
+     * @return true if deleted successfully, false if not found
+     */
+    @Override
+    public boolean deleteFeedback(Integer feedbackId) {
+        log.info("Deleting/Rejecting feedback with ID: {}", feedbackId);
+        
+        if (feedbackRepository.existsById(feedbackId)) {
+            feedbackRepository.deleteById(feedbackId);
+            log.info("🗑️ Feedback deleted successfully - ID: {}", feedbackId);
+            return true;
+        } else {
+            log.warn("Feedback not found with ID: {}", feedbackId);
+            return false;
+        }
+    }
+    
+    /**
      * Process pending feedback (add images that weren't added yet)
      * STEP 5: Feedback - Process pending feedback
      */
