@@ -33,7 +33,4 @@ public class PredictionDisease {
     
     @Column(name = "is_healthy")
     private Boolean isHealthy;
-    
-    @Column(name = "confidence")
-    private Double confidence;
 }

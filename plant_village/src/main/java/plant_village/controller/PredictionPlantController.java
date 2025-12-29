@@ -46,7 +46,6 @@ public class PredictionPlantController {
                 .predictionId(pp.getPredictionId())
                 .plantId(pp.getPlantId())
                 .plantName(pp.getPlant() != null ? pp.getPlant().getPlantName() : null)
-                .confidence(pp.getConfidence())
                 .build())
             .collect(Collectors.toList());
         return ResponseEntity.ok(dtoList);
@@ -68,7 +67,6 @@ public class PredictionPlantController {
                 .predictionId(pp.getPredictionId())
                 .plantId(pp.getPlantId())
                 .plantName(pp.getPlant() != null ? pp.getPlant().getPlantName() : null)
-                .confidence(pp.getConfidence())
                 .build();
             return ResponseEntity.ok(dto);
         }
@@ -88,7 +86,6 @@ public class PredictionPlantController {
                 .predictionId(pp.getPredictionId())
                 .plantId(pp.getPlantId())
                 .plantName(pp.getPlant() != null ? pp.getPlant().getPlantName() : null)
-                .confidence(pp.getConfidence())
                 .build())
             .collect(Collectors.toList());
         return ResponseEntity.ok(dtoList);
@@ -107,7 +104,6 @@ public class PredictionPlantController {
                 .predictionId(pp.getPredictionId())
                 .plantId(pp.getPlantId())
                 .plantName(pp.getPlant() != null ? pp.getPlant().getPlantName() : null)
-                .confidence(pp.getConfidence())
                 .build())
             .collect(Collectors.toList());
         return ResponseEntity.ok(dtoList);
@@ -126,7 +122,6 @@ public class PredictionPlantController {
                 .predictionId(saved.getPredictionId())
                 .plantId(saved.getPlantId())
                 .plantName(saved.getPlant() != null ? saved.getPlant().getPlantName() : null)
-                .confidence(saved.getConfidence())
                 .build();
             return ResponseEntity.status(201).body(dto);
         } catch (Exception e) {

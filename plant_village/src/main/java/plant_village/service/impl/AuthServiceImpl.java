@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import plant_village.config.security.PasswordValidator;
 import plant_village.dto.LoginRequest;
 import plant_village.dto.LoginResponse;
 import plant_village.exception.ResourceNotFoundException;
@@ -19,6 +20,7 @@ import plant_village.service.UserService;
 import javax.crypto.SecretKey;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -40,11 +42,19 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private PasswordEncoder passwordEncoder;
     
+    @Autowired
+    private PasswordValidator passwordValidator;
+    
     @Value("${jwt.secret:your-very-secure-secret-key-that-is-at-least-256-bits-long-for-HS256-algorithm}")
     private String jwtSecret;
     
     @Value("${jwt.expiration:86400000}")  // 24 hours in milliseconds
     private long jwtExpiration;
+    
+    // Failed login tracking for brute force protection
+    private static final int MAX_FAILED_ATTEMPTS = 5;
+    private static final long LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+    private final java.util.Map<String, FailedLoginTracker> failedLogins = new java.util.concurrent.ConcurrentHashMap<>();
     
     /**
      * Authenticate user with email and password
@@ -53,23 +63,39 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public LoginResponse login(LoginRequest loginRequest) {
-        log.info("Login attempt for email: {}", loginRequest.getEmail());
+        String email = loginRequest.getEmail().toLowerCase().trim();
+        log.info("Login attempt for email: {}", email);
+        
+        // Check for account lockout
+        if (isAccountLocked(email)) {
+            log.warn("Login blocked - Account temporarily locked: {}", email);
+            throw new RuntimeException("Çok fazla başarısız giriş denemesi. Lütfen 15 dakika sonra tekrar deneyin.");
+        }
         
         // Find user by email
-        User user = userRepository.findByEmail(loginRequest.getEmail())
+        User user = userRepository.findByEmail(email)
             .orElseThrow(() -> {
-                log.warn("Login failed - User not found: {}", loginRequest.getEmail());
+                recordFailedLogin(email);
+                log.warn("Login failed - User not found: {}", email);
                 return new ResourceNotFoundException("E-mail veya şifre hatalı");
             });
         
         // Verify password
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPasswordHash())) {
-            log.warn("Login failed - Invalid password for user: {}", loginRequest.getEmail());
+            recordFailedLogin(email);
+            log.warn("Login failed - Invalid password for user: {}", email);
             throw new RuntimeException("E-mail veya şifre hatalı");
         }
         
+        // Clear failed login attempts on success
+        clearFailedLogins(email);
+        
         // Generate token
         String token = generateToken(user);
+        
+        // Update last login time
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
         
         log.info("User logged in successfully: {} (ID: {})", user.getEmail(), user.getId());
         
@@ -88,14 +114,28 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public User register(LoginRequest registerRequest) {
-        log.info("Registration attempt for email: {}", registerRequest.getEmail());
+        String email = registerRequest.getEmail().toLowerCase().trim();
+        log.info("Registration attempt for email: {}", email);
+        
+        // Validate password strength
+        List<String> passwordErrors = passwordValidator.validate(registerRequest.getPassword());
+        if (!passwordErrors.isEmpty()) {
+            String errorMessage = String.join(", ", passwordErrors);
+            log.warn("Registration failed - Weak password for email: {}", email);
+            throw new RuntimeException("Şifre gereksinimleri karşılanmıyor: " + errorMessage);
+        }
+        
+        // Check if email already exists
+        if (userRepository.findByEmail(email).isPresent()) {
+            log.warn("Registration failed - Email already exists: {}", email);
+            throw new RuntimeException("Bu e-mail adresi zaten kayıtlı");
+        }
         
         User newUser = User.builder()
             .email(registerRequest.getEmail())
             .passwordHash(registerRequest.getPassword())  // Will be hashed in UserService
             .userName(registerRequest.getEmail().split("@")[0])  // Username from email prefix
             .role("USER")
-            .createAt(LocalDateTime.now())
             .lastLogin(LocalDateTime.now())
             .build();
         
@@ -192,5 +232,60 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public long getTokenExpiration() {
         return jwtExpiration;
+    }
+    
+    // =========================================
+    // BRUTE FORCE PROTECTION METHODS
+    // =========================================
+    
+    /**
+     * Record a failed login attempt
+     */
+    private void recordFailedLogin(String email) {
+        failedLogins.compute(email, (key, tracker) -> {
+            if (tracker == null || System.currentTimeMillis() - tracker.firstFailedTime > LOCKOUT_DURATION_MS) {
+                return new FailedLoginTracker(System.currentTimeMillis(), 1);
+            }
+            tracker.failedCount++;
+            return tracker;
+        });
+    }
+    
+    /**
+     * Check if account is locked due to too many failed attempts
+     */
+    private boolean isAccountLocked(String email) {
+        FailedLoginTracker tracker = failedLogins.get(email);
+        if (tracker == null) {
+            return false;
+        }
+        
+        // Check if lockout period has expired
+        if (System.currentTimeMillis() - tracker.firstFailedTime > LOCKOUT_DURATION_MS) {
+            failedLogins.remove(email);
+            return false;
+        }
+        
+        return tracker.failedCount >= MAX_FAILED_ATTEMPTS;
+    }
+    
+    /**
+     * Clear failed login attempts for an email
+     */
+    private void clearFailedLogins(String email) {
+        failedLogins.remove(email);
+    }
+    
+    /**
+     * Helper class to track failed login attempts
+     */
+    private static class FailedLoginTracker {
+        long firstFailedTime;
+        int failedCount;
+        
+        FailedLoginTracker(long firstFailedTime, int failedCount) {
+            this.firstFailedTime = firstFailedTime;
+            this.failedCount = failedCount;
+        }
     }
 }

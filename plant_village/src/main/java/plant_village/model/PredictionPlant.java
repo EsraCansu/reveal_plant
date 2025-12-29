@@ -30,7 +30,4 @@ public class PredictionPlant {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "prediction_id", nullable = false, insertable = false, updatable = false)
     private Prediction prediction;
-    
-    @Column(name = "confidence")
-    private Double confidence;
 }

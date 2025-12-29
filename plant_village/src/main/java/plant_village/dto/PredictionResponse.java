@@ -24,7 +24,6 @@ public class PredictionResponse {
     private LocalDateTime createAt;
     private Boolean isValid;
     private String wateringFrequency;
-    private String careTips;
     private String soilType;
     private String hardinessZone;
     private String message;

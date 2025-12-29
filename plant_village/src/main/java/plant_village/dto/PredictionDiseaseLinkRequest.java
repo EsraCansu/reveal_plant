@@ -23,9 +23,4 @@ public class PredictionDiseaseLinkRequest {
 
     @NotNull(message = "Is Healthy boş olamaz")
     private Boolean isHealthy;
-
-    @NotNull(message = "Confidence boş olamaz")
-    @Min(value = 0, message = "Confidence 0 ile 1 arasında olmalıdır")
-    @Max(value = 1, message = "Confidence 0 ile 1 arasında olmalıdır")
-    private Float confidence;
 }

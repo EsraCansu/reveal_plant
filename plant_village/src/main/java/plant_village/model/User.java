@@ -31,9 +31,6 @@ public class User {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
     
-    @Column(name = "created_at")
-    private LocalDateTime createAt;
-    
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
     
@@ -61,9 +58,6 @@ public class User {
      */
     @PrePersist
     public void prePersist() {
-        if (this.createAt == null) {
-            this.createAt = LocalDateTime.now();
-        }
         if (this.lastLogin == null) {
             this.lastLogin = LocalDateTime.now();
         }

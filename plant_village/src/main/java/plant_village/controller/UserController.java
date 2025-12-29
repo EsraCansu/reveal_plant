@@ -174,7 +174,6 @@ public class UserController {
             userData.put("location", user.getLocation());
             userData.put("bio", user.getBio());
             userData.put("avatarUrl", user.getAvatarUrl());
-            userData.put("createdAt", user.getCreateAt());
             userData.put("lastLogin", user.getLastLogin());
             
             return ResponseEntity.ok(userData);
@@ -288,7 +287,6 @@ public class UserController {
                     userMap.put("userName", user.getUserName());
                     userMap.put("email", user.getEmail());
                     userMap.put("role", user.getRole());
-                    userMap.put("createdAt", user.getCreateAt());
                     userMap.put("lastLogin", user.getLastLogin());
                     return userMap;
                 })
@@ -389,7 +387,7 @@ public class UserController {
             result.put("email", user.getEmail());
             result.put("userName", user.getUserName());
             result.put("role", user.getRole());
-            result.put("createdAt", user.getCreateAt());
+
             result.put("lastLogin", user.getLastLogin());
             // Profile fields
             result.put("phone", user.getPhone());
@@ -479,8 +477,7 @@ public class UserController {
                 "location", updatedUser.getLocation() != null ? updatedUser.getLocation() : "",
                 "bio", updatedUser.getBio() != null ? updatedUser.getBio() : "",
                 "avatarUrl", updatedUser.getAvatarUrl() != null ? updatedUser.getAvatarUrl() : "",
-                "role", updatedUser.getRole(),
-                "createdAt", updatedUser.getCreateAt()
+                "role", updatedUser.getRole()
             ));
             
             return ResponseEntity.ok(result);
@@ -580,7 +577,7 @@ public class UserController {
             
             java.util.Map<String, Object> stats = new java.util.HashMap<>();
             stats.put("userId", user.getId());
-            stats.put("memberSince", user.getCreateAt());
+
             stats.put("lastLogin", user.getLastLogin());
             stats.put("totalDiagnoses", userPredictions.size());
             
@@ -691,7 +688,7 @@ public class UserController {
             profile.put("bio", user.getBio());
             profile.put("avatarUrl", user.getAvatarUrl());
             profile.put("role", user.getRole());
-            profile.put("createdAt", user.getCreateAt());
+
             profile.put("lastLogin", user.getLastLogin());
             exportData.put("profile", profile);
             
@@ -702,7 +699,7 @@ public class UserController {
                 pred.put("predictionType", p.getPredictionType());
                 pred.put("confidence", p.getConfidence());
                 pred.put("uploadedImageUrl", p.getUploadedImageUrl());
-                pred.put("createdAt", p.getCreateAt());
+
                 pred.put("isValid", p.getIsValid());
                 return pred;
             }).toList());

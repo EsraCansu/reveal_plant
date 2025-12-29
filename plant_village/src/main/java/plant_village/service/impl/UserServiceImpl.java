@@ -52,7 +52,6 @@ public class UserServiceImpl implements UserService {
         
         // Encrypt password
         user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
-        user.setCreateAt(LocalDateTime.now());
         user.setLastLogin(LocalDateTime.now());
         
         User savedUser = userRepository.save(user);

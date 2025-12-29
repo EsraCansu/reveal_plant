@@ -18,13 +18,11 @@ public class PredictionPlantLinkResponse {
     private Integer predictionPlantId;
     private Integer predictionId;
     private Integer plantId;
-    private Float confidence;
     
     // Plant details
     private String plantName;
     private String scientificName;
     private String description;
-    private String careTips;
     
     private String message;
 }

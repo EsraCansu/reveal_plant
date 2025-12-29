@@ -32,7 +32,7 @@ public class PredictionPlantDiseaseServiceImpl implements PredictionPlantDisease
     // ===== PLANT LINKING =====
     
     @Override
-    public PredictionPlant linkPlantToPrediction(Integer predictionId, Integer plantId, Float confidence) {
+    public PredictionPlant linkPlantToPrediction(Integer predictionId, Integer plantId) {
         log.info("Bitki tahmin'e bağlanıyor - Prediction ID: {}, Plant ID: {}", predictionId, plantId);
         
         Prediction prediction = predictionRepository.findById(predictionId)
@@ -46,7 +46,6 @@ public class PredictionPlantDiseaseServiceImpl implements PredictionPlantDisease
             .plantId(plantId)
             .prediction(prediction)
             .plant(plant)
-            .confidence(confidence != null ? confidence.doubleValue() : null)
             .build();
         
         PredictionPlant saved = predictionPlantRepository.save(predictionPlant);
@@ -102,7 +101,7 @@ public class PredictionPlantDiseaseServiceImpl implements PredictionPlantDisease
     // ===== DISEASE LINKING =====
     
     @Override
-    public PredictionDisease linkDiseaseToPrediction(Integer predictionId, Integer diseaseId, Boolean isHealthy, Float confidence) {
+    public PredictionDisease linkDiseaseToPrediction(Integer predictionId, Integer diseaseId, Boolean isHealthy) {
         log.info("Hastalık tahmin'e bağlanıyor - Prediction ID: {}, Disease ID: {}", predictionId, diseaseId);
         
         Prediction prediction = predictionRepository.findById(predictionId)
@@ -117,7 +116,6 @@ public class PredictionPlantDiseaseServiceImpl implements PredictionPlantDisease
             .prediction(prediction)
             .disease(disease)
             .isHealthy(isHealthy)
-            .confidence(confidence != null ? confidence.doubleValue() : null)
             .build();
         
         PredictionDisease saved = predictionDiseaseRepository.save(predictionDisease);

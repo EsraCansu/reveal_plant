@@ -13,5 +13,4 @@ public class PredictionPlantDTO {
     private Integer predictionId;
     private Integer plantId;
     private String plantName;
-    private Double confidence;
 }

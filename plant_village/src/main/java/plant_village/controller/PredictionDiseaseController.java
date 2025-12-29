@@ -48,7 +48,6 @@ public class PredictionDiseaseController {
                 .diseaseId(pd.getDiseaseId())
                 .diseaseName(pd.getDisease() != null ? pd.getDisease().getDiseaseName() : null)
                 .isHealthy(pd.getIsHealthy())
-                .confidence(pd.getConfidence())
                 .build())
             .collect(Collectors.toList());
         return ResponseEntity.ok(dtoList);
@@ -71,7 +70,6 @@ public class PredictionDiseaseController {
                 .diseaseId(pd.getDiseaseId())
                 .diseaseName(pd.getDisease() != null ? pd.getDisease().getDiseaseName() : null)
                 .isHealthy(pd.getIsHealthy())
-                .confidence(pd.getConfidence())
                 .build();
             return ResponseEntity.ok(dto);
         }
@@ -92,7 +90,6 @@ public class PredictionDiseaseController {
                 .diseaseId(pd.getDiseaseId())
                 .diseaseName(pd.getDisease() != null ? pd.getDisease().getDiseaseName() : null)
                 .isHealthy(pd.getIsHealthy())
-                .confidence(pd.getConfidence())
                 .build())
             .collect(Collectors.toList());
         return ResponseEntity.ok(dtoList);
@@ -112,7 +109,6 @@ public class PredictionDiseaseController {
                 .diseaseId(pd.getDiseaseId())
                 .diseaseName(pd.getDisease() != null ? pd.getDisease().getDiseaseName() : null)
                 .isHealthy(pd.getIsHealthy())
-                .confidence(pd.getConfidence())
                 .build())
             .collect(Collectors.toList());
         return ResponseEntity.ok(dtoList);
@@ -132,7 +128,6 @@ public class PredictionDiseaseController {
                 .diseaseId(saved.getDiseaseId())
                 .diseaseName(saved.getDisease() != null ? saved.getDisease().getDiseaseName() : null)
                 .isHealthy(saved.getIsHealthy())
-                .confidence(saved.getConfidence())
                 .build();
             return ResponseEntity.status(201).body(dto);
         } catch (Exception e) {
@@ -162,7 +157,6 @@ public class PredictionDiseaseController {
                 .diseaseId(updated.getDiseaseId())
                 .diseaseName(updated.getDisease() != null ? updated.getDisease().getDiseaseName() : null)
                 .isHealthy(updated.getIsHealthy())
-                .confidence(updated.getConfidence())
                 .build();
             return ResponseEntity.ok(dto);
         }

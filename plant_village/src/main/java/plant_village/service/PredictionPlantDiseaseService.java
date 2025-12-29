@@ -8,7 +8,7 @@ import java.util.Optional;
 public interface PredictionPlantDiseaseService {
     
     // Plant linking
-    PredictionPlant linkPlantToPrediction(Integer predictionId, Integer plantId, Float confidence);
+    PredictionPlant linkPlantToPrediction(Integer predictionId, Integer plantId);
     
     Optional<PredictionPlant> getPredictionPlantByCompositeKey(Integer predictionId, Integer plantId);
     
@@ -17,7 +17,7 @@ public interface PredictionPlantDiseaseService {
     void deletePredictionPlant(Integer predictionId, Integer plantId);
     
     // Disease linking
-    PredictionDisease linkDiseaseToPrediction(Integer predictionId, Integer diseaseId, Boolean isHealthy, Float confidence);
+    PredictionDisease linkDiseaseToPrediction(Integer predictionId, Integer diseaseId, Boolean isHealthy);
     
     Optional<PredictionDisease> getPredictionDiseaseByCompositeKey(Integer predictionId, Integer diseaseId);
     

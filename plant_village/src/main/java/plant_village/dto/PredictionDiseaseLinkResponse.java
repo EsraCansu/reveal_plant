@@ -19,7 +19,6 @@ public class PredictionDiseaseLinkResponse {
     private Integer predictionId;
     private Integer diseaseId;
     private Boolean isHealthy;
-    private Float confidence;
     
     // Disease details
     private String diseaseName;

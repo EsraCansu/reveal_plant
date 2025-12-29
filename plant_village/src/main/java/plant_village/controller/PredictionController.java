@@ -205,9 +205,6 @@ public class PredictionController {
                     predInfo.put("uploadedImageUrl", pred.getUploadedImageUrl());
                     predInfo.put("predictionType", pred.getPredictionType());
                     predInfo.put("confidence", pred.getConfidence());
-                    if (pred.getCareTips() != null) {
-                        predInfo.put("careTips", pred.getCareTips());
-                    }
                     dto.put("prediction", predInfo);
                     dto.put("uploadedImageUrl", pred.getUploadedImageUrl());
                 }

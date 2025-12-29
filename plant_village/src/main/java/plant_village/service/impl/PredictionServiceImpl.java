@@ -248,7 +248,6 @@ public class PredictionServiceImpl implements PredictionService {
             prediction.setUploadedImageUrl(imageBase64);  // Store base64 image
             prediction.setPredictionType(predictionTypeValue);  // Plant name or Disease name based on mode
             prediction.setConfidence(mlResponse.getTopConfidence());      // Overall confidence
-            prediction.setCareTips(description);  // Store description as care_tips
             
             // Set validity based on 50% threshold
             boolean isValid = mlResponse.getTopConfidence() != null && mlResponse.getTopConfidence() >= 0.5;
@@ -281,10 +280,9 @@ public class PredictionServiceImpl implements PredictionService {
                         pp.setPlantId(plant.getId());
                         pp.setPrediction(savedPrediction);
                         pp.setPlant(plant);
-                        pp.setConfidence(topPrediction.getConfidenceScore());
                         
                         plantDetails.add(pp);
-                        log.info("🌱 Added plant match: {} (id={}) with confidence {}", plant.getPlantName(), plant.getId(), topPrediction.getConfidenceScore());
+                        log.info("🌱 Added plant match: {} (id={})", plant.getPlantName(), plant.getId());
                     } else {
                         log.warn("⚠️ Plant not found in DB: {}", plantName);
                     }
@@ -311,14 +309,13 @@ public class PredictionServiceImpl implements PredictionService {
                         pd.setDiseaseId(disease.getId());
                         pd.setPrediction(savedPrediction);
                         pd.setDisease(disease);
-                        pd.setConfidence(topPrediction.getConfidenceScore());
                         
                         // Set is_healthy flag: 1 if disease name contains "healthy", 0 otherwise (disease detected)
                         boolean isHealthy = disease.getDiseaseName().toLowerCase().contains("healthy");
                         pd.setIsHealthy(isHealthy);
                         
                         diseaseDetails.add(pd);
-                        log.info("🦠 Added disease match: {} (id={}) with confidence {} - Healthy: {}", disease.getDiseaseName(), disease.getId(), topPrediction.getConfidenceScore(), isHealthy);
+                        log.info("🦠 Added disease match: {} (id={}) - Healthy: {}", disease.getDiseaseName(), disease.getId(), isHealthy);
                     } else {
                         log.warn("⚠️ Disease not found in DB: {}", diseaseName);
                     }

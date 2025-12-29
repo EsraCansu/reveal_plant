@@ -14,5 +14,4 @@ public class PredictionDiseaseDTO {
     private Integer diseaseId;
     private String diseaseName;
     private Boolean isHealthy;
-    private Double confidence;
 }

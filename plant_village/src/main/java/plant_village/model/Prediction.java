@@ -44,9 +44,6 @@ public class Prediction {
     
     @Column(name = "is_valid")
     private Boolean isValid;
-    
-    @Column(name = "care_tips", columnDefinition = "NVARCHAR(MAX)")
-    private String careTips;
 
     @OneToMany(mappedBy = "prediction", cascade = CascadeType.ALL)
     @JsonIgnore  // Prevent circular reference
