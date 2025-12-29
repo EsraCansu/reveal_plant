@@ -276,6 +276,7 @@
                                 <table class="table table-hover mb-0" id="feedbackTable">
                                     <thead class="table-dark">
                                         <tr>
+                                            <th>Image</th>
                                             <th>ID</th>
                                             <th>User</th>
                                             <th>Prediction</th>
@@ -364,11 +365,11 @@
                             <table class="table table-sm table-borderless">
                                 <tr>
                                     <td class="text-muted" style="width: 100px;">Name:</td>
-                                    <td><strong id="modalUserName">-</strong></td>
+                                    <td><strong id="feedbackModalUserName">-</strong></td>
                                 </tr>
                                 <tr>
                                     <td class="text-muted">Email:</td>
-                                    <td><span id="modalUserEmail">-</span></td>
+                                    <td><span id="feedbackModalUserEmail">-</span></td>
                                 </tr>
                             </table>
 
@@ -705,12 +706,28 @@
         function displayFeedbackTable(feedbackData) {
             if (feedbackData.length === 0) {
                 document.getElementById('feedbackTableBody').innerHTML = 
-                    '<tr><td colspan="7" class="text-center text-muted">No feedback submitted yet.</td></tr>';
+                    '<tr><td colspan="8" class="text-center text-muted">No feedback submitted yet.</td></tr>';
                 return;
             }
             
-            const tableHTML = feedbackData.map(fb => `
+            const tableHTML = feedbackData.map(fb => {
+                // Handle different image URL types: base64, http, or relative path
+                let imageUrl = 'https://via.placeholder.com/50?text=No+Img';
+                if (fb.uploadedImageUrl) {
+                    if (fb.uploadedImageUrl.startsWith('data:') || fb.uploadedImageUrl.startsWith('http')) {
+                        imageUrl = fb.uploadedImageUrl;
+                    } else {
+                        imageUrl = BACKEND_URL + fb.uploadedImageUrl;
+                    }
+                }
+                return `
                 <tr style="cursor: pointer;" onclick="openFeedbackDetail(${fb.feedbackId})">
+                    <td>
+                        <img src="${imageUrl}" 
+                             alt="Feedback" 
+                             style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;"
+                             onerror="this.src='https://via.placeholder.com/50?text=No+Img'">
+                    </td>
                     <td><strong>#${fb.feedbackId}</strong></td>
                     <td>
                         <div><strong>${(fb.user && fb.user.userName) || 'Anonymous'}</strong></div>
@@ -743,7 +760,8 @@
                         ` : ''}
                     </td>
                 </tr>
-            `).join('');
+            `;
+            }).join('');
             document.getElementById('feedbackTableBody').innerHTML = tableHTML;
         }
 
@@ -778,8 +796,8 @@
             
             // User info - now from API
             const user = fb.user || {};
-            document.getElementById('modalUserName').textContent = user.userName || 'Anonymous';
-            document.getElementById('modalUserEmail').textContent = user.email || 'N/A';
+            document.getElementById('feedbackModalUserName').textContent = user.userName || 'Anonymous';
+            document.getElementById('feedbackModalUserEmail').textContent = user.email || 'N/A';
             
             // Prediction info - now from API with formatted name
             document.getElementById('modalPredictionType').textContent = fb.predictionType ? formatPredictionType(fb.predictionType) : 'Analysis';
@@ -787,18 +805,29 @@
             document.getElementById('modalPredictedName').textContent = fb.predictionType ? formatPredictionType(fb.predictionType) : 'Unknown';
             document.getElementById('modalConfidence').textContent = fb.confidence ? `${(fb.confidence * 100).toFixed(1)}%` : 'N/A';
             
-            // Image - from prediction uploadedImageUrl (same as my-diagnosis page)
-            const imageUrl = fb.uploadedImageUrl;
+            // Image - from prediction uploadedImageUrl (handles base64, http, and relative paths)
+            const rawImageUrl = fb.uploadedImageUrl;
             const imgElement = document.getElementById('modalPredictionImage');
-            if (imageUrl) {
-                // Handle both relative and absolute URLs
-                imgElement.src = imageUrl.startsWith('http') ? imageUrl : `${BACKEND_URL}${imageUrl}`;
+            if (rawImageUrl) {
+                // Handle base64, http/https, or relative paths
+                let fullImageUrl;
+                if (rawImageUrl.startsWith('data:') || rawImageUrl.startsWith('http')) {
+                    fullImageUrl = rawImageUrl;
+                } else {
+                    fullImageUrl = `${BACKEND_URL}${rawImageUrl}`;
+                }
+                imgElement.src = fullImageUrl;
                 imgElement.alt = 'Prediction Image';
+                imgElement.style.maxHeight = '300px';
+                imgElement.style.objectFit = 'contain';
                 imgElement.onerror = function() {
+                    console.error('Image failed to load from:', fullImageUrl);
                     this.src = 'https://via.placeholder.com/300x300?text=Image+Not+Found';
                 };
             } else {
+                console.warn('No uploadedImageUrl found for feedback:', feedbackId);
                 imgElement.src = 'https://via.placeholder.com/300x300?text=No+Image';
+                imgElement.alt = 'No Image Available';
             }
             
             // Feedback info
