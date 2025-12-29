@@ -47,4 +47,10 @@ public interface PredictionFeedbackService {
      * Process pending feedback (add images that weren't added yet)
      */
     void processPendingFeedback();
+    
+    /**
+     * Approve and save images of correct predictions
+     * Saves images of predictions marked as isCorrect to approve_img folder
+     */
+    Map<String, Object> approveCorrectImages();
 }

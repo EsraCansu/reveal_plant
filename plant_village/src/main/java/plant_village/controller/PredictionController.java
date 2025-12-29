@@ -622,4 +622,39 @@ public class PredictionController {
             return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    /**
+     * Approve and save images of predictions marked as correct in feedback
+     * POST /api/predictions/approve-images
+     */
+    @PostMapping("/approve-images")
+    @Operation(
+        summary = "Approve and save correct prediction images",
+        description = "Retrieves all feedback marked as correct (isCorrect=true) and saves the associated prediction images to approve_img folder"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Images approval process completed"),
+        @ApiResponse(responseCode = "500", description = "Error processing images")
+    })
+    public ResponseEntity<Map<String, Object>> approveCorrectImages() {
+        try {
+            log.info("🖼️ Starting image approval process for correct predictions");
+            Map<String, Object> result = feedbackService.approveCorrectImages();
+            
+            if ("success".equals(result.get("status"))) {
+                log.info("✅ Image approval completed successfully - {} images saved", result.get("successCount"));
+                return new ResponseEntity<>(result, HttpStatus.OK);
+            } else {
+                log.warn("⚠️ Image approval completed with errors");
+                return new ResponseEntity<>(result, HttpStatus.OK);
+            }
+        } catch (Exception e) {
+            log.error("❌ Error approving images: {}", e.getMessage(), e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("status", "error");
+            error.put("message", "Error approving images: " + e.getMessage());
+            error.put("error", e.toString());
+            return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }
