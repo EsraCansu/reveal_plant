@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "Prediction_Feedback")
@@ -36,6 +37,7 @@ public class PredictionFeedback {
     private Boolean isApprovedFromAdmin;
 
     @Column(name = "is_approved", nullable = false)
+    @JsonIgnore  // Redundant - use isApprovedFromAdmin instead
     private Boolean isApproved;
 
     @Column(name = "comment", columnDefinition = "NVARCHAR(500)")
@@ -45,6 +47,7 @@ public class PredictionFeedback {
     private LocalDateTime createdAt;
     
     @Column(name = "updated_at")
+    @JsonIgnore  // Redundant - use createdAt instead
     private LocalDateTime updatedAt;
     
     @Column(name = "image_added_to_db")

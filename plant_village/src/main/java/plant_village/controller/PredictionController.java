@@ -178,18 +178,8 @@ public class PredictionController {
                 dto.put("predictionId", fb.getPrediction() != null ? fb.getPrediction().getId() : null);
                 dto.put("isCorrect", fb.getIsCorrect());
                 dto.put("isApprovedFromAdmin", fb.getIsApprovedFromAdmin());
-                // isApprovedFromAdmin true ise isApproved da true olsun
-                dto.put("isApproved", fb.getIsApprovedFromAdmin() != null ? fb.getIsApprovedFromAdmin() : false);
-                dto.put("feedbackText", fb.getComment());
                 dto.put("comment", fb.getComment());
                 dto.put("createdAt", fb.getCreatedAt() != null ? fb.getCreatedAt().toString() : null);
-                
-                // Handle updatedAt safely
-                LocalDateTime updatedTime = fb.getUpdatedAt();
-                if (updatedTime == null) {
-                    updatedTime = fb.getCreatedAt();
-                }
-                dto.put("updatedAt", updatedTime != null ? updatedTime.toString() : null);
                 
                 // User Information
                 if (fb.getUser() != null) {
@@ -197,14 +187,12 @@ public class PredictionController {
                     userInfo.put("userId", fb.getUser().getId());
                     userInfo.put("userName", fb.getUser().getUserName());
                     userInfo.put("email", fb.getUser().getEmail());
-                    userInfo.put("fullName", fb.getUser().getUserName());
                     dto.put("user", userInfo);
                 } else {
                     Map<String, Object> userInfo = new HashMap<>();
                     userInfo.put("userId", 0);
                     userInfo.put("userName", "Anonymous");
                     userInfo.put("email", "anonymous@reveal-plant.com");
-                    userInfo.put("fullName", "Anonymous User");
                     dto.put("user", userInfo);
                 }
                 
@@ -221,8 +209,6 @@ public class PredictionController {
                     }
                     dto.put("prediction", predInfo);
                     dto.put("uploadedImageUrl", pred.getUploadedImageUrl());
-                    dto.put("predictionType", pred.getPredictionType());
-                    dto.put("confidence", pred.getConfidence());
                 }
                 
                 return dto;
